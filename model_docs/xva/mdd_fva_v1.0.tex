@@ -1,0 +1,558 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% ── Colour definitions ────────────────────────────────────────────────────────
+\definecolor{apexblue}{RGB}{0,51,102}
+\definecolor{apexgray}{RGB}{100,100,100}
+\definecolor{apexred}{RGB}{180,30,30}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{apexblue}}{}{0em}{\thesection\quad}
+\titleformat{\subsection}{\normalsize\bfseries\color{apexblue}}{}{0em}{\thesubsection\quad}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{apexgray}{\small RESTRICTED --- Model Risk Sensitive}}
+\lhead{\textcolor{apexgray}{\small APEX-MDL-0011 \textbar{} FVA MDD v1.0}}
+\rfoot{\textcolor{apexgray}{\small \thepage}}
+\lfoot{\textcolor{apexgray}{\small Apex Global Bank \textbar{} Quantitative Research Division}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ── Hyperref setup ────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=apexblue,
+  urlcolor=apexblue,
+  pdftitle={Apex Global Bank -- FVA Model Development Document},
+  pdfauthor={XVA Quant Team}
+}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{titlepage}
+  \begin{center}
+    \vspace*{2cm}
+    {\color{apexblue}\rule{\linewidth}{2pt}}\\[0.5cm]
+    {\Huge\bfseries\color{apexblue} Model Development Document}\\[0.4cm]
+    {\LARGE\bfseries Funding Valuation Adjustment (FVA)}\\[0.3cm]
+    {\Large Version 1.0}\\[0.5cm]
+    {\color{apexblue}\rule{\linewidth}{2pt}}\\[1cm]
+    {\large Apex Global Bank \textbar{} Quantitative Research Division}\\[0.3cm]
+    {\large\textcolor{apexred}{Classification: RESTRICTED --- Model Risk Sensitive}}\\[0.3cm]
+    {\large SR 11-7 Section Reference: Model Development}\\[2cm]
+    \begin{tabular}{ll}
+      \textbf{Model ID:}   & APEX-MDL-0011 \\[4pt]
+      \textbf{Date:}       & March 2026 \\[4pt]
+      \textbf{Status:}     & In Validation \\[4pt]
+      \textbf{Risk Tier:}  & Tier 1 \\
+    \end{tabular}
+  \end{center}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Document Metadata}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{Document Control Information}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Model Name            & Funding Valuation Adjustment (FVA) \\
+Model ID              & APEX-MDL-0011 \\
+Version               & 1.0 \\
+Status                & In Validation \\
+Risk Tier             & Tier 1 \\
+Regulatory Framework  & IFRS 13 Fair Value; Internal FTP Policy; Basel III (informational) \\
+Date of Development   & March 2026 \\
+Business Owner        & Head of Global Markets Trading (James Okafor) \\
+Model Developer       & Quantitative Research --- XVA Team \\
+MRO Review            & Pending --- Dr.\ Rebecca Chen \\
+CRO Approval          & Pending --- Dr.\ Priya Nair \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Version History}
+
+\begin{table}[h!]
+\centering
+\caption{Document Version History}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Change Summary} \\
+\midrule
+0.1 & Jan 2026 & Initial framework --- funding cost only (FCA) \\
+0.8 & Feb 2026 & Added funding benefit (FBA); asymmetric treatment \\
+1.0 & Mar 2026 & Production candidate; submitted for validation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Executive Summary}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Model Purpose}
+
+FVA captures the cost (or benefit) of funding derivatives positions that are not fully
+collateralised under a CSA. When Apex enters an uncollateralised derivative with a client
+and hedges it in the interbank market under a collateralised CSA, the bank faces an asymmetric
+funding situation: variation margin must be posted to the hedge counterparty when the hedge is
+out-of-the-money, but no corresponding margin is received from the client. This funding gap
+must be financed at Apex's unsecured borrowing rate. FVA quantifies the present value of this
+cost over the life of the trade.
+
+\[
+\mathrm{FVA} = \mathrm{FCA} - \mathrm{FBA}
+\tag{1}
+\]
+
+FCA (Funding Cost Adjustment) is the cost of funding receivables when Apex is owed money but
+cannot receive collateral. FBA (Funding Benefit Adjustment) is the benefit when Apex owes money
+and can use its own funds rather than paying market rates.
+
+\subsection{The FVA Debate}
+
+FVA is the most debated valuation adjustment in derivatives pricing. Hull and White (2012)
+argued that FVA adjustments represent double-counting with DVA: a bank's funding costs are
+already reflected in its credit spread, and applying FVA separately misprices derivatives by
+incorporating an avoidable cost into an asset's fair value. The counterargument --- adopted by
+most major dealers --- is that FVA is real: it affects actual cash flows and trading decisions,
+regardless of theoretical arguments about perfect markets.
+
+Apex's policy (approved by the CFO and CRO in 2024) is to \textbf{include FVA in derivatives
+fair value} for internal pricing and P\&L purposes, consistent with industry practice. This
+document acknowledges the theoretical debate and documents the specific methodological choices
+made.
+
+\subsection{Output Description}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{FVA charge per new trade}: Used by front office to price uncollateralised client derivatives
+  \item \textbf{Portfolio FVA}: Daily P\&L impact reported in income statement
+  \item \textbf{FVA Greeks}: Sensitivities to interest rates (DV01), FX, and credit spreads --- used for hedging
+  \item \textbf{FCA/FBA decomposition}: Separated for internal cost allocation between Treasury (funding) and trading (derivative)
+  \item \textbf{FVA by counterparty and desk}: Granular attribution for profitability analysis
+\end{itemize}
+
+\subsection{Key Assumptions}
+
+\begin{enumerate}[leftmargin=*]
+  \item Apex's unsecured borrowing spread over OIS/SOFR is a reliable proxy for the marginal cost of funding derivatives positions.
+  \item The funding curve is flat across tenors within a 1-year horizon (curve shape used for longer tenors).
+  \item The hedge for every uncollateralised client trade is assumed to be executed collateralised (full VM under ISDA SIMM).
+  \item DVA and FVA are computed independently and do not overlap.
+  \item Funding costs are symmetric: the same spread applies to borrowing and investing (relaxed in the FCA/FBA asymmetric variant).
+\end{enumerate}
+
+\subsection{Known Limitations}
+
+\begin{itemize}[leftmargin=*]
+  \item The assumption of a single funding curve ignores liquidity segmentation (different tenors trade at different spreads, especially in stress).
+  \item FVA is sensitive to the assumed hedging strategy; actual hedging behaviour may differ from the ``always hedge collateralised'' assumption.
+  \item FBA recognition is conservative --- many practitioners argue FBA should not be recognised as it relies on Apex defaulting.
+  \item The model does not capture dynamic funding strategies (e.g., using repo to fund derivatives positions more cheaply).
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Business Context and Purpose}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The Funding Gap Problem}
+
+Consider a simple example:
+\begin{enumerate}[leftmargin=*]
+  \item Apex writes a 5-year interest rate swap to a corporate client (uncollateralised --- no CSA in place).
+  \item Apex hedges by entering the opposite swap with a dealer (collateralised --- daily VM under ISDA SIMM).
+  \item If rates move so that the dealer hedge is out-of-the-money for Apex, Apex must post variation margin to the dealer immediately.
+  \item But Apex cannot call margin from the corporate client.
+  \item Apex must borrow funds to post that margin --- at its unsecured borrowing spread over OIS.
+\end{enumerate}
+
+This is the funding gap. Over a 5-year swap, the expected cumulative cost of this funding gap
+--- the FVA --- can represent a significant fraction of the swap's gross profit.
+
+\subsection{Market Practice}
+
+Following the 2013 disclosures by Citigroup (\$1.5B FVA loss) and JPMorgan (\$1.5B FVA
+charge), virtually all major dealers began reporting FVA. The ISDA produced a paper in 2014
+documenting the range of industry approaches. The consensus methodology --- symmetric funding
+curve applied to expected future funding gaps --- is what this model implements.
+
+\subsection{Model Users}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Front Office Pricing}: FVA charge added to price of uncollateralised client derivatives.
+  \item \textbf{Finance / P\&L}: Daily FVA P\&L recognised in income statement.
+  \item \textbf{Treasury}: FVA informs funding cost allocation --- trading desks are charged for the funding they consume.
+  \item \textbf{Collateral Negotiators}: FVA quantifies the value of upgrading a no-CSA relationship to a full CSA.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Theoretical Foundation}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{FVA Formula}
+
+The symmetric FVA formula under the risk-neutral measure is:
+
+\begin{equation}
+\mathrm{FVA} = -\int_0^T s_f(t)\,\mathbb{E}\!\left[V^+(t)\right] D(0,t)\,dt
+             + \int_0^T s_f(t)\,\mathbb{E}\!\left[V^-(t)\right] D(0,t)\,dt
+\tag{2}
+\end{equation}
+
+Decomposed into cost and benefit components:
+
+\begin{align}
+\mathrm{FCA} &= -\sum_i s_f \cdot \mathrm{ENE}_{\mathrm{coll}}(t_i) \cdot \Delta t_i \cdot D(0,t_i)
+\tag{3} \\[6pt]
+\mathrm{FBA} &= \phantom{-}\sum_i s_f \cdot \mathrm{EPE}_{\mathrm{coll}}(t_i) \cdot \Delta t_i \cdot D(0,t_i)
+\tag{4}
+\end{align}
+
+where:
+\begin{itemize}[leftmargin=*]
+  \item $s_f$ = Apex's funding spread over OIS (current: 55\,bp for 1--5 year tenors)
+  \item $\mathrm{EPE}_{\mathrm{coll}}(t)$ = expected positive exposure of the \emph{collateralised hedge} at time $t$
+  \item $\mathrm{ENE}_{\mathrm{coll}}(t)$ = expected negative exposure of the collateralised hedge
+  \item $D(0,t)$ = OIS discount factor
+\end{itemize}
+
+\textbf{Intuition}: FCA is paid when Apex receives money from the client trade but must fund
+the hedge (borrowing cost). FBA is earned when Apex owes money on the client trade but can use
+that receipt to fund itself more cheaply.
+
+\subsection{Relationship to CVA}
+
+CVA and FVA share the same simulation infrastructure (EPE/ENE profiles from Monte Carlo) but
+differ in what drives the cost:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{CVA}: the counterparty might \emph{default} (credit loss) --- proportional to default probability.
+  \item \textbf{FVA}: Apex must \emph{fund} the position regardless of whether anyone defaults --- proportional to exposure profile $\times$ funding spread.
+\end{itemize}
+
+They are conceptually independent and both are priced into client derivatives quotes.
+
+\subsection{The Asymmetric Variant (FCA Only)}
+
+Some practitioners argue FBA should not be recognised because:
+\begin{enumerate}[leftmargin=*]
+  \item It requires Apex to be in a net payable position to a collateralised counterparty.
+  \item The ``benefit'' of holding their cash cheaply is already priced in the OIS rate.
+  \item Recognising FBA inflates P\&L on day 1 against a future cash flow that may not materialise.
+\end{enumerate}
+
+Apex's policy recognises symmetric FVA (FCA $-$ FBA) but requires the FBA component to be
+separately disclosed in risk reports with a sensitivity showing the P\&L impact of removing FBA.
+
+\subsection{Funding Curve Construction}
+
+Apex's unsecured funding curve is constructed from:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Short end (0--1Y)}: SOFR + Apex CP (commercial paper) spread from recent issuance.
+  \item \textbf{Medium term (1--5Y)}: SOFR + Apex senior unsecured bond spread (Bloomberg/Markit secondary).
+  \item \textbf{Long end (5--30Y)}: SOFR + Apex CDS spread + liquidity premium (estimated from basis between bond spread and CDS).
+\end{enumerate}
+
+The curve is rebuilt daily. Any point where Apex has not issued bonds in the past 12 months
+uses linear interpolation between bracketing tenors.
+
+\subsection{Literature References}
+
+\begin{itemize}[leftmargin=*]
+  \item Burgard, C., Kjaer, M.\ (2011). ``Partial Differential Equation Representations of Derivatives with Bilateral Counterparty Risk and Funding Costs.'' \textit{Journal of Credit Risk}, Vol.\ 7.
+  \item Hull, J., White, A.\ (2012). ``The FVA Debate.'' \textit{Risk Magazine}, July 2012.
+  \item Hull, J., White, A.\ (2014). ``Valuing Derivatives: Funding Value Adjustments and Fair Value.'' \textit{Financial Analysts Journal}, Vol.\ 70.
+  \item Andersen, L., Duffie, D., Song, Y.\ (2019). ``Funding Value Adjustments.'' \textit{Journal of Finance}, Vol.\ 74.
+  \item ISDA (2014). \textit{FVA: The ISDA Guidance}.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Data Requirements and Governance}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Input Data Sources}
+
+\begin{table}[h!]
+\centering
+\caption{FVA Model Input Data Sources}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Data Item} & \textbf{Source} & \textbf{Frequency} \\
+\midrule
+Apex funding curve (CP, bond spreads) & Treasury / Bloomberg & Daily \\
+OIS discount curves (SOFR, ESTR, SONIA) & Bloomberg / Internal & Daily \\
+EPE/ENE profiles & CVA model Monte Carlo engine & Daily (shared run) \\
+Trade/netting set data & Front office systems & Real-time \\
+CSA terms (VM threshold, MTA) & ISDA MA database & On amendment \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data Governance}
+
+FVA shares the CVA model's simulation infrastructure. Any change to simulation parameters
+(number of paths, time grid, market factor models) requires simultaneous review of both CVA and
+FVA outputs to confirm consistency.
+
+The funding curve construction is owned jointly by the XVA team and Treasury. Disputes about
+the appropriate funding spread are escalated to the CFO / Head of Treasury.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Methodology and Implementation}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Shared Simulation with CVA}
+
+FVA reuses the Monte Carlo simulation generated for CVA (same paths, same time steps, same
+market factor evolution). The incremental computation is:
+\begin{enumerate}[leftmargin=*]
+  \item Apply netting set aggregation (same as CVA).
+  \item Apply CSA collateral offset (same as CVA).
+  \item Apply funding spread to EPE/ENE profiles.
+\end{enumerate}
+
+This integration reduces computational cost but creates a dependency: FVA results cannot be
+produced without a successful CVA run.
+
+\subsection{FVA for Partially Collateralised Trades}
+
+Many CSAs have a threshold (e.g., Apex posts margin only when net MtM exceeds \$10M) or a
+minimum transfer amount. These create a funding gap even for nominally collateralised
+relationships:
+
+\begin{equation}
+\mathrm{Funding\_Gap}(t) = \max\!\bigl(V(t) - \mathrm{Threshold} - \mathrm{MTA},\,0\bigr) - C_{\mathrm{posted}}(t)
+\tag{5}
+\end{equation}
+
+The FVA for partially collateralised trades is computed using this adjusted exposure rather
+than the full EPE/ENE.
+
+\subsection{Desk-Level FVA Allocation}
+
+FVA is allocated to individual trading desks based on their contribution to the firm's aggregate
+funding need. The allocation methodology:
+\begin{enumerate}[leftmargin=*]
+  \item Compute firm-level FVA.
+  \item Decompose by netting set.
+  \item Allocate netting set FVA to originating desk using trade-level sensitivities.
+  \item Charge desk P\&L; credit is passed to Treasury (which provides the actual funding).
+\end{enumerate}
+
+This creates the correct incentive: traders who write large uncollateralised trades face
+explicit P\&L charges for the funding they consume.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Model Testing and Backtesting}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Proxy Backtesting}
+
+Daily FVA P\&L is compared against Greeks-predicted P\&L:
+
+\begin{equation}
+\Delta\mathrm{FVA}_{\mathrm{pred}} = \mathrm{DV01}_{\mathrm{FVA}} \cdot \Delta r
+  + \Delta s_f \cdot \mathrm{Duration} \cdot \mathrm{Exposure}
+\tag{6}
+\end{equation}
+
+Tolerance: P\&L explain $> 80\%$ of total FVA daily change. Lower threshold than CVA given the
+additional uncertainty from funding spread moves.
+
+\subsection{Benchmark Comparison}
+
+Quarterly comparison against an independently computed FVA using a simplified closed-form for
+a representative vanilla IRS:
+
+\begin{equation}
+\mathrm{FVA}_{\mathrm{approx}} \approx s_f \cdot \overline{\mathrm{EPE}} \cdot T
+\tag{7}
+\end{equation}
+
+Agreement threshold: within 8\% of full simulation result.
+
+\subsection{Sensitivity to Funding Curve}
+
+Funding curve sensitivity analysis --- parallel shift of $+100\,\mathrm{bp}$ in Apex's funding
+spread:
+\begin{itemize}[leftmargin=*]
+  \item Expected FVA increase: proportional to portfolio duration $\times$ exposure.
+  \item Monitored quarterly; material sensitivity triggers review of hedging strategy.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Performance Metrics and Calibration Standards}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{FVA Performance Metrics and Thresholds}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Metric} & \textbf{Acceptable Range} & \textbf{Action if Breached} \\
+\midrule
+FVA P\&L Explain          & $>80\%$                & Investigate within 2 business days \\
+Benchmark deviation       & $<8\%$ relative        & Review within 30 days \\
+Funding curve staleness   & No tenor $>5$ days old & Data quality alert \\
+FBA as \% of FCA          & Disclosed separately   & Quarterly disclosure to MRO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Recalibration Schedule}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Funding curve}: Daily (automated from bond/CDS feed).
+  \item \textbf{Simulation paths (shared with CVA)}: No recalibration; path count reviewed annually.
+  \item \textbf{FCA/FBA policy (asymmetric vs.\ symmetric)}: Annual review by CFO / CRO.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Limitations, Assumptions, and Known Weaknesses}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Theoretical Controversy}
+
+The fundamental limitation of FVA is theoretical: the academic literature has not reached
+consensus on whether FVA is a legitimate fair value adjustment or a distortion of asset pricing
+principles. Hull and White's critique --- that FVA leads to negative NPV trades being accepted
+when they should not be --- is mathematically valid in a frictionless market. In practice,
+market frictions (unsecured funding is genuinely more expensive than collateralised) make FVA
+operationally real regardless of its theoretical status.
+
+\textbf{Compensating control}: FVA is disclosed separately from CVA and DVA in financial
+statements. The sensitivity of P\&L to the FVA methodology (symmetric vs.\ FCA-only) is
+disclosed in the quarterly risk report.
+
+\subsection{Funding Spread Instability in Stress}
+
+In a stress event affecting Apex's credit, the funding spread may widen dramatically and
+non-linearly. The current model uses a flat funding spread calibrated to current market
+conditions. A 100\,bp widening in Apex's credit spread would increase FCA by approximately
+\$180M.
+
+\textbf{Compensating control}: Stressed FVA computed using funding spread at the 75th
+percentile of historical 6-month widening.
+
+\subsection{Wrong-Way Funding Risk}
+
+For some counterparties, the scenarios where Apex's funding costs are highest (stress events)
+coincide with scenarios where those counterparties are most likely to increase their derivatives
+exposure. This ``wrong-way funding risk'' is not explicitly modelled.
+
+\textbf{Compensating control}: Concentration limits on uncollateralised exposure by desk ensure
+no single counterparty drives excessive FVA.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Compensating Controls}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{FVA Compensating Controls}
+\begin{tabular}{@{}p{4.5cm}p{6cm}p{3.5cm}@{}}
+\toprule
+\textbf{Risk} & \textbf{Control} & \textbf{Owner} \\
+\midrule
+Theoretical controversy & Separate disclosure; FCA-only sensitivity & Finance / CFO \\[4pt]
+Funding spread instability & Stressed FVA at 75th percentile spread & XVA Quant Team \\[4pt]
+Funding curve staleness & Daily rebuild; 5-day staleness alert & Market Data \\[4pt]
+FBA overstatement & FBA disclosed separately; policy review annually & CFO / CRO \\[4pt]
+Shared simulation failure & Fallback: prior-day FVA + Greek adjustment & XVA Technology \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Model Reserve}
+
+A model reserve of \textbf{\$25 million} is held against FVA model uncertainty:
+
+\begin{table}[h!]
+\centering
+\caption{FVA Model Reserve Breakdown}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Reserve Component} & \textbf{Amount (USD M)} \\
+\midrule
+Theoretical methodology uncertainty (FCA vs.\ FCA--FBA) & 12 \\
+Funding curve construction uncertainty                   & 8 \\
+Wrong-way funding risk                                   & 5 \\
+\midrule
+\textbf{Total Reserve}                                   & \textbf{25} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Change Management}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Material changes (funding curve methodology, FCA/FBA policy, integration with new simulation
+infrastructure) require full MRO re-validation. Non-material changes (new tenor point added to
+funding curve, computational optimisation) proceed via expedited review with 5-business-day
+notification to MRO.
+
+\subsection{Material Change Triggers}
+
+\begin{itemize}[leftmargin=*]
+  \item Change to the definition of eligible hedging instruments (collateralised vs.\ uncollateralised).
+  \item Change to the symmetric/asymmetric FCA/FBA policy.
+  \item Replacement of the shared Monte Carlo simulation infrastructure.
+  \item Change to the FTP (Funds Transfer Pricing) rate used as the funding curve basis.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Approvals and Sign-Off}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{Approval Status}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Role} & \textbf{Name} & \textbf{Status} & \textbf{Date} \\
+\midrule
+Model Developer          & XVA Quant Team    & Submitted & March 2026 \\
+Model Risk Officer       & Dr.\ Rebecca Chen & Pending   & --- \\
+Chief Risk Officer       & Dr.\ Priya Nair   & Pending   & --- \\
+CFO (FVA Policy Owner)   & Diana Osei        & Pending   & --- \\
+Business Owner           & James Okafor      & Pending   & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1cm}
+\noindent\textcolor{apexgray}{\footnotesize
+Document Classification: RESTRICTED --- Model Risk Sensitive\\
+Apex Global Bank \textbar{} Quantitative Research Division \textbar{} XVA Team\\
+Next scheduled review: March 2027 (or upon material model change)
+}
+
+\end{document}

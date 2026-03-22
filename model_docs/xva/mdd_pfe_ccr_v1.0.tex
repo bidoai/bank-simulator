@@ -1,0 +1,1010 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── packages ─────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{multirow}
+\usepackage{enumitem}
+
+% ── colours ──────────────────────────────────────────────────────────────────
+\definecolor{apexblue}{RGB}{0,51,102}
+\definecolor{apexgray}{RGB}{100,100,100}
+\definecolor{apexred}{RGB}{180,30,30}
+
+% ── hyperref setup ───────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=apexblue,
+  citecolor=apexblue,
+  urlcolor=apexblue,
+  pdftitle={MDD: PFE / CCR Exposure Engine -- APEX-MDL-0014},
+  pdfauthor={Apex Global Bank, Quantitative Research Division}
+}
+
+% ── header / footer ──────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{apexblue}{\small\textbf{APEX-MDL-0014} \textbar\ PFE / CCR Exposure Engine v1.0}}
+\rhead{\textcolor{apexgray}{\small RESTRICTED --- Model Risk Sensitive}}
+\lfoot{\textcolor{apexgray}{\small Apex Global Bank \textbar\ Quantitative Research Division}}
+\rfoot{\textcolor{apexgray}{\small Page \thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ── section style ────────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{apexblue}}{{\thesection.}}{0.5em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{apexblue}}{{\thesubsection}}{0.5em}{}
+
+% ── misc ─────────────────────────────────────────────────────────────────────
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+% ─────────────────────────────────────────────────────────────────────────────
+
+% ── title block ──────────────────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries\color{apexblue} Model Development Document}\\[0.4em]
+  {\Large\bfseries PFE / CCR Exposure Engine}\\[0.3em]
+  {\large Version 1.0}\\[0.6em]
+  {\normalsize Apex Global Bank \textbar\ Quantitative Research Division}\\[0.2em]
+  {\small\color{apexgray} SR 11-7 Section Reference: Model Development \textbar\ March 2026}
+\end{center}
+
+\vspace{1em}
+\textcolor{apexred}{\textbf{Classification: RESTRICTED --- Model Risk Sensitive}}
+\vspace{1em}
+
+\hrule
+\vspace{1em}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Document Metadata}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Model Name           & PFE / CCR Exposure Engine \\
+Model ID             & APEX-MDL-0014 \\
+Version              & 1.0 \\
+Status               & In Validation \\
+Risk Tier            & Tier 1 \\
+Regulatory Framework & Basel III SA-CCR; IFRS 13 Fair Value; SR 11-7 \\
+Date of Development  & March 2026 \\
+Business Owner       & Head of Global Markets Trading (James Okafor) \\
+Model Developer      & Quantitative Research --- XVA Team \\
+MRO Review           & Pending --- Dr.\ Rebecca Chen \\
+CRO Approval         & Pending --- Dr.\ Priya Nair \\
+\bottomrule
+\end{tabular}
+\caption{Document metadata}
+\end{table}
+
+\subsection{Version History}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Change Summary} \\
+\midrule
+0.1 & Jan 2026 & Initial netting framework; EPE/ENE profiles only \\
+0.8 & Feb 2026 & Collateral offset with MPoR; SA-CCR add-on module \\
+1.0 & Mar 2026 & Production candidate; submitted for validation \\
+\bottomrule
+\end{tabular}
+\caption{Version history}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Executive Summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Model Purpose}
+
+The PFE / CCR Exposure Engine is the foundational simulation model for all
+counterparty credit risk (CCR) measurement at Apex Global Bank. It generates
+the exposure profiles --- Expected Positive Exposure (EPE), Expected Negative
+Exposure (ENE), and Potential Future Exposure (PFE) --- that are consumed by
+three downstream Tier~1 models:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{CVA} (APEX-MDL-0010): uses EPE to compute the market value of
+        counterparty default risk;
+  \item \textbf{FVA} (APEX-MDL-0011): uses EPE/ENE to compute the funding cost
+        of uncollateralised positions;
+  \item \textbf{MVA} (APEX-MDL-0012): uses simulated future Initial Margin
+        profiles derived from the same Monte Carlo paths.
+\end{itemize}
+
+In addition, the model produces:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{PFE for credit limit management}: the 97.5th-percentile
+        exposure used by the Credit Risk function to set and monitor
+        counterparty credit limits;
+  \item \textbf{SA-CCR capital}: the Basel~III standardised-approach CCR
+        exposure-at-default (EAD) used for regulatory capital calculation.
+\end{itemize}
+
+Because this model is upstream of multiple Tier~1 models and directly feeds
+regulatory capital reporting, it is classified as \textbf{Tier~1}.
+
+\subsection{Output Description}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Output} & \textbf{Consumer} & \textbf{Frequency} \\
+\midrule
+EPE profile (time series) & CVA, FVA, MVA models       & Daily \\
+ENE profile (time series) & FVA model                   & Daily \\
+PFE at 97.5\% (time series) & Credit limit system       & Daily \\
+Effective EPE (Basel)       & Regulatory capital (IMM)  & Daily \\
+SA-CCR EAD by netting set   & Capital reporting, RWA    & Daily \\
+Netting benefit report      & Credit / legal            & Monthly \\
+\bottomrule
+\end{tabular}
+\caption{Model outputs and consumers}
+\end{table}
+
+\subsection{Key Assumptions}
+
+\begin{enumerate}[noitemsep]
+  \item Market factors evolve under the risk-neutral measure (for XVA) and the
+        real-world measure (for PFE / credit limits); the current implementation
+        uses risk-neutral for all outputs with a real-world scaling factor
+        applied to PFE percentiles.
+  \item Market factor dynamics follow the parametric models specified in
+        Section~\ref{sec:theory} (Hull-White for rates, GBM for FX/equity, CIR
+        for credit spreads).
+  \item Netting sets are legally isolated: exposure netting is applied within
+        but not across ISDA Master Agreements.
+  \item The collateral posting party exercises its collateral obligations in
+        full at each margin call date; no dispute or operational delay is
+        modelled outside the Margin Period of Risk.
+  \item SA-CCR calculation follows BCBS~279 (March 2014) as implemented in
+        US rules effective April 2020.
+\end{enumerate}
+
+\subsection{Known Limitations}
+
+\begin{enumerate}[noitemsep]
+  \item The Gaussian copula used for joint factor simulation underestimates
+        tail dependence in stress scenarios.
+  \item The correlation matrix is static and recalibrated annually; intra-year
+        correlation shifts are not captured.
+  \item Gap risk for equity derivatives (overnight jumps) is not explicitly
+        modelled.
+  \item Approximately 8\% of counterparties require proxy CDS spread mapping,
+        introducing basis risk.
+  \item Path-dependent exotic derivatives use computational approximations that
+        may introduce pricing errors of up to 5\%.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Business Context and Purpose}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{The Counterparty Credit Risk Problem}
+
+OTC derivatives expose Apex to the risk that a counterparty defaults when the
+derivative has positive mark-to-market value to Apex. Unlike a loan, where
+exposure is the outstanding principal, a derivative's exposure is a random
+variable that depends on the future evolution of market prices. The fundamental
+challenge of CCR is that this exposure must be estimated over the entire life
+of a contract --- potentially 30 years for a long-dated interest rate swap.
+
+The 2008 financial crisis demonstrated the catastrophic consequences of
+underestimating CCR. Bear Stearns and Lehman Brothers had large derivatives
+portfolios with hundreds of counterparties. Exposure estimates that failed to
+account for netting, or that used inadequate correlation assumptions, produced
+dangerously low credit limits. When stress arrived, actual losses exceeded
+modelled estimates by factors of 3--5x.
+
+\subsection{Regulatory History}
+
+CCR modelling has been shaped by successive waves of Basel regulation:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Basel II (2004)}: introduced the Internal Model Method (IMM)
+        allowing banks with approved simulation models to use EPE for CCR
+        capital, replacing the cruder Current Exposure Method (CEM).
+  \item \textbf{Basel~III (2010)}: introduced the CVA capital charge requiring
+        EPE-based CVA calculation; introduced the stressed EPE concept.
+  \item \textbf{BCBS~279 / SA-CCR (2014)}: replaced CEM with the more
+        risk-sensitive Standardised Approach to CCR, mandatory from 2020 for
+        banks without IMM approval.
+  \item \textbf{FRTB-CVA (2017)}: reformed the CVA capital framework,
+        requiring banks to compute CVA sensitivities using an approved
+        simulation infrastructure.
+\end{itemize}
+
+Apex currently uses SA-CCR for regulatory capital and maintains this model as
+a candidate for IMM approval, which would allow use of internal EPE for
+capital purposes.
+
+\subsection{Model Users}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{User} & \textbf{Function} & \textbf{Output Used} \\
+\midrule
+Credit Risk Officers   & Counterparty limit setting and monitoring & PFE at 97.5\% \\
+XVA Desk               & CVA/FVA/MVA pricing and hedging           & EPE, ENE \\
+Regulatory Capital     & Basel III SA-CCR RWA calculation          & SA-CCR EAD \\
+Finance / P\&L         & CVA P\&L via downstream CVA model         & EPE \\
+Internal Audit / MRO   & Model validation and ongoing monitoring   & All outputs \\
+Regulators (OCC, Fed)  & CCAR stress testing; SR 11-7 review       & SA-CCR EAD, EPE \\
+\bottomrule
+\end{tabular}
+\caption{Model users and primary outputs consumed}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Theoretical Foundation}
+\label{sec:theory}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Close-Out Netting}
+
+Under an ISDA Master Agreement, all transactions between two parties within a
+single netting set are aggregated upon default. The close-out netting value at
+time $t$ is:
+
+\begin{equation}
+  V_{\text{net}}(t) = \sum_{k=1}^{K} V_k(t)
+  \label{eq:netting}
+\end{equation}
+
+where $V_k(t)$ is the mark-to-market value of transaction $k$ at time $t$,
+measured from Apex's perspective (positive = Apex is owed money).
+
+The \emph{netting benefit} at time $t$ quantifies how much the netting agreement
+reduces gross positive exposure:
+
+\begin{equation}
+  \text{NettingBenefit}(t)
+    = \sum_{k=1}^{K} \max(V_k(t),\, 0)
+    - \max\!\left(\sum_{k=1}^{K} V_k(t),\, 0\right)
+  \label{eq:netting_benefit}
+\end{equation}
+
+A netting benefit of zero implies either all trades are in the same direction
+(no offset) or the netting set is entirely out-of-the-money for Apex.
+
+\subsection{Collateral Offset and the CSA}
+
+Where a Credit Support Annex (CSA) governs variation margin, the posted
+collateral reduces the effective exposure at each simulation date. Let $C(t)$
+denote the collateral balance (positive = collateral held by Apex), $\Theta$
+the CSA threshold, and $\delta$ the minimum transfer amount (MTA). The
+collateralised exposure before MPoR adjustment is:
+
+\begin{equation}
+  V_{\text{col}}(t)
+    = \max\!\bigl(V_{\text{net}}(t) - C(t) - \Theta - \delta,\; 0\bigr)
+  \label{eq:col_exposure}
+\end{equation}
+
+For a fully collateralised CSA with $\Theta = 0$ and $\delta = 0$, the exposure
+collapses to $\max(V_{\text{net}}(t) - C(t), 0)$.
+
+\subsection{Margin Period of Risk}
+
+The Margin Period of Risk (MPoR) is the time from the last successful margin
+call to the close-out of the portfolio following a counterparty default. During
+MPoR, Apex cannot call additional margin; the last received collateral may be
+stale. BCBS~261 specifies:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{10 business days}: daily-margined netting sets (standard);
+  \item \textbf{20 business days}: netting sets where the counterparty has
+        $\geq 5{,}000$ transactions or illiquid collateral;
+  \item \textbf{At least 20 business days}: re-hypothecated collateral.
+\end{itemize}
+
+The effective collateral at simulation time $t$, accounting for MPoR delay
+$\tau$, is:
+
+\begin{equation}
+  C_{\text{eff}}(t) = C(t - \tau)
+  \label{eq:coleff}
+\end{equation}
+
+where $\tau$ is the applicable MPoR. Substituting into \eqref{eq:col_exposure}:
+
+\begin{equation}
+  V_{\text{col,MPoR}}(t)
+    = \max\!\bigl(V_{\text{net}}(t) - C(t-\tau) - \Theta - \delta,\; 0\bigr)
+  \label{eq:mpor_exposure}
+\end{equation}
+
+\subsection{Exposure Metrics}
+
+Let $\tilde{V}(t) \equiv V_{\text{col,MPoR}}(t)$ denote the collateralised,
+MPoR-adjusted exposure. All exposure metrics are derived from the distribution
+of $\tilde{V}(t)$ across Monte Carlo paths.
+
+\subsubsection{Expected Exposure and Expected Positive / Negative Exposure}
+
+\begin{align}
+  \text{EE}(t)  &= \mathbb{E}\!\left[\max\!\bigl(\tilde{V}(t),\, 0\bigr)\right]
+  \label{eq:ee} \\[4pt]
+  \text{EPE}    &= \frac{1}{T} \int_0^T \text{EE}(t)\, dt
+  \label{eq:epe} \\[4pt]
+  \text{ENE}(t) &= \mathbb{E}\!\left[\min\!\bigl(\tilde{V}(t),\, 0\bigr)\right]
+  \label{eq:ene}
+\end{align}
+
+The EPE in \eqref{eq:epe} represents the time-averaged expected exposure and
+is the primary input to the CVA calculation.
+
+\subsubsection{Effective EPE (Regulatory)}
+
+For Basel IMM purposes, the \emph{Effective Expected Exposure} is the
+non-decreasing envelope of EE, ensuring the regulatory capital measure is
+conservative with respect to roll-off of near-term exposure:
+
+\begin{equation}
+  \text{EffEE}(t) = \max\!\bigl(\text{EE}(t),\; \text{EffEE}(t - \Delta t)\bigr),
+  \quad \text{EffEE}(0) = V_{\text{net}}(0)
+  \label{eq:eff_ee}
+\end{equation}
+
+The \emph{Effective EPE} is then:
+
+\begin{equation}
+  \text{EffEPE} = \frac{1}{1\text{Y}} \int_0^{1\text{Y}} \text{EffEE}(t)\, dt
+  \label{eq:eff_epe}
+\end{equation}
+
+\subsubsection{Potential Future Exposure}
+
+PFE at confidence level $\alpha$ at time horizon $t$ is the $\alpha$-quantile
+of the exposure distribution:
+
+\begin{equation}
+  \text{PFE}_\alpha(t) = Q_\alpha\!\left[\tilde{V}(t)\right]
+  \label{eq:pfe}
+\end{equation}
+
+Apex uses $\alpha = 97.5\%$ as the standard PFE confidence level for credit
+limit purposes, consistent with Basel counterparty credit risk guidance.
+
+\subsection{Market Factor Models}
+
+\subsubsection{Interest Rates: Two-Factor Hull-White}
+
+Domestic and foreign short rates are modelled using the two-factor Hull-White
+(HW2) model, which fits the initial term structure exactly while allowing
+mean-reverting stochastic evolution:
+
+\begin{align}
+  r(t) &= x_1(t) + x_2(t) + \varphi(t) \label{eq:hw2_r}\\
+  dx_1(t) &= -a_1\, x_1(t)\, dt + \sigma_1\, dW_1(t) \label{eq:hw2_x1}\\
+  dx_2(t) &= -a_2\, x_2(t)\, dt + \sigma_2\, dW_2(t) \label{eq:hw2_x2}
+\end{align}
+
+where $\varphi(t)$ is the deterministic fit to the initial forward curve,
+$a_1, a_2$ are mean-reversion speeds, $\sigma_1, \sigma_2$ are volatilities,
+and $\text{Corr}(dW_1, dW_2) = \rho_{12}$.
+
+Current calibration (March 2026):
+$a_1 = 0.03$, $a_2 = 0.35$, $\sigma_1 = 0.007$, $\sigma_2 = 0.014$,
+$\rho_{12} = -0.72$.
+
+\subsubsection{FX Rates: Geometric Brownian Motion}
+
+FX spot rates $S_{\text{CCY/USD}}(t)$ are modelled as:
+
+\begin{equation}
+  \frac{dS(t)}{S(t)} = \bigl(r_d(t) - r_f(t)\bigr)\, dt + \sigma_{\text{FX}}\, dW_{\text{FX}}(t)
+  \label{eq:fx_gbm}
+\end{equation}
+
+where $r_d$ and $r_f$ are domestic and foreign short rates from the HW2 models,
+and $\sigma_{\text{FX}}$ is the FX volatility calibrated to ATM options with
+maturity matching the simulation horizon.
+
+\subsubsection{Equity: Heston Stochastic Volatility}
+
+Equity prices are modelled under the Heston (1993) framework to capture the
+volatility smile:
+
+\begin{align}
+  \frac{dS(t)}{S(t)} &= \mu\, dt + \sqrt{v(t)}\, dW_S(t) \label{eq:heston_s}\\
+  dv(t) &= \kappa\bigl(\bar{v} - v(t)\bigr)\, dt + \xi\sqrt{v(t)}\, dW_v(t) \label{eq:heston_v}
+\end{align}
+
+with $\text{Corr}(dW_S, dW_v) = \rho_{\text{SV}}$. Parameters are calibrated
+to the equity volatility surface.
+
+\subsubsection{Credit Spreads: Cox-Ingersoll-Ross}
+
+Credit spreads (used for CVA hazard rate evolution) follow a CIR process,
+ensuring non-negativity:
+
+\begin{equation}
+  d\lambda(t) = \kappa_\lambda\!\bigl(\bar{\lambda} - \lambda(t)\bigr)\, dt
+               + \sigma_\lambda\sqrt{\lambda(t)}\, dW_\lambda(t)
+  \label{eq:cir}
+\end{equation}
+
+\subsection{Joint Simulation via Cholesky Decomposition}
+
+All market factors are simulated jointly using a $47 \times 47$ correlation
+matrix $\mathbf{P}$, Cholesky-decomposed into $\mathbf{L}$ such that
+$\mathbf{L}\mathbf{L}^\top = \mathbf{P}$. Standard normal variates
+$\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ are transformed into
+correlated variates $\mathbf{w} = \mathbf{L}\mathbf{z}$, which are then
+used to drive the stochastic differential equations above.
+
+The 47 factors comprise: 5 interest rate curves (SOFR, ESTR, SONIA, TONAR,
+HIBOR), 10 FX pairs (major and EM currencies), 12 equity indices, 15 credit
+spread curves (investment grade, high yield, financials, sovereigns), and
+5 commodity indices.
+
+\subsection{SA-CCR: Standardised Approach to Counterparty Credit Risk}
+
+For regulatory capital purposes under Basel~III (BCBS~279), the
+Exposure-at-Default (EAD) for a netting set is:
+
+\begin{equation}
+  \text{EAD} = \alpha \cdot \bigl(\text{RC} + \text{PFE}_{\text{addon}}\bigr)
+  \label{eq:sa_ccr_ead}
+\end{equation}
+
+where $\alpha = 1.4$ is the supervisory scalar, RC is the replacement cost, and
+$\text{PFE}_{\text{addon}}$ is the supervisory add-on.
+
+\subsubsection{Replacement Cost}
+
+For margined netting sets:
+
+\begin{equation}
+  \text{RC} = \max\!\bigl(V - C,\; \text{TH} + \text{MTA} - \text{NICA},\; 0\bigr)
+  \label{eq:rc_margined}
+\end{equation}
+
+For unmargined netting sets:
+
+\begin{equation}
+  \text{RC} = \max\!\bigl(V - C,\; 0\bigr)
+  \label{eq:rc_unmargined}
+\end{equation}
+
+where $V$ is current net MtM, $C$ is collateral held net of haircuts, TH is
+the CSA threshold, MTA is the minimum transfer amount, and NICA is the
+net independent collateral amount.
+
+\subsubsection{PFE Add-On Aggregation}
+
+The aggregate PFE add-on across all five asset classes (interest rate, FX,
+credit, equity, commodity) is:
+
+\begin{equation}
+  \text{PFE}_{\text{addon}} = \text{AddOn}^{\text{IR}}
+    + \text{AddOn}^{\text{FX}}
+    + \text{AddOn}^{\text{credit}}
+    + \text{AddOn}^{\text{EQ}}
+    + \text{AddOn}^{\text{com}}
+  \label{eq:pfe_addon}
+\end{equation}
+
+Each asset-class add-on is computed from the supervisory delta, notional,
+maturity factor, and supervisory volatility as specified in BCBS~279 Annex~B.
+For interest rate derivatives, the add-on within a single currency hedging set
+uses the partial netting formula:
+
+\begin{equation}
+  \text{AddOn}^{\text{IR, CCY}}
+    = \left|\, \sum_j \delta_j \cdot d_j \cdot \text{MF}_j \cdot \sigma^{\text{IR}}_j
+      \right|
+  \label{eq:ir_addon}
+\end{equation}
+
+where $\delta_j \in \{+1, -1\}$ is the supervisory delta, $d_j$ is the
+adjusted notional, $\text{MF}_j$ is the maturity factor
+($\text{MF}_j = \sqrt{\min(M_j, 1\text{Y}) / 1\text{Y}}$ for unmargined), and
+$\sigma^{\text{IR}}_j$ is the supervisory volatility ($= 0.50\%$ for IR).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Data Requirements and Governance}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Input Data Sources}
+
+\begin{longtable}{@{}lll@{}}
+\toprule
+\textbf{Data Item} & \textbf{Source} & \textbf{Frequency} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+OIS/RFR yield curves (SOFR, ESTR, SONIA, TONAR, HIBOR) & Bloomberg / Internal & Daily \\
+FX spot rates (10 pairs vs. USD) & Bloomberg & Real-time (EOD snap) \\
+Equity index levels (12 indices) & Bloomberg & Daily \\
+Credit spread curves (IG, HY, fins, sov) & Markit / Bloomberg & Daily \\
+Swaption vol surfaces (all rate curves) & Bloomberg & Daily \\
+FX ATM vol (all pairs) & Bloomberg & Daily \\
+Equity vol surfaces (all indices) & Bloomberg & Daily \\
+Credit spread vol (CDS options where available) & Markit & Weekly \\
+ISDA Master Agreement database & Legal / ISDA operations & On amendment \\
+CSA terms (threshold, MTA, eligible collateral) & Legal / ISDA operations & On amendment \\
+Trade population (all OTC derivatives) & Front-office systems & Real-time \\
+Collateral balances (VM posted/received) & Collateral Management & Daily \\
+Historical factor data (5-year lookback) & Bloomberg / Proprietary & Annual \\
+\end{longtable}
+
+\subsection{Data Quality Controls}
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Curve completeness}: All OIS curves must have at least 10 tenor
+        points covering 1W to 30Y. Missing tenors use linear log-discount
+        interpolation with a staleness flag if the bracketing points are
+        $>2$ business days old.
+  \item \textbf{Vol surface consistency}: Swaption vol surfaces are validated
+        for absence of calendar spread arbitrage and butterfly spread arbitrage
+        before use. Surfaces failing validation revert to prior-day with an
+        alert.
+  \item \textbf{Trade data completeness}: Trade population must reconcile to
+        front-office systems within 0.5\% of notional before the simulation
+        run proceeds. Material breaks ($>1\%$) halt the run and escalate to
+        Operations.
+  \item \textbf{CSA database}: The CSA terms database must cover $\geq 99\%$
+        of live netting sets by notional. Missing CSA terms default to
+        ``uncollateralised'' (conservative).
+\end{enumerate}
+
+\subsection{BCBS 239 Compliance}
+
+As a Tier~1 model feeding regulatory capital, the PFE/CCR engine is subject to
+BCBS~239 data lineage requirements. Every input data item is tagged with
+provenance metadata (source system, timestamp, transformation applied).
+The full data lineage from raw market data to SA-CCR EAD must be
+reconstructable within 4 hours of a regulatory request.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Methodology and Implementation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Monte Carlo Engine}
+
+The simulation engine generates $N = 10{,}000$ risk-neutral paths over
+$M = 200$ time steps:
+
+\begin{itemize}[noitemsep]
+  \item $t_1, \ldots, t_{52}$: weekly steps to 1 year;
+  \item $t_{53}, \ldots, t_{112}$: monthly steps from 1 to 5 years;
+  \item $t_{113}, \ldots, t_{200}$: quarterly steps from 5 to 30 years.
+\end{itemize}
+
+GPU acceleration (CUDA via cuBLAS) is used for the $47 \times 47$ Cholesky
+decomposition and for batched path generation. The full portfolio run completes
+in under 4 hours on the production GPU cluster. An intraday ``Greeks'' run
+(500 paths, 1Y horizon only) completes in under 30 minutes.
+
+\subsection{Netting Set Aggregation Algorithm}
+
+For each simulation path $\omega$ and time step $t$:
+
+\begin{enumerate}[noitemsep]
+  \item Price all trades $V_k(\omega, t)$ using the simulated market factors.
+  \item Group trades by ISDA netting set identifier.
+  \item Compute $V_{\text{net}}(\omega, t) = \sum_k V_k(\omega, t)$ within
+        each netting set (Equation~\ref{eq:netting}).
+  \item Apply collateral offset per Equation~\ref{eq:mpor_exposure}, using
+        the CSA terms for the netting set.
+  \item Record $\tilde{V}(\omega, t)$ as the path-level collateralised exposure.
+\end{enumerate}
+
+\subsection{Exposure Profile Construction}
+
+After all $N$ paths are generated, for each netting set and time step $t$:
+
+\begin{enumerate}[noitemsep]
+  \item $\text{EE}(t) = \frac{1}{N} \sum_\omega \max(\tilde{V}(\omega, t), 0)$;
+  \item $\text{ENE}(t) = \frac{1}{N} \sum_\omega \min(\tilde{V}(\omega, t), 0)$;
+  \item $\text{PFE}_{97.5\%}(t) = $ 97.5th-percentile of
+        $\{\tilde{V}(\omega, t)\}_{\omega=1}^N$;
+  \item $\text{EffEE}(t)$ computed recursively per Equation~\ref{eq:eff_ee}.
+\end{enumerate}
+
+Portfolio-level profiles aggregate netting-set profiles using the same
+path-consistent summation (no diversification benefit across netting sets for
+EPE, consistent with Basel IMM requirements).
+
+\subsection{SA-CCR Calculation}
+
+The SA-CCR module runs as a post-processing step on the current-date trade
+population (no simulation paths required). For each netting set:
+
+\begin{enumerate}[noitemsep]
+  \item Classify each trade into asset class (IR, FX, credit, EQ, commodity).
+  \item Compute supervisory delta $\delta_j$ for each trade (sign and optionality
+        adjustment).
+  \item Compute adjusted notional $d_j$ (trade-specific; tenor-adjusted for IR).
+  \item Compute maturity factor $\text{MF}_j$ (margined or unmargined formula).
+  \item Aggregate add-ons within hedging sets (with partial netting for IR/credit).
+  \item Aggregate hedging-set add-ons to netting-set $\text{PFE}_{\text{addon}}$.
+  \item Compute RC per Equation~\ref{eq:rc_margined} or \ref{eq:rc_unmargined}.
+  \item Compute EAD per Equation~\ref{eq:sa_ccr_ead}.
+\end{enumerate}
+
+\subsection{Shared Infrastructure with CVA, FVA, MVA}
+
+CVA, FVA, and MVA all consume outputs from the same Monte Carlo run. This
+ensures consistency across XVA measures --- a requirement under IFRS~13 for
+coherent fair value measurement --- and reduces computational cost by avoiding
+redundant simulation. The dependency chain is:
+
+\begin{center}
+  \textbf{PFE/CCR Engine} $\;\longrightarrow\;$ \textbf{CVA} (APEX-MDL-0010)\\[2pt]
+  \textbf{PFE/CCR Engine} $\;\longrightarrow\;$ \textbf{FVA} (APEX-MDL-0011)\\[2pt]
+  \textbf{PFE/CCR Engine} $\;\longrightarrow\;$ \textbf{MVA} (APEX-MDL-0012)
+\end{center}
+
+A failure of the PFE/CCR engine propagates to all three downstream models.
+The fallback procedure (prior-day EPE/ENE scaled by Greeks) is documented
+in Section~\ref{sec:controls}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Model Testing and Backtesting}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{P\&L Explain for EE}
+
+Daily predicted EE change is compared to actual EE change:
+
+\begin{equation}
+  \Delta\text{EE}_{\text{predicted}}
+    = \frac{\partial \text{EE}}{\partial r} \Delta r
+    + \frac{\partial \text{EE}}{\partial S_{\text{FX}}} \Delta S_{\text{FX}}
+    + \frac{\partial \text{EE}}{\partial \lambda} \Delta\lambda
+    + \text{theta}
+\end{equation}
+
+P\&L explain ratio $= \Delta\text{EE}_{\text{predicted}} / \Delta\text{EE}_{\text{actual}}$
+must exceed 85\%. Deviations $>15\%$ trigger a model investigation within
+2 business days.
+
+\subsection{SA-CCR Benchmark}
+
+The SA-CCR EAD is compared quarterly to the 97.5th-percentile internal PFE
+multiplied by $\alpha = 1.4$ (the SA-CCR scalar):
+
+\begin{equation}
+  \text{SA-CCR ratio}
+    = \frac{\text{SA-CCR EAD}}{1.4 \times \text{PFE}_{97.5\%}(1\text{Y})}
+\end{equation}
+
+Acceptable range: $[0.9,\; 1.5]$. Values outside this range indicate either
+over-conservatism in SA-CCR or inadequacy of the internal model, and trigger
+a 30-day review.
+
+\subsection{Historical Backtesting}
+
+EE predictions are compared to realised exposures on a rolling 1-year
+lookback. The test asks: ``did the realised 1-year maximum exposure fall
+below the predicted PFE$_{97.5\%}$ at least 97.5\% of the time?'' Following
+the Basel traffic light framework:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Zone} & \textbf{Exceptions (out of 250 obs.)} & \textbf{Action} \\
+\midrule
+Green  & 0--6   & No action required \\
+Yellow & 7--9   & Explanation required; potential add-on \\
+Red    & 10+    & Model review mandatory; capital add-on \\
+\bottomrule
+\end{tabular}
+\caption{Backtesting traffic light zones (adapted for CCR)}
+\end{table}
+
+\subsection{Stress Scenario Analysis}
+
+Five stress scenarios are applied to the current portfolio and the resulting
+EE profiles are reported to the Market Risk Officer quarterly:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Scenario} & \textbf{EE Increase (\$M)} & \textbf{PFE$_{97.5\%}$ Increase (\$M)} \\
+\midrule
+2008 GFC replay              & +\$1{,}100 & +\$2{,}400 \\
+2020 COVID stress            & +\$650     & +\$1{,}500 \\
+Rates +200bp parallel shift  & +\$420     & +\$980 \\
+Credit spreads +100bp        & +\$280     & +\$620 \\
+FX +/-20\% (dollar weakening) & +\$210     & +\$450 \\
+\bottomrule
+\end{tabular}
+\caption{Stress scenario EE and PFE impacts (approximate, current portfolio)}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Performance Metrics and Calibration Standards}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{longtable}{@{}llll@{}}
+\toprule
+\textbf{Metric} & \textbf{Acceptable Range} & \textbf{Frequency} & \textbf{Action if Breached} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+EE P\&L Explain                & $>85\%$           & Daily    & Investigate within 2 business days \\
+SA-CCR ratio (SA-CCR / 1.4$\times$PFE) & $[0.9,\, 1.5]$  & Quarterly & Review within 30 days \\
+Backtesting exceptions (annual) & $\leq 6$ (Green zone) & Quarterly & Escalate if Yellow; mandatory if Red \\
+Correlation matrix condition \# & $<1{,}000$        & Annual   & Recalibrate; notify MRO \\
+Data completeness (CSA coverage) & $\geq 99\%$       & Daily    & Escalate to Legal/Operations \\
+Intraday run completion time    & $<30$ minutes      & Daily    & Technology escalation \\
+Full EOD run completion time    & $<4$ hours         & Daily    & Technology escalation \\
+\end{longtable}
+
+\subsection{Recalibration Schedule}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{HW2 and CIR parameters}: Annual recalibration to 5-year
+        historical data; ad hoc recalibration upon material market structure
+        change (e.g., rate regime change).
+  \item \textbf{Heston equity parameters}: Quarterly recalibration to current
+        vol surface.
+  \item \textbf{Correlation matrix}: Annual recalibration using rolling 5-year
+        equally-weighted data; reviewed after market stress events.
+  \item \textbf{SA-CCR supervisory parameters}: Fixed by BCBS~279; updated
+        only upon regulatory change with full MRO review.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Limitations, Assumptions, and Known Weaknesses}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Gaussian Copula Tail Dependence}
+
+The joint factor simulation uses a Gaussian copula: correlated normal random
+variables are mapped to each factor's marginal distribution. The Gaussian
+copula underestimates tail dependence --- the probability of multiple factors
+simultaneously moving to extreme values is lower in the Gaussian copula than
+in empirical data, particularly during systemic stress events.
+
+\textbf{Compensating control}: Stressed EE (computed using 2008 and 2020 shock
+scenarios) is disclosed alongside base EE. A capital add-on for tail dependence
+is included in the model reserve.
+
+\subsection{Static Correlation Matrix}
+
+The 47$\times$47 correlation matrix is calibrated once per year. During periods
+of market stress, correlations can change rapidly and materially (e.g.,
+equity-FX correlations invert during risk-off events). The static matrix may
+produce inaccurate exposure estimates intra-year.
+
+\textbf{Compensating control}: The Market Risk Officer monitors intraday
+correlation estimates from a 60-day rolling window and can trigger an
+unscheduled recalibration if any major pair moves $>30$ percentage points.
+
+\subsection{Equity Gap Risk}
+
+The Heston model uses continuous-time diffusion with no jump component.
+Overnight equity gaps (e.g., a 20\% single-day drop following an unexpected
+corporate event) are not captured. For equity derivatives with short-dated
+optionality, this can understate PFE.
+
+\textbf{Compensating control}: Equity derivatives with remaining maturity
+$<6$ months use a jump-adjusted vol ($\sigma_{\text{adj}} = 1.2 \times
+\sigma_{\text{Heston}}$) for PFE calculation only.
+
+\subsection{Proxy Credit Spread Mapping}
+
+Approximately 8\% of counterparties by notional have no observable CDS spread.
+These use a proxy mapping based on credit rating and sector (e.g., BBB-rated
+European utility $\mapsto$ iTraxx Main component average). The proxy spread
+may not reflect idiosyncratic credit risk.
+
+\textbf{Compensating control}: Proxy-mapped counterparties are flagged in all
+outputs. A 25\% add-on is applied to the EPE for proxy-mapped counterparties
+in the CVA calculation. The Credit Risk function reviews proxy assignments
+quarterly.
+
+\subsection{Exotic Derivative Approximations}
+
+Path-dependent exotic derivatives (e.g., barrier options, Asian options, TARFs)
+are priced using closed-form approximations or pre-computed exposure grids
+rather than full nested Monte Carlo. These approximations may introduce pricing
+errors of up to 5\% for individual instruments.
+
+\textbf{Compensating control}: Exotics exceeding \$50M in notional receive a
+full nested Monte Carlo re-price on a monthly basis. The largest 20 exotic
+positions are benchmarked to an independent pricing library quarterly.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Compensating Controls}
+\label{sec:controls}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{longtable}{@{}lll@{}}
+\toprule
+\textbf{Risk} & \textbf{Control} & \textbf{Owner} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Tail dependence underestimation
+  & Stressed EE disclosure; model reserve add-on
+  & XVA Quant / MRO \\
+Static correlation
+  & 60-day rolling monitor; unscheduled recalibration trigger at 30pp move
+  & Market Risk \\
+Equity gap risk
+  & 1.2$\times$ vol adjustment for short-dated equity derivatives
+  & XVA Quant \\
+Proxy CDS mapping
+  & 25\% EPE add-on; quarterly review by Credit Risk
+  & Credit Risk \\
+Exotic approximation error
+  & Monthly full reprice for $>$\$50M; quarterly benchmark vs.\ independent library
+  & XVA Technology \\
+Engine failure (downstream cascade)
+  & Fallback: prior-day EPE/ENE scaled by Greeks; alert to CVA/FVA/MVA desks
+  & XVA Technology \\
+CSA database gaps
+  & Missing CSA defaults to uncollateralised (conservative); nightly reconciliation
+  & Legal / Operations \\
+Data staleness
+  & 2-business-day staleness alert; fallback to prior-day with flag
+  & Market Data \\
+\end{longtable}
+
+\subsection{Model Reserve}
+
+A model reserve of \textbf{\$35 million} is held against PFE/CCR model
+uncertainty:
+
+\begin{itemize}[noitemsep]
+  \item Gaussian copula tail dependence: \$15M;
+  \item Proxy CDS mapping basis risk: \$10M;
+  \item Exotic derivative path-dependency approximation: \$10M.
+\end{itemize}
+
+The reserve is reviewed annually alongside the model recalibration cycle and
+may be adjusted following material market events.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Relationship to Downstream Models}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The PFE/CCR Exposure Engine is a producer model; it does not consume outputs
+from other models within the XVA suite. The table below summarises the
+downstream dependencies:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Downstream Model} & \textbf{Model ID} & \textbf{Input Consumed} & \textbf{Sensitivity} \\
+\midrule
+CVA  & APEX-MDL-0010 & EPE profile (all counterparties)       & High --- linear in EPE \\
+FVA  & APEX-MDL-0011 & EPE and ENE profiles                   & High --- linear in EPE/ENE \\
+MVA  & APEX-MDL-0012 & Simulated IM profiles (Monte Carlo)    & High --- direct path dependency \\
+ColVA & APEX-MDL-0013 & $|\text{EPE}|$ for collateral balance & Medium \\
+\bottomrule
+\end{tabular}
+\caption{Downstream model dependencies}
+\end{table}
+
+Any change to the PFE/CCR engine that affects EPE or ENE profiles (e.g.,
+correlation matrix recalibration, factor model change, netting set
+re-aggregation) triggers a mandatory impact assessment for all four downstream
+models before the change is deployed to production.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Change Management}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\textbf{Material changes} requiring full MRO re-validation:
+
+\begin{itemize}[noitemsep]
+  \item Change to any market factor model (HW2 $\to$ LMM, Heston $\to$ SABR, etc.);
+  \item Change to netting set aggregation logic or MPoR treatment;
+  \item Change to SA-CCR add-on calculation methodology;
+  \item Integration of new asset class or new market (e.g., adding crypto
+        derivative exposure);
+  \item Migration to a new simulation infrastructure or hardware platform.
+\end{itemize}
+
+\textbf{Non-material changes} via expedited review (5 business days):
+
+\begin{itemize}[noitemsep]
+  \item Annual recalibration of factor model parameters (within pre-approved bounds);
+  \item Addition of a new counterparty to the proxy CDS mapping table;
+  \item Computational optimisation with no change to outputs;
+  \item Bug fixes that correct errors without changing methodology.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Approvals and Sign-Off}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Role} & \textbf{Name} & \textbf{Status} & \textbf{Date} \\
+\midrule
+Model Developer      & XVA Quant Team      & $\checkmark$ Submitted & March 2026 \\
+Model Risk Officer   & Dr.\ Rebecca Chen   & $\circ$ Pending & --- \\
+Chief Risk Officer   & Dr.\ Priya Nair     & $\circ$ Pending & --- \\
+Business Owner       & James Okafor        & $\circ$ Pending & --- \\
+\bottomrule
+\end{tabular}
+\caption{Approval status}
+\end{table}
+
+\vspace{2em}
+\hrule
+\vspace{0.5em}
+{\small\color{apexgray}
+Document Classification: RESTRICTED --- Model Risk Sensitive\\
+Apex Global Bank \textbar\ Quantitative Research Division \textbar\ XVA Team\\
+Next scheduled review: March 2027 (or upon material model change)
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\appendix
+\section{Notation Summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{longtable}{@{}ll@{}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+$V_k(t)$          & MtM value of trade $k$ at time $t$ (Apex's perspective) \\
+$V_{\text{net}}(t)$ & Net MtM value of netting set at time $t$ \\
+$C(t)$            & Collateral balance at time $t$ (positive = held by Apex) \\
+$\Theta$          & CSA threshold \\
+$\delta$          & CSA minimum transfer amount (MTA) \\
+$\tau$            & Margin Period of Risk \\
+$\tilde{V}(t)$    & Collateralised, MPoR-adjusted exposure \\
+$\text{EE}(t)$    & Expected Exposure at time $t$ \\
+$\text{EPE}$      & (Time-averaged) Expected Positive Exposure \\
+$\text{EffEE}(t)$ & Effective Expected Exposure (non-decreasing) \\
+$\text{ENE}(t)$   & Expected Negative Exposure at time $t$ \\
+$\text{PFE}_\alpha(t)$ & Potential Future Exposure at confidence $\alpha$, horizon $t$ \\
+$\alpha$          & SA-CCR supervisory scalar ($= 1.4$) \\
+$\text{RC}$       & SA-CCR Replacement Cost \\
+$\text{EAD}$      & Exposure at Default (SA-CCR) \\
+$N$               & Number of Monte Carlo paths ($= 10{,}000$) \\
+$M$               & Number of simulation time steps ($= 200$) \\
+$a_1, a_2$        & Hull-White mean-reversion speeds \\
+$\sigma_1, \sigma_2$ & Hull-White volatilities \\
+$\kappa, \bar{v}, \xi$ & Heston mean-reversion, long-run variance, vol-of-vol \\
+$\kappa_\lambda, \bar{\lambda}, \sigma_\lambda$ & CIR credit spread parameters \\
+$\mathbf{P}$      & $47 \times 47$ factor correlation matrix \\
+$\mathbf{L}$      & Cholesky factor of $\mathbf{P}$ \\
+\end{longtable}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\end{document}

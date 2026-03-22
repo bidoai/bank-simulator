@@ -1,0 +1,691 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{multirow}
+\usepackage{enumitem}
+
+\definecolor{apexblue}{RGB}{0,51,102}
+\definecolor{apexgray}{RGB}{100,100,100}
+\definecolor{apexred}{RGB}{180,30,30}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=apexblue,
+  citecolor=apexblue,
+  urlcolor=apexblue,
+  pdftitle={MDD: Credit Valuation Adjustment -- APEX-MDL-0010},
+  pdfauthor={Apex Global Bank, Quantitative Research Division}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{apexblue}{\small\textbf{APEX-MDL-0010} \textbar\ Credit Valuation Adjustment (CVA) v1.0}}
+\rhead{\textcolor{apexgray}{\small RESTRICTED --- Model Risk Sensitive}}
+\lfoot{\textcolor{apexgray}{\small Apex Global Bank \textbar\ Quantitative Research Division}}
+\rfoot{\textcolor{apexgray}{\small Page \thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\titleformat{\section}{\large\bfseries\color{apexblue}}{{\thesection.}}{0.5em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{apexblue}}{{\thesubsection}}{0.5em}{}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries\color{apexblue} Model Development Document}\\[0.4em]
+  {\Large\bfseries Credit Valuation Adjustment (CVA)}\\[0.3em]
+  {\large Version 1.0}\\[0.6em]
+  {\normalsize Apex Global Bank \textbar\ Quantitative Research Division}\\[0.2em]
+  {\small\color{apexgray} SR 11-7 Section Reference: Model Development \textbar\ March 2026}
+\end{center}
+
+\vspace{1em}
+\textcolor{apexred}{\textbf{Classification: RESTRICTED --- Model Risk Sensitive}}
+\vspace{1em}
+\hrule
+\vspace{1em}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Document Metadata}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Model Name           & Credit Valuation Adjustment (CVA) \\
+Model ID             & APEX-MDL-0010 \\
+Version              & 1.0 \\
+Status               & In Validation \\
+Risk Tier            & Tier 1 \\
+Regulatory Framework & Basel III SA-CVA / BA-CVA; IFRS 13 Fair Value; ISDA SIMM \\
+Date of Development  & March 2026 \\
+Business Owner       & Head of Global Markets Trading (James Okafor) \\
+Model Developer      & Quantitative Research --- XVA Team \\
+MRO Review           & Pending --- Dr.\ Rebecca Chen \\
+CRO Approval         & Pending --- Dr.\ Priya Nair \\
+\bottomrule
+\end{tabular}
+\caption{Document metadata}
+\end{table}
+
+\subsection{Version History}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Author} & \textbf{Change Summary} \\
+\midrule
+0.1 & Jan 2026 & XVA Quant Team & Initial draft --- bilateral framework \\
+0.9 & Feb 2026 & XVA Quant Team & Added WWR module; stress calibration \\
+1.0 & Mar 2026 & XVA Quant Team & Production candidate; submitted for validation \\
+\bottomrule
+\end{tabular}
+\caption{Version history}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Executive Summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Model Purpose}
+
+CVA is the market value of counterparty credit risk embedded in a derivatives
+portfolio. It represents the expected loss arising from counterparty default,
+adjusted for the replacement cost of the derivative at the time of default.
+This model computes bilateral CVA (incorporating both counterparty and
+own-credit risk) for all OTC derivatives held by Apex Global Bank that are
+subject to counterparty credit risk.
+
+CVA is subtracted from the risk-free value of the derivatives portfolio to
+arrive at the fair value under IFRS~13. It also feeds the regulatory CVA
+capital charge under Basel~III.
+
+\subsection{Business Use Cases}
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Fair Value Accounting (IFRS 13)}: Daily CVA P\&L is reported
+        in the income statement. CVA is a component of derivatives fair value
+        disclosed in financial statements.
+  \item \textbf{Regulatory Capital (Basel III SA-CVA)}: CVA feeds the
+        Standardised Approach CVA capital charge, calibrated to market risk
+        sensitivities of CVA.
+  \item \textbf{Derivatives Pricing}: Front-office traders add CVA when
+        pricing new derivatives with uncollateralised or partially
+        collateralised counterparties.
+  \item \textbf{Counterparty Limit Management}: CVA informs the Credit Risk
+        Officer's assessment of exposure relative to credit limits.
+  \item \textbf{Hedging}: The CVA desk dynamically hedges CVA sensitivities
+        (credit delta CS01, IR delta DV01) using CDS and interest rate
+        instruments.
+\end{enumerate}
+
+\subsection{Output Description}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Unilateral CVA}: Expected loss from counterparty default only.
+  \item \textbf{Bilateral CVA (BCVA)}: Net of CVA and DVA per IFRS~13.
+  \item \textbf{CVA Greeks}: Sensitivities to CS01, DV01, FX, and
+        volatility --- used for hedging and SA-CVA capital.
+  \item \textbf{CVA by counterparty}: Granular attribution for limit
+        management.
+  \item \textbf{CVA P\&L explain}: Daily change decomposed into market moves,
+        credit spread changes, and new trades.
+\end{itemize}
+
+\subsection{Key Assumptions}
+
+\begin{enumerate}[noitemsep]
+  \item Counterparty default times follow a Poisson process with intensity
+        implied by CDS spreads or internal PD estimates.
+  \item Recovery rates are fixed at 40\% for senior unsecured counterparties,
+        with desk override capability for specific counterparties.
+  \item Market risk factors evolve independently of counterparty credit
+        quality, except where wrong-way risk is explicitly modelled.
+  \item Netting sets are legally enforceable --- ISDA Master Agreement and CSA
+        in place and legally reviewed for each counterparty.
+  \item Simulation horizon matches the longest trade maturity (up to 30 years
+        for long-dated swaps).
+\end{enumerate}
+
+\subsection{Known Limitations}
+
+\begin{enumerate}[noitemsep]
+  \item Wrong-way risk between FX and sovereign/bank counterparties is
+        approximated; full correlation-based WWR simulation is computationally
+        expensive.
+  \item Recovery rates are deterministic; stochastic recovery adds model
+        complexity without materially changing the mean CVA estimate.
+  \item The model does not capture re-rating dynamics (gradual credit
+        deterioration before default).
+  \item Gap risk (jump-to-default over a weekend) is not captured in the
+        continuous-time framework.
+  \item Proxy CDS spreads for counterparties without observable CDS introduce
+        basis risk.
+\end{enumerate}
+
+\subsection{Materiality Assessment}
+
+CVA for Apex's derivatives portfolio is currently approximately
+\textbf{\$2.1 billion} (gross, pre-netting and collateral). A 1\% change
+in average counterparty credit spreads produces approximately
+\textbf{\$85 million} in CVA P\&L. This is a Tier~1 model: it feeds both
+the income statement and regulatory capital.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Business Context and Purpose}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Business Problem}
+
+Prior to CVA, derivatives were marked to risk-free value, ignoring
+counterparty credit quality. A swap with an AAA-rated government counterparty
+and an identical swap with a CCC-rated corporate were marked identically ---
+a manifest mispricing exposed catastrophically when Lehman Brothers defaulted
+with approximately \$35 billion in outstanding OTC derivatives in 2008.
+
+Post-crisis, IFRS~13 (2013) and the Basel~III CVA capital charge (2019)
+mandated that banks explicitly value and capitalise counterparty credit risk.
+
+\subsection{Regulatory Requirement}
+
+Under \textbf{Basel~III SA-CVA} (CRR Article 383), banks must hold capital
+against the risk that CVA itself moves due to market risk factors. The SA-CVA
+approach requires computing CVA sensitivities (delta and vega) to all market
+risk factors and aggregating them under a prescribed formula with regulatory
+correlations. As Apex does not currently hold IMA-CVA approval, the
+Standardised Approach applies to all CVA capital.
+
+\subsection{Model Users}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{User} & \textbf{Function} \\
+\midrule
+XVA Desk                   & Daily CVA computation, P\&L, hedging \\
+Credit Risk Officer        & Counterparty exposure monitoring \\
+Finance / Accounting       & IFRS 13 fair value for financial statements \\
+Regulatory Reporting       & Basel III CVA capital charge computation \\
+Front Office Pricing Desks & CVA charge in client-facing derivatives prices \\
+\bottomrule
+\end{tabular}
+\caption{Model users}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Theoretical Foundation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Unilateral CVA}
+
+Under the risk-neutral measure $\mathbb{Q}$, unilateral CVA is:
+
+\begin{equation}
+  \text{CVA} = (1 - R) \int_0^T \text{EE}(t)\, d\text{PD}(t)
+  \label{eq:cva_continuous}
+\end{equation}
+
+where $R$ is the recovery rate, $\text{EE}(t) = \mathbb{E}^{\mathbb{Q}}[\max(V(t), 0)]$
+is the Expected Exposure, $V(t)$ is the mark-to-market value of the netting
+set at time $t$, and $\text{PD}(t)$ is the cumulative probability of default
+by time $t$.
+
+In discrete form over time steps $t_1, t_2, \ldots, t_n$:
+
+\begin{equation}
+  \text{CVA} \approx (1 - R) \sum_{i=1}^{n} \text{EE}(t_i)
+    \cdot \bigl[\text{PD}(t_{i-1}, t_i)\bigr]
+  \label{eq:cva_discrete}
+\end{equation}
+
+where $\text{PD}(t_{i-1}, t_i)$ is the marginal probability of default in the
+interval $[t_{i-1}, t_i]$.
+
+\subsection{Bilateral CVA}
+
+The bilateral CVA (BCVA) incorporates both counterparty default risk (CVA)
+and Apex's own default risk (DVA):
+
+\begin{equation}
+  \text{BCVA} = \text{CVA} - \text{DVA}
+  \label{eq:bcva}
+\end{equation}
+
+The DVA replaces the counterparty's default probability and exposure profile
+with Apex's own default probability and the counterparty's exposure to Apex:
+
+\begin{equation}
+  \text{DVA} = (1 - R_{\text{Apex}}) \int_0^T \text{ENE}(t)\, d\text{PD}_{\text{Apex}}(t)
+  \label{eq:dva}
+\end{equation}
+
+where $\text{ENE}(t) = \mathbb{E}^{\mathbb{Q}}[\min(V(t), 0)]$ is the
+Expected Negative Exposure.
+
+\subsection{Credit Curve Calibration}
+
+Counterparty default intensities $\lambda(t)$ are bootstrapped from the CDS
+spread term structure. Under a flat hazard rate approximation:
+
+\begin{equation}
+  s(T) \approx (1 - R) \cdot \lambda
+  \label{eq:cds_approx}
+\end{equation}
+
+For a flat hazard rate:
+
+\begin{equation}
+  \text{PD}(0, T) = 1 - \exp(-\lambda T),
+  \qquad \text{where } \lambda = \frac{s}{1 - R}
+  \label{eq:flat_hazard}
+\end{equation}
+
+For counterparties without observable CDS, proxy mapping assigns the
+counterparty to a peer group (sector $\times$ rating $\times$ geography) and
+uses the average CDS spread of observable peers. For loan counterparties with
+internal ratings, PD is mapped to an implied spread via:
+
+\begin{equation}
+  s \approx \frac{\text{PD} \cdot \text{LGD}}{1 - \text{PD} \cdot \text{LGD} \cdot \text{tenor}}
+  \label{eq:pd_to_spread}
+\end{equation}
+
+\subsection{Exposure Simulation}
+
+Expected Exposure is computed via Monte Carlo simulation:
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{Simulate market risk factors} under the risk-neutral measure:
+        interest rates (two-factor Hull-White), FX (GBM with local vol), equity
+        (GBM with stochastic vol), commodity prices.
+  \item \textbf{Re-price all trades} in each netting set on each simulation
+        path at each time step.
+  \item \textbf{Apply netting}: sum trades within each legally enforceable
+        netting set.
+  \item \textbf{Apply collateral}: subtract collateral balance accounting for
+        MTA, thresholds, and the Margin Period of Risk.
+  \item \textbf{Compute EE}: average positive exposures across paths at each
+        time step.
+\end{enumerate}
+
+Simulation parameters: $N = 10{,}000$ paths (production); $N = 1{,}000$
+(intraday); monthly time steps for the first 2 years, quarterly thereafter,
+semi-annual beyond 10 years; 2-factor Hull-White interest rate model
+calibrated to swaption implied vols; $47 \times 47$ correlation matrix
+estimated from 5-year historical data.
+
+\subsection{Wrong-Way Risk}
+
+Wrong-way risk (WWR) arises when counterparty creditworthiness deteriorates
+precisely when exposure is highest. For specific WWR, exposure and default
+probability are jointly simulated using a bivariate diffusion:
+
+\begin{align}
+  d\lambda(t) &= \kappa(\theta - \lambda(t))\, dt + \sigma_\lambda\, dW_\lambda(t)
+  \label{eq:wwr_lambda} \\
+  dV(t)       &= \mu_V\, dt + \sigma_V\, dW_V(t)
+  \label{eq:wwr_v}
+\end{align}
+
+with $dW_\lambda \cdot dW_V = \rho_{\text{WWR}}\, dt$, where $\rho_{\text{WWR}}$
+is estimated from historical correlation between CDS spreads and derivative
+value for the specific counterparty.
+
+\subsection{SA-CVA Capital Calculation}
+
+Under Basel~III SA-CVA, the capital charge is:
+
+\begin{equation}
+  K_{\text{SA-CVA}} = m_{\text{CVA}} \sqrt{
+    \sum_b \left[\rho \sum_k WS_{k,b}\right]^2
+    + (1 - \rho^2) \sum_k WS_{k,b}^2
+  }
+  \label{eq:sa_cva}
+\end{equation}
+
+where $m_{\text{CVA}} = 1.25$ is the supervisory scalar, $\rho$ is the
+prescribed intra-bucket correlation, and $WS_{k,b}$ is the weighted
+sensitivity of CVA to risk factor $k$ in bucket $b$. Sensitivities are
+computed by bumping each risk factor $\pm 1$bp and recomputing CVA.
+
+\subsection{Literature References}
+
+\begin{itemize}[noitemsep]
+  \item Gregory, J.\ (2012). \textit{Counterparty Credit Risk and Credit Value
+        Adjustment}. Wiley Finance.
+  \item Pykhtin, M., Zhu, S.\ (2007). ``A Guide to Modelling Counterparty
+        Credit Risk.'' \textit{GARP Risk Review}, Jul/Aug 2007.
+  \item BCBS (2015). \textit{Review of the Credit Valuation Adjustment Risk
+        Framework}. Basel Committee on Banking Supervision.
+  \item Brigo, D., Capponi, A.\ (2010). ``Bilateral Counterparty Risk with
+        Application to CDSs.'' \textit{Risk Magazine}, March 2010.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Data Requirements and Governance}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Input Data Sources}
+
+\begin{longtable}{@{}llll@{}}
+\toprule
+\textbf{Data Item} & \textbf{Source} & \textbf{Frequency} & \textbf{Fallback} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+CDS spread term structures   & Bloomberg CDSW / Markit & Daily EOD   & Prior day + spread adjustment \\
+Interest rate curves (SOFR, ESTR) & Bloomberg / Internal & Intraday & Prior EOD curve \\
+FX spot and forward rates    & WM/Reuters 4pm fix       & Daily       & Bloomberg BGN \\
+Equity prices                & Exchange feeds           & Real-time   & Prior close \\
+Implied volatility surfaces  & Bloomberg OVDV           & Daily       & Prior day + ATM adj. \\
+Trade / netting set data     & Front office (Murex)     & Real-time   & Last confirmed booking \\
+CSA / collateral terms       & ISDA MA database         & On amendment & Legal review required \\
+Recovery rate assumptions    & Credit risk database     & Quarterly   & 40\% senior unsecured \\
+Historical correlations      & Risk data warehouse      & Monthly     & 3-year lookback minimum \\
+\end{longtable}
+
+\subsection{Data Quality Requirements}
+
+\begin{itemize}[noitemsep]
+  \item CDS completeness: $\geq 95\%$ of counterparty PDs from observable CDS
+        or proxy; $\leq 5\%$ from internal PD mapping.
+  \item Proxy staleness: peer group average CDS age $>5$ business days triggers
+        alert.
+  \item Trade completeness: 100\% of trades loaded to CVA system within T+1
+        of execution; same-day for trades $>\$100$M notional.
+  \item CSA terms: any amendment reflected in CVA system within 2 business days
+        of legal execution.
+\end{itemize}
+
+\subsection{BCBS 239 Data Lineage}
+
+Every CVA output must be traceable to: (1) underlying trade data, (2) market
+data snapshot (time-stamped), (3) model version tag, and (4) netting set
+assignment with legal review date. Lineage is captured in the risk data
+warehouse with immutable audit log. Full lineage for any CVA figure is
+reproducible within 4 hours of a regulatory request.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Methodology and Implementation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Production Run Schedule}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Run Type} & \textbf{Timing} & \textbf{Paths} & \textbf{Purpose} \\
+\midrule
+Intraday indicative & Every 2 hours & 1,000  & Trader pricing / limit monitoring \\
+EOD official        & 18:00 EST     & 10,000 & IFRS 13 P\&L, regulatory reporting \\
+Weekly stressed     & Saturday      & 20,000 & Stressed CVA for ICAAP \\
+Scenario (on demand) & As needed    & 5,000  & New trade pre-approval \\
+\bottomrule
+\end{tabular}
+\caption{Production run schedule}
+\end{table}
+
+\subsection{Computational Architecture}
+
+The EOD run involves approximately $4.5 \times 10^9$ pricing evaluations
+($10{,}000$ paths $\times$ 30 time steps $\times$ $\sim$15,000 active trades).
+Implementation uses GPU acceleration (NVIDIA A100), vectorised
+\texttt{numpy}/\texttt{cupy} for exposure aggregation, parallelisation by
+netting set, and first-order Taylor approximation for trades below \$5M
+notional. EOD runtime target: $\leq 45$ minutes.
+
+\subsection{Netting and Collateral Logic}
+
+\begin{equation}
+  \text{Exposure}(t, \omega) = \max\!\left(\sum_i V_i(t, \omega) - C(t, \omega),\; 0\right)
+  \label{eq:exposure}
+\end{equation}
+
+where the collateral balance evolves as:
+
+\begin{equation}
+  C(t) = C(0) + \sum_{\text{margin calls settled up to }(t - \tau)} \Delta C
+  \label{eq:collateral}
+\end{equation}
+
+with $\tau = 10$ business days (MPoR for daily-margined counterparties;
+20 days for weekly-margined). Minimum Transfer Amount (MTA) and thresholds
+are applied per CSA terms.
+
+\subsection{CVA Hedging}
+
+The CVA desk actively hedges:
+\begin{itemize}[noitemsep]
+  \item \textbf{CS01}: via single-name CDS or CDS indices (CDX IG, iTraxx
+        Main);
+  \item \textbf{DV01}: via interest rate swaps;
+  \item \textbf{FX delta}: via FX forwards.
+\end{itemize}
+
+Residual unhedged CVA (illiquid counterparties without liquid CDS) is
+disclosed separately in risk reports.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Model Testing and Backtesting}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Proxy Backtesting (P\&L Explain)}
+
+CVA P\&L is compared against Greeks-predicted P\&L. Unexplained CVA P\&L
+exceeding 10\% of total for more than 5 days in a quarter triggers a model
+review.
+
+\subsection{EE Profile Validation}
+
+The model-generated EE profile is compared to:
+\begin{enumerate}[noitemsep]
+  \item Independent analytical solution (closed-form for simple vanilla IRS);
+  \item ORE (Open Source Risk Engine, QuantLib-based) benchmark.
+\end{enumerate}
+
+Agreement thresholds: EE profiles $\leq 3\%$ mean absolute deviation; CVA
+point estimate $\leq 5\%$ relative deviation; CS01 $\leq 5\%$ relative
+deviation.
+
+\subsection{Stress Testing}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Scenario} & \textbf{CDS Shock} & \textbf{IR Shock} & \textbf{CVA Impact} \\
+\midrule
+IG counterparties widen 100bp  & +100bp IG  & 0      & +\$420M \\
+HY counterparties widen 500bp  & +500bp HY  & 0      & +\$180M \\
+Correlation breakdown ($\rho \to 1$) & 0    & 0      & +\$340M \\
+WWR activation (top 10 cptys)  & +200bp     & 0      & +\$290M \\
+Combined GFC analog            & +300/+800bp & +200bp & +\$1.1B \\
+\bottomrule
+\end{tabular}
+\caption{Stress scenario CVA impacts (estimated, current portfolio)}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Performance Metrics and Calibration Standards}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{longtable}{@{}llll@{}}
+\toprule
+\textbf{Metric} & \textbf{Acceptable Range} & \textbf{Frequency} & \textbf{Action if Breached} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+CVA P\&L Explain         & $>85\%$           & Daily     & Investigate within 2 business days \\
+EE Benchmark Deviation   & $<5\%$ relative   & Quarterly & Formal model review within 30 days \\
+CS01 Accuracy            & $<5\%$ relative   & Monthly   & Desk notification; review within 15 days \\
+EOD Computation Time     & $<45$ minutes     & Daily     & Technology escalation \\
+CDS Data Completeness    & $>95\%$           & Daily     & Data quality alert; proxy review \\
+\end{longtable}
+
+\subsection{Recalibration Schedule}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Correlation matrix}: Monthly, rolling 5-year window.
+  \item \textbf{Credit curves}: Daily (automated from Bloomberg/Markit feeds).
+  \item \textbf{Volatility surfaces}: Daily (automated).
+  \item \textbf{Recovery rate assumptions}: Quarterly review by Credit Risk Officer.
+  \item \textbf{WWR parameters}: Semi-annual, or immediately after a
+        significant counterparty credit event.
+\end{itemize}
+
+\subsection{Failure Criteria}
+
+The model is considered to have failed if any of the following occur:
+\begin{enumerate}[noitemsep]
+  \item CVA P\&L explain $< 70\%$ for three consecutive business days.
+  \item EE benchmark deviation $> 15\%$ on a full portfolio comparison.
+  \item EOD run fails to complete within 2 hours (SLA breach).
+  \item Data completeness drops below 90\% for more than 2 consecutive days.
+  \item Model produces negative CVA for a counterparty without contractual
+        explanation.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Limitations, Assumptions, and Known Weaknesses}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Fixed Recovery Rate}
+
+Recovery is fixed at 40\% for senior unsecured counterparties. Recovery rates
+are highly variable in practice (20--70\% depending on industry and economic
+cycle; approximately 28\% during 2008--2009).
+
+\textbf{Compensating control}: Recovery floored at 35\% in stressed scenario
+runs. Desk override for specific counterparties.
+
+\subsection{Independent Defaults (No Contagion)}
+
+The model treats counterparty defaults as driven by idiosyncratic factors only.
+In systemic events, financial institution counterparties become highly
+correlated.
+
+\textbf{Compensating control}: ``Correlation Breakdown'' stress scenario
+($\rho \to 1$) bounds this risk. Counterparty concentration limits further
+reduce tail exposure.
+
+\subsection{Static Netting Set}
+
+The netting set composition is fixed at the valuation date. New trades added
+after valuation are not reflected until the next run.
+
+\textbf{Compensating control}: Same-day booking requirement for trades
+$> \$100$M notional, with manual CVA adjustment same day.
+
+\subsection{Linear Exposure Approximation for Small Trades}
+
+Trades below \$5M notional use a first-order Taylor approximation to EE
+(approximately 40\% of trades by count; 2\% by notional). Analysis shows
+approximation error $< 1\%$ of CVA contribution for this segment.
+
+\subsection{Proxy CDS Spread Risk}
+
+Approximately 8\% of counterparties (3\% by CVA contribution) lack observable
+CDS. Proxy basis risk is unobservable by construction.
+
+\textbf{Compensating control}: 25\% add-on to CVA for all proxy-mapped
+counterparties. Proxy mapping reviewed quarterly.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Compensating Controls and Risk Mitigants}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{longtable}{@{}lll@{}}
+\toprule
+\textbf{Risk} & \textbf{Control} & \textbf{Owner} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+WWR underestimation       & WWR module; bivariate diffusion; stress scenarios & XVA Quant \\
+Recovery rate error       & Conservative 35\% floor; quarterly review         & Credit Risk \\
+Proxy CDS spread error    & 25\% CVA add-on for proxy counterparties           & XVA Quant \\
+Correlation instability   & Correlation breakdown stress scenario              & Market Risk \\
+Booking lag               & Same-day booking for trades $>\$100$M             & Operations \\
+Computation failure       & Prior-day CVA + Greeks $\times$ moves fallback    & XVA Technology \\
+Contagion / cascade risk  & Concentration limits; stress testing               & Credit Risk \\
+\end{longtable}
+
+\subsection{Model Reserve}
+
+A model reserve of \textbf{\$45 million} is held against CVA model uncertainty:
+\begin{itemize}[noitemsep]
+  \item Proxy spread basis risk: \$15M.
+  \item Wrong-way risk model simplification: \$20M.
+  \item Recovery rate uncertainty: \$10M.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Change Management}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\textbf{Material changes} requiring full MRO re-validation: change in
+simulation methodology (number of risk factors, correlation structure), change
+in collateral treatment or MPoR assumption, change in WWR model specification,
+recalibration that changes portfolio CVA by more than 5\%, or addition of new
+product types to CVA scope.
+
+\textbf{Non-material changes} via expedited review (MRO notification within
+5 business days): new counterparty added, CDS proxy group reassignment,
+computational optimisation with no methodology change.
+
+\textbf{Emergency patch procedure}: interim CVA estimate via prior-day CVA +
+Greeks $\times$ moves; root cause identified within 4 hours; patch deployed
+and validated by XVA team lead; MRO notified same day; full incident report
+within 5 business days.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Approvals and Sign-Off}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Role} & \textbf{Name} & \textbf{Status} & \textbf{Date} \\
+\midrule
+Model Developer       & XVA Quant Team      & $\checkmark$ Submitted    & March 2026 \\
+Model Risk Officer    & Dr.\ Rebecca Chen   & $\circ$ Pending Validation & --- \\
+Chief Risk Officer    & Dr.\ Priya Nair     & $\circ$ Pending MRO Approval & --- \\
+Business Owner        & James Okafor        & $\circ$ Pending CRO Approval & --- \\
+Regulatory Capital    & Finance / Reg.\ Reporting & $\circ$ Pending    & --- \\
+\bottomrule
+\end{tabular}
+\caption{Approval status}
+\end{table}
+
+\vspace{2em}
+\hrule
+\vspace{0.5em}
+{\small\color{apexgray}
+Document Classification: RESTRICTED --- Model Risk Sensitive\\
+Apex Global Bank \textbar\ Quantitative Research Division \textbar\ XVA Team\\
+Next scheduled review: March 2027 (or upon material model change)
+}
+
+\end{document}

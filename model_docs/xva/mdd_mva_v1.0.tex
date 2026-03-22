@@ -1,0 +1,607 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% ── Colour definitions ────────────────────────────────────────────────────────
+\definecolor{apexblue}{RGB}{0,51,102}
+\definecolor{apexgray}{RGB}{100,100,100}
+\definecolor{apexred}{RGB}{180,30,30}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{apexblue}}{}{0em}{\thesection\quad}
+\titleformat{\subsection}{\normalsize\bfseries\color{apexblue}}{}{0em}{\thesubsection\quad}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\textcolor{apexgray}{\small RESTRICTED --- Model Risk Sensitive}}
+\lhead{\textcolor{apexgray}{\small APEX-MDL-0012 \textbar{} MVA MDD v1.0}}
+\rfoot{\textcolor{apexgray}{\small \thepage}}
+\lfoot{\textcolor{apexgray}{\small Apex Global Bank \textbar{} Quantitative Research Division}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ── Hyperref setup ────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=apexblue,
+  urlcolor=apexblue,
+  pdftitle={Apex Global Bank -- MVA Model Development Document},
+  pdfauthor={XVA Quant Team}
+}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{titlepage}
+  \begin{center}
+    \vspace*{2cm}
+    {\color{apexblue}\rule{\linewidth}{2pt}}\\[0.5cm]
+    {\Huge\bfseries\color{apexblue} Model Development Document}\\[0.4cm]
+    {\LARGE\bfseries Margin Valuation Adjustment (MVA)}\\[0.3cm]
+    {\Large Version 1.0}\\[0.5cm]
+    {\color{apexblue}\rule{\linewidth}{2pt}}\\[1cm]
+    {\large Apex Global Bank \textbar{} Quantitative Research Division}\\[0.3cm]
+    {\large\textcolor{apexred}{Classification: RESTRICTED --- Model Risk Sensitive}}\\[0.3cm]
+    {\large SR 11-7 Section Reference: Model Development}\\[2cm]
+    \begin{tabular}{ll}
+      \textbf{Model ID:}   & APEX-MDL-0012 \\[4pt]
+      \textbf{Date:}       & March 2026 \\[4pt]
+      \textbf{Status:}     & In Validation \\[4pt]
+      \textbf{Risk Tier:}  & Tier 1 \\
+    \end{tabular}
+  \end{center}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Document Metadata}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{Document Control Information}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Model Name            & Margin Valuation Adjustment (MVA) \\
+Model ID              & APEX-MDL-0012 \\
+Version               & 1.0 \\
+Status                & In Validation \\
+Risk Tier             & Tier 1 \\
+Regulatory Framework  & BCBS-IOSCO UMR; ISDA SIMM v2.6; EMIR; Dodd-Frank \\
+Date of Development   & March 2026 \\
+Business Owner        & Head of Global Markets Trading (James Okafor) \\
+Model Developer       & Quantitative Research --- XVA Team \\
+MRO Review            & Pending --- Dr.\ Rebecca Chen \\
+CRO Approval          & Pending --- Dr.\ Priya Nair \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Version History}
+
+\begin{table}[h!]
+\centering
+\caption{Document Version History}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Change Summary} \\
+\midrule
+0.1 & Nov 2025 & Initial framework --- IM forecasting via regression \\
+0.5 & Jan 2026 & SIMM sensitivities methodology integrated \\
+1.0 & Mar 2026 & Production candidate; submitted for validation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Executive Summary}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Model Purpose}
+
+MVA is the present value of the expected future costs of posting Initial Margin (IM) on
+uncleared OTC derivatives over the life of a trade. It was introduced as a necessary valuation
+adjustment following the implementation of the BCBS-IOSCO Uncleared Margin Rules (UMR), which
+began phased implementation in 2016 and reached Phase~6 in September 2022 (capturing entities
+with AANA $\geq$ \$8 billion).
+
+Unlike Variation Margin (which is exchanged daily and represents current mark-to-market),
+Initial Margin is a forward-looking risk buffer held by a third-party custodian to cover
+potential exposure during the Margin Period of Risk if a counterparty defaults. It is not
+returned to the poster until the trade matures or is terminated. The cost of funding this
+IM at Apex's unsecured borrowing spread for potentially decades is the MVA:
+
+\begin{equation}
+\mathrm{MVA} = \mathrm{PV}\!\left[\sum_i s_f(t_i)\cdot\mathbb{E}\!\left[\mathrm{IM}_{\mathrm{SIMM}}(t_i)\right]\cdot\Delta t_i\right]
+\tag{1}
+\end{equation}
+
+\subsection{Why MVA Matters Now}
+
+Before UMR Phase~6, only the largest dealers exchanged IM on bilateral OTC trades. Phase~6
+extended the requirement to mid-size institutions. For Apex, this created an overnight
+obligation to post IM on approximately 47\% of its bilateral OTC derivatives portfolio with
+Phase~6 counterparties. The aggregate IM obligation for Apex is currently approximately
+\textbf{\$8.7 billion} across all bilateral relationships.
+
+At an average funding spread of 55\,bp, the annual cost of carrying this IM is approximately
+\textbf{\$48 million per year}. Over the average remaining life of the portfolio (approximately
+6.2 years duration-weighted), the present value of these future funding costs is approximately
+\textbf{\$240 million} --- the current portfolio MVA.
+
+\subsection{Output Description}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Trade MVA}: MVA charge per new trade --- incorporated into front-office pricing.
+  \item \textbf{Portfolio MVA}: Daily P\&L reported in income statement.
+  \item \textbf{IM forecast profile}: Expected IM at each future date (EPE of IM under SIMM).
+  \item \textbf{MVA Greeks}: Sensitivities to rates and volatility for hedging.
+  \item \textbf{MVA by counterparty}: Attribution for collateral efficiency analysis.
+  \item \textbf{SIMM sensitivity report}: The underlying SIMM sensitivities driving IM calculations.
+\end{itemize}
+
+\subsection{Key Assumptions}
+
+\begin{enumerate}[leftmargin=*]
+  \item Initial Margin is calculated under ISDA SIMM v2.6 (the industry standard IM model for bilateral trades).
+  \item Future IM is estimated by simulating future SIMM sensitivities (delta, vega, curvature) under the same Monte Carlo framework used for CVA/FVA.
+  \item Apex's funding spread for IM is 55\,bp over OIS for 1--5Y; funding curve used for longer tenors.
+  \item The custodian is a qualifying third-party custodian (State Street); IM posted earns no return (or OIS $-$ haircut).
+  \item SIMM risk weights and correlations are fixed at current ISDA SIMM v2.6 calibration; no scenario for SIMM recalibration risk.
+\end{enumerate}
+
+\subsection{Known Limitations}
+
+\begin{itemize}[leftmargin=*]
+  \item Forecasting SIMM sensitivities under future market scenarios is computationally expensive and relies on linear approximation for efficiency; true future SIMM may differ by 5--15\%.
+  \item SIMM recalibration risk: ISDA recalibrates SIMM risk weights annually; a recalibration that increases risk weights would increase IM requirements and thus MVA.
+  \item The model assumes continuous IM posting; in practice, MTAs create discontinuities that are smoothed over in the simulation.
+  \item MVA is computed assuming the full UMR regime; any regulatory change (e.g., threshold increases) would require immediate model update.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Business Context and Purpose}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{The UMR Backstory}
+
+The Uncleared Margin Rules emerged from the G20's Pittsburgh Summit (2009) mandate to reform
+OTC derivatives markets following the 2008 crisis. The core insight: the daisy chain of
+uncollateralised bilateral OTC trades had created a web of hidden counterparty risk. AIG's
+near-failure was a direct result --- AIG had written enormous quantities of credit default swaps
+with minimal collateral, and when the credit markets collapsed, the potential losses were so
+large that AIG would have defaulted on hundreds of counterparties simultaneously.
+
+UMR forces dealers and large end-users to post two-way IM on bilateral trades --- creating a
+genuine buffer that survives the default of either party. The cost of this buffer --- MVA ---
+is real and must be priced.
+
+\subsection{ISDA SIMM Overview}
+
+ISDA's Standard Initial Margin Model (SIMM) is the industry-standard methodology for
+calculating IM on bilateral uncleared OTC derivatives. It was developed collaboratively by
+major dealers and ISDA, approved by regulators, and adopted by essentially all Phase~1--6
+participants.
+
+SIMM computes IM as a risk-weighted sum of trade sensitivities. For a single risk class the
+formula is:
+
+\begin{equation}
+\mathrm{IM}_{\mathrm{SIMM}} = \sqrt{\sum_i \sum_j \rho_{ij}\cdot \mathrm{WS}_i\cdot\mathrm{WS}_j}
+\tag{2}
+\end{equation}
+
+where $\mathrm{WS}_i = \mathrm{RW}_i \cdot s_i$ (risk-weighted sensitivity), $\rho_{ij}$ is
+the prescribed inter-bucket correlation, and $\mathrm{RW}_i$ is the SIMM risk weight for
+bucket~$i$. SIMM covers six risk classes: Interest Rate (IR), Credit Qualifying (CQ), Credit
+Non-Qualifying (CNQ), Equity (EQ), FX, and Commodity (CM).
+
+\subsection{Why MVA Is Tier 1}
+
+MVA feeds directly into:
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Income statement}: Daily MVA P\&L affects earnings.
+  \item \textbf{New trade pricing}: Incorrect MVA pricing leads to systematic mis-pricing of bilateral derivatives.
+  \item \textbf{Collateral optimisation decisions}: MVA drives decisions about which trades to clear (CCPs require IM too, but on different terms) vs.\ keep bilateral.
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Theoretical Foundation}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{MVA Formula}
+
+\begin{equation}
+\mathrm{MVA} = -\sum_i s_f(t_i)\cdot\mathbb{E}\!\left[\mathrm{IM}_{\mathrm{SIMM}}(t_i)\right]\cdot D(0,t_i)\cdot\Delta t_i
+\tag{3}
+\end{equation}
+
+where:
+\begin{itemize}[leftmargin=*]
+  \item $s_f(t_i)$ = Apex's funding spread at time $t_i$ (from the funding curve used in FVA)
+  \item $\mathbb{E}[\mathrm{IM}_{\mathrm{SIMM}}(t_i)]$ = expected Initial Margin under SIMM at future time $t_i$
+  \item $D(0,t_i)$ = OIS discount factor
+  \item The negative sign: IM is a cash outflow (cost to Apex)
+\end{itemize}
+
+The key challenge is computing $\mathbb{E}[\mathrm{IM}_{\mathrm{SIMM}}(t_i)]$ --- forecasting
+future SIMM sensitivities and therefore future IM requirements.
+
+\subsection{Forecasting Future SIMM Sensitivities}
+
+We employ three approaches of increasing accuracy and computational cost.
+
+\textbf{Approach 1 --- Regression (current production approach)}: A regression model maps
+current portfolio sensitivities and market state to future SIMM:
+
+\begin{equation}
+\mathrm{IM}_{\mathrm{SIMM}}(t) \approx f\!\left(\mathbf{S}(0),\, \mathbf{X}(t)\right)
+\tag{4}
+\end{equation}
+
+where $\mathbf{S}(0)$ denotes current DV01/vega/curvature and $\mathbf{X}(t)$ the projected
+market state. Model: gradient boosting regression trained on historical SIMM calculations.
+Accuracy: within 8\% of full-calculation SIMM for 90\% of scenarios. Computation: $\approx$2
+seconds per counterparty netting set.
+
+\textbf{Approach 2 --- Approximate SIMM re-calculation}: At each Monte Carlo time step,
+re-compute approximate SIMM using perturbed sensitivities via first-order Taylor expansion:
+
+\begin{equation}
+s_k(t) \approx s_k(0) + \frac{\partial s_k}{\partial r}\,\Delta r(t) + \frac{\partial s_k}{\partial\sigma}\,\Delta\sigma(t)
+\tag{5}
+\end{equation}
+
+Accuracy: within 5\% of full SIMM for vanilla portfolios. Computation: $\approx$15 seconds per
+counterparty.
+
+\textbf{Approach 3 --- Full SIMM re-calculation (benchmark only)}: Re-run full SIMM at each
+simulation node. Used only for quarterly benchmark validation.
+
+\textbf{Current production}: Approach~1 for most counterparties; Approach~2 for the 20 largest
+counterparties by IM obligation (representing $\approx$75\% of total MVA).
+
+\subsection{SIMM Sensitivities Under Future Market Scenarios}
+
+For the interest rate risk class (62\% of total IM at Apex), delta sensitivity evolution
+assumes future DV01 scales with remaining duration and the simulated rate environment under a
+two-factor Hull-White model:
+
+\begin{equation}
+\mathrm{DV01}(t) \approx \mathrm{DV01}(0)\cdot\frac{D_{\mathrm{rem}}(t)}{D(0)}\cdot\Phi_r(t)
+\tag{6}
+\end{equation}
+
+where $\Phi_r(t)$ is a rate-level adjustment factor derived from the simulated short rate.
+Vega (for swaption portfolios) is proportional to remaining time to expiry and the ratio of
+current vs.\ future implied volatility. Vega collapses to zero at option expiry.
+
+\subsection{Marginal MVA for New Trade Pricing}
+
+When pricing a new trade, the relevant quantity is the \textbf{marginal MVA} --- the change in
+portfolio MVA from adding the new trade:
+
+\begin{equation}
+\mathrm{MVA}_{\mathrm{marginal}} = \mathrm{MVA}(\text{Portfolio} + \text{New Trade}) - \mathrm{MVA}(\text{Portfolio})
+\tag{7}
+\end{equation}
+
+Due to netting effects within a counterparty's netting set, marginal MVA can be significantly
+less than the standalone MVA of the new trade, or even negative (IM-reducing) if the new trade
+offsets existing sensitivities.
+
+\subsection{Literature References}
+
+\begin{itemize}[leftmargin=*]
+  \item ISDA (2022). \textit{SIMM Methodology, version 2.6}. ISDA.
+  \item BCBS-IOSCO (2015). \textit{Margin Requirements for Non-Centrally Cleared Derivatives}, rev.\ 2020.
+  \item Green, A., Kenyon, C.\ (2014). ``MVA: Initial Margin Valuation Adjustment by Replication and Regression.'' \textit{Risk Magazine}, May 2014.
+  \item Anfuso, F., Aziz, D., Giltinan, P., Loukopoulos, K.\ (2017). ``A Sound Modelling and Backtesting Framework for Forecasting Initial Margin Requirements.'' SSRN Working Paper.
+  \item Caspers, P., Giltinan, P., Lichters, R., Nowaczyk, N.\ (2017). ``Forecasting Initial Margin Requirements: A Model Evaluation.'' \textit{Journal of Risk}, Vol.\ 19.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Data Requirements and Governance}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Input Data Sources}
+
+\begin{table}[h!]
+\centering
+\caption{MVA Model Input Data Sources}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Data Item} & \textbf{Source} & \textbf{Frequency} \\
+\midrule
+SIMM risk weights and correlations & ISDA SIMM documentation (annual) & Annual; immediate on release \\
+Trade sensitivities (delta, vega, curvature) & Risk systems (Murex) & Daily \\
+CSA terms (IM threshold, MTA, eligible collateral) & ISDA SIMM Custodial Agreement DB & On amendment \\
+Funding curve & Treasury (same as FVA) & Daily \\
+Historical SIMM calculations (for regression) & Risk data warehouse & Monthly re-training \\
+Actual IM calls received/posted & Collateral management system & Daily \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{SIMM Version Governance}
+
+ISDA releases updated SIMM calibrations annually (typically September). Apex's process:
+\begin{enumerate}[leftmargin=*]
+  \item ISDA releases SIMM vX.Y (typically 60 days notice).
+  \item XVA team recalibrates MVA model to new SIMM weights.
+  \item Model Risk Officer expedited review (15 business days for SIMM version updates).
+  \item Production deployment by SIMM effective date.
+  \item Parallel run for 5 business days pre-cutover.
+\end{enumerate}
+
+\textbf{SIMM version currently in production}: v2.6 (effective September 2024).
+
+\subsection{BCBS 239 Data Lineage}
+
+Every MVA figure is traceable to: (a)~trade data from Murex, (b)~SIMM sensitivity
+calculation (timestamped), (c)~SIMM version tag, (d)~funding curve snapshot, (e)~MVA
+model version.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Methodology and Implementation}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Production Run Architecture}
+
+MVA shares the simulation infrastructure with CVA and FVA. The additional computation is:
+\begin{enumerate}[leftmargin=*]
+  \item At each Monte Carlo time step, compute approximate future SIMM for each netting set.
+  \item Multiply by funding spread at that tenor.
+  \item Discount back to today.
+\end{enumerate}
+
+\textbf{Run frequency}: Daily EOD (10,000 paths, same as CVA). Intraday indicative runs every
+4 hours (1,000 paths).
+
+\textbf{Computation time}: Approximately 18 minutes incremental on top of CVA run (regression
+approach). Total XVA suite (CVA $+$ FVA $+$ MVA) target: $\leq$ 70 minutes.
+
+\subsection{IM Portfolio Optimisation}
+
+MVA is used in the collateral optimisation engine to evaluate whether bilateral trades should be:
+\begin{enumerate}[leftmargin=*]
+  \item Kept bilateral (pay MVA and FVA; retain flexibility).
+  \item Cleared at CCP (pay CCP IM and default fund contribution; standardised but efficient for plain vanilla).
+  \item Compressed/terminated (reduce gross notional; reduce IM obligation).
+\end{enumerate}
+
+The optimisation runs weekly and generates recommendations for the Head of Operations and
+trading desk heads.
+
+\subsection{Actual IM vs.\ Model Validation}
+
+Daily comparison of model-predicted SIMM against actual IM calls received from counterparties:
+\begin{itemize}[leftmargin=*]
+  \item Tolerance: $\leq 5\%$ difference for 95\% of daily IM calls.
+  \item Systematic bias (model consistently under- or over-predicting): investigate within 3 business days.
+\end{itemize}
+
+This is both a data quality check (are counterparties calculating SIMM correctly?) and a
+model accuracy check.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Model Testing and Backtesting}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Actual vs.\ Predicted IM}
+
+Primary backtesting: compare model-generated expected IM at horizon $T$ against actual IM
+posted at time $T$.
+
+Sample size: 24 months of daily IM calls across 130+ active counterparties.
+
+\begin{table}[h!]
+\centering
+\caption{Backtesting Results (as of Model Submission)}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Metric} & \textbf{Result} \\
+\midrule
+Mean absolute error            & 4.2\% of actual IM (within 5\% threshold) \\
+95th percentile error          & 11.8\% (outliers from SIMM recalibration events) \\
+Directional accuracy           & 87\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Full-Calculation Benchmark}
+
+Quarterly comparison of regression-based SIMM forecast (production) against Approach~3 (full
+SIMM re-calculation) for a representative sub-portfolio:
+\begin{itemize}[leftmargin=*]
+  \item Target: regression within 8\% of full calculation.
+  \item Last benchmark result (Q4 2025): 6.3\% mean deviation --- \textbf{pass}.
+\end{itemize}
+
+\subsection{SIMM Sensitivity Stress Test}
+
+Simulate a 50\% increase in all SIMM risk weights (analogous to a severe SIMM recalibration):
+
+\begin{table}[h!]
+\centering
+\caption{SIMM Stress Test Results}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Impact Item} & \textbf{Result} \\
+\midrule
+Portfolio IM increase         & \$4.3B (from \$8.7B to $\approx$\$13B) \\
+MVA increase                  & $\approx$\$120M \\
+Funding requirement increase  & $\approx$\$4.3B \\
+LCR impact                    & Remains above 100\% minimum \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Performance Metrics and Calibration Standards}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{MVA Performance Metrics and Thresholds}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Metric} & \textbf{Acceptable Range} & \textbf{Action if Breached} \\
+\midrule
+IM prediction error vs.\ actual calls & $<5\%$ mean absolute & Investigate within 3 days \\
+IM prediction error vs.\ full SIMM    & $<8\%$ mean deviation & Review regression model \\
+SIMM version deployment lag           & $\leq 0$ days vs.\ ISDA date & Emergency deployment process \\
+Actual IM call reconciliation         & $<3$ unreconciled calls $>$\$10M & Collateral ops escalation \\
+MVA P\&L explain                      & $>75\%$ & Investigate within 2 days \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Limitations, Assumptions, and Known Weaknesses}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{SIMM Recalibration Risk}
+
+ISDA recalibrates SIMM annually. A significant recalibration would:
+\begin{enumerate}[leftmargin=*]
+  \item Increase actual IM requirements immediately.
+  \item Require MVA model update within 60 days.
+  \item Affect profitability of all existing bilateral derivatives --- a retroactive cost that cannot be hedged.
+\end{enumerate}
+
+No model-based compensation is possible for this risk. The compensating control is operational:
+ISDA recalibration schedule is tracked; pre-implementation impact analysis of proposed changes
+is prepared quarterly.
+
+\subsection{Basis Between SIMM and Actual IM}
+
+Different counterparties calculate SIMM slightly differently (different curve construction,
+different aggregation methods). These differences create a basis between Apex's SIMM calculation
+and the counterparty's --- resulting in disputes and IM calls that differ from model predictions.
+
+\textbf{Compensating control}: Dispute resolution process (ISDA SIMM reconciliation guidance);
+daily IM call reconciliation with automatic escalation for $>$\$5M discrepancy.
+
+\subsection{Regression Model Staleness}
+
+The regression model for future SIMM is retrained monthly on historical data. In a regime change
+(e.g., a rapid large move in rates or a significant restructuring of the derivatives portfolio),
+the regression may become unrepresentative until the next retraining cycle.
+
+\textbf{Compensating control}: Anomaly detection on regression outputs --- if predicted IM
+deviates from actual by $>15\%$ on three consecutive days, emergency retraining is triggered.
+
+\subsection{Eligible Collateral Uncertainty}
+
+SIMM IM must be posted in eligible collateral (typically cash or high-quality government bonds).
+If eligible collateral is scarce (a real stress scenario in which everyone is simultaneously
+posting IM), the cost of sourcing eligible collateral may exceed the funding spread assumed in
+the model.
+
+\textbf{Compensating control}: Collateral availability stress test run quarterly; minimum
+eligible collateral buffer maintained by Treasury.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Compensating Controls}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{MVA Compensating Controls}
+\begin{tabular}{@{}p{4.5cm}p{6cm}p{3.5cm}@{}}
+\toprule
+\textbf{Risk} & \textbf{Control} & \textbf{Owner} \\
+\midrule
+SIMM recalibration & Pre-implementation impact analysis; operational monitoring & XVA Quant + Reg Affairs \\[4pt]
+IM calculation disputes & Daily IM reconciliation; dispute resolution protocol & Collateral Ops \\[4pt]
+Regression staleness & Monthly retraining; anomaly detection & XVA Quant Team \\[4pt]
+Eligible collateral scarcity & Collateral availability stress test; buffer maintained & Treasury \\[4pt]
+SIMM version deployment lag & Change management process; 60-day advance preparation & Technology / XVA \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Model Reserve}
+
+A model reserve of \textbf{\$18 million} is held against MVA model uncertainty:
+
+\begin{table}[h!]
+\centering
+\caption{MVA Model Reserve Breakdown}
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Reserve Component} & \textbf{Amount (USD M)} \\
+\midrule
+Regression approximation error  & 8 \\
+SIMM recalibration risk         & 7 \\
+Collateral cost uncertainty     & 3 \\
+\midrule
+\textbf{Total Reserve}          & \textbf{18} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Change Management}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{SIMM Version Updates}
+
+SIMM annual recalibration is classified as a material model change requiring expedited MRO
+review (15 business days). No delay to production deployment is permitted --- ISDA effective
+dates are regulatory compliance deadlines.
+
+\subsection{All Other Material Changes}
+
+Full re-validation process applies (definition same as CVA MDD Section~11). Material changes
+include: change to IM forecasting approach (Approach~1/2/3 transition), change to the
+shared simulation infrastructure, change to the funding curve used in MVA computation,
+change to eligible collateral assumptions.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Approvals and Sign-Off}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{table}[h!]
+\centering
+\caption{Approval Status}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Role} & \textbf{Name} & \textbf{Status} & \textbf{Date} \\
+\midrule
+Model Developer                & XVA Quant Team    & Submitted & March 2026 \\
+Model Risk Officer             & Dr.\ Rebecca Chen & Pending   & --- \\
+Chief Risk Officer             & Dr.\ Priya Nair   & Pending   & --- \\
+Head of Treasury (UMR Compliance) & Amara Diallo   & Pending   & --- \\
+Business Owner                 & James Okafor      & Pending   & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{1cm}
+\noindent\textcolor{apexgray}{\footnotesize
+Document Classification: RESTRICTED --- Model Risk Sensitive\\
+Apex Global Bank \textbar{} Quantitative Research Division \textbar{} XVA Team\\
+Next scheduled review: March 2027 (or upon SIMM version update / material model change)
+}
+
+\end{document}
