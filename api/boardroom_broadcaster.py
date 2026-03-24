@@ -134,10 +134,6 @@ class BoardroomBroadcaster:
             "agent": agent_name,
         })
 
-    async def broadcast_queue_update(self, pending_count: int) -> None:
-        """Notify UI of pending Claude Code queue items (not stored in history)."""
-        await self._broadcast({"type": "queue_update", "pending": pending_count})
-
     async def broadcast_system(self, message: str) -> None:
         """Broadcast a system-level status message."""
         msg: dict[str, Any] = {

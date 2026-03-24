@@ -107,50 +107,6 @@
         .btn-mute:hover { color: var(--text-primary); border-color: var(--text-muted); }
         .btn-mute.muted { color: var(--text-dim); border-color: var(--border-subtle); }
 
-        .mode-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.2s;
-        }
-
-        .mode-badge.claude-code {
-            border: 1px solid #6e40c9;
-            color: #bc8cff;
-            background: rgba(110, 64, 201, 0.1);
-        }
-
-        .mode-badge.claude-code:hover {
-            background: rgba(110, 64, 201, 0.2);
-        }
-
-        .mode-badge.live-api {
-            border: 1px solid #4493f8;
-            color: var(--blue);
-            background: rgba(68, 147, 248, 0.1);
-        }
-
-        .mode-badge.live-api:hover {
-            background: rgba(68, 147, 248, 0.2);
-        }
-
-        .mode-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .mode-badge.claude-code .mode-dot {
-            animation: pulse-dot 2.5s ease-in-out infinite;
-        }
 
         .connection-badge {
             display: inline-flex;
@@ -712,31 +668,6 @@
             font-size: 11px;
         }
 
-        .queue-badge {
-            display: none;
-            align-items: center;
-            gap: 5px;
-            padding: 3px 9px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            border: 1px solid #6e40c9;
-            color: #bc8cff;
-            background: rgba(110, 64, 201, 0.12);
-            cursor: default;
-        }
-
-        .queue-badge.visible {
-            display: inline-flex;
-            animation: pulse-dot 1.8s ease-in-out infinite;
-        }
-
-        .queue-badge .qb-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #bc8cff;
-        }
 
         /* ── Keyframe animations ───────────────────────────────────────────── */
         @keyframes fade-in {
@@ -785,11 +716,6 @@
         <div class="header-title">Boardroom</div>
         <div class="header-spacer"></div>
         <button id="btn-mute" class="btn-mute" onclick="toggleMute()" title="Toggle voice narration">🔊</button>
-        <div class="header-divider"></div>
-        <div id="mode-badge" class="mode-badge claude-code" onclick="toggleMode()" title="Click to switch mode">
-            <span class="mode-dot"></span>
-            <span id="mode-text">CLAUDE CODE</span>
-        </div>
         <div class="header-divider"></div>
         <div id="conn-badge" class="connection-badge">
             <span class="conn-dot"></span>
@@ -863,10 +789,6 @@
                     autocomplete="off"
                     spellcheck="false"
                 >
-                <div class="queue-badge" id="queue-badge" title="Pending Claude Code responses">
-                    <span class="qb-dot"></span>
-                    <span id="queue-badge-text">1 pending</span>
-                </div>
                 <button class="btn btn-send" onclick="sendQuestion()">Send</button>
                 <button class="btn btn-export" onclick="exportTranscript()">Export Transcript</button>
             </div>
@@ -1155,8 +1077,7 @@
             viewingMeetingId = null;
             clearConversation();
             hideEmptyState();
-            const modeLabel = data.mode === "claude_code" ? " [Claude Code]" : "";
-            renderSystemMessage(`Meeting started${modeLabel}: "${data.title}"`);
+            renderSystemMessage(`Meeting started: "${data.title}"`);
             loadMeetings();
         } catch (e) {
             renderSystemMessage("Could not start meeting — is the server running?");
@@ -1351,19 +1272,6 @@
                 scrollToBottom();
                 break;
 
-            case "queue_update": {
-                const badge = document.getElementById("queue-badge");
-                const n = msg.pending || 0;
-                if (n > 0) {
-                    document.getElementById("queue-badge-text").textContent =
-                        `${n} pending`;
-                    badge.classList.add("visible");
-                } else {
-                    badge.classList.remove("visible");
-                }
-                break;
-            }
-
             case "pong":
                 break; // keepalive, ignore
         }
@@ -1546,53 +1454,11 @@
         btn.classList.toggle("muted", muted);
     }
 
-    // ── Mode management ───────────────────────────────────────────────────────
-
-    async function fetchConfig() {
-        try {
-            const res  = await fetch("/api/boardroom/config");
-            const data = await res.json();
-            applyMode(data.mode);
-        } catch (_) { /* server not up yet, leave default */ }
-    }
-
-    function applyMode(mode) {
-        const badge = document.getElementById("mode-badge");
-        const text  = document.getElementById("mode-text");
-        if (mode === "live_api") {
-            badge.className = "mode-badge live-api";
-            text.textContent = "LIVE API";
-        } else {
-            badge.className = "mode-badge claude-code";
-            text.textContent = "CLAUDE CODE";
-        }
-        badge.dataset.mode = mode;
-    }
-
-    async function toggleMode() {
-        const badge   = document.getElementById("mode-badge");
-        const current = badge.dataset.mode || "claude_code";
-        const next    = current === "claude_code" ? "live_api" : "claude_code";
-        try {
-            const res  = await fetch("/api/boardroom/config", {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ mode: next }),
-            });
-            const data = await res.json();
-            applyMode(data.mode);
-            renderSystemMessage(`Mode switched to: ${data.mode === "claude_code" ? "Claude Code (assistant-driven)" : "Live API (Anthropic API calls)"}`);
-        } catch (_) {
-            renderSystemMessage("Could not switch mode — server unavailable.");
-        }
-    }
-
     // ── Boot ──────────────────────────────────────────────────────────────────
 
     renderAgentList();
     loadMeetings();
     connect();
-    fetchConfig();
     // Hide mute button on browsers without Speech Synthesis support
     if (!tts.supported) document.getElementById("btn-mute").style.display = "none";
     // Refresh session list every 15s to pick up status changes
