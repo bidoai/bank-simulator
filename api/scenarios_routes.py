@@ -1,12 +1,13 @@
 """FastAPI routes for stress test scenario runner."""
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+from api.scenario_state import scenario_state
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -203,6 +204,45 @@ async def run_scenario(req: RunRequest) -> JSONResponse:
         "stressed": stressed,
         "change_table": _change_table(baseline, stressed),
     })
+
+
+@router.post("/activate")
+async def activate_scenario(req: RunRequest) -> JSONResponse:
+    """
+    Activate a scenario so the boardroom agents respond to it in character.
+
+    The active scenario is injected into every agent's prompt on the next
+    meeting. Only one scenario can be active at a time — calling this again
+    replaces the current one.
+    """
+    scenario_id = req.scenario_id
+    if scenario_id not in SCENARIOS:
+        return JSONResponse(
+            {"error": f"Unknown scenario_id '{scenario_id}'."},
+            status_code=422,
+        )
+    scenario = SCENARIOS[scenario_id]
+    shocks = req.custom_shocks if scenario_id == "custom" and req.custom_shocks else scenario["shocks"]
+    scenario_state.activate(scenario_id, scenario["name"], shocks)
+    return JSONResponse({
+        "activated": True,
+        "scenario_id": scenario_id,
+        "scenario_name": scenario["name"],
+        "shocks": shocks,
+    })
+
+
+@router.delete("/activate")
+async def deactivate_scenario() -> JSONResponse:
+    """Clear the active scenario — agents return to normal discussion."""
+    scenario_state.deactivate()
+    return JSONResponse({"deactivated": True})
+
+
+@router.get("/active")
+async def get_active_scenario() -> JSONResponse:
+    """Return the currently active scenario, or active=false if none."""
+    return JSONResponse(scenario_state.snapshot())
 
 
 @router.get("/library")

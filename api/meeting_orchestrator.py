@@ -112,16 +112,56 @@ def _load_agent(name: str, client):
     return creator(client)
 
 
+def _format_shock(key: str, value: float) -> str:
+    """Convert a raw shock key/value pair into a readable description."""
+    labels = {
+        "ir_sigma_multiplier":      f"IR volatility {value:.2f}× baseline",
+        "fx_vol_multiplier":        f"FX volatility {value:.2f}× baseline",
+        "eq_vol_multiplier":        f"Equity volatility {value:.2f}× baseline",
+        "credit_spread_multiplier": f"Credit spreads {value:.2f}× baseline",
+        "ir_level_shift":           f"IR curves +{value*100:.0f}bp parallel shift",
+        "ig_spread_multiplier":     f"IG credit spreads {value:.1f}× baseline",
+        "hy_spread_multiplier":     f"HY credit spreads {value:.1f}× baseline",
+    }
+    return labels.get(key, f"{key}: {value}")
+
+
 def _build_context_prompt(topic: str, transcript: list[dict], agent_name: str) -> str:
     """
     Build the prompt fed to each agent.
 
     Includes:
+      - Active market scenario (if any) injected at the top
       - The meeting topic/question
       - All prior turns as a formatted transcript
       - An instruction to respond naturally to prior speakers
     """
-    lines = [
+    lines: list[str] = []
+
+    # Inject active scenario context so agents react in character
+    try:
+        from api.scenario_state import scenario_state
+        snap = scenario_state.snapshot()
+        if snap["active"]:
+            lines.append("⚠️  ACTIVE MARKET SCENARIO")
+            lines.append("─" * 60)
+            lines.append(f"Scenario: {snap['scenario_name']}")
+            lines.append("Market conditions now in effect:")
+            for k, v in snap["shocks"].items():
+                lines.append(f"  • {_format_shock(k, v)}")
+            lines.append("")
+            lines.append(
+                "This scenario is LIVE. Factor these market conditions into "
+                "your response — react as you would if this shock hit the "
+                "bank right now. Be specific about the implications for your "
+                "area of responsibility."
+            )
+            lines.append("─" * 60)
+            lines.append("")
+    except Exception:
+        pass  # Never let scenario injection break a meeting
+
+    lines += [
         f"BOARD MEETING TOPIC: {topic}",
         "",
     ]

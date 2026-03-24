@@ -2,13 +2,10 @@
 
 ## P1 — High Priority
 
-### TODO-001: Agent Context Window Management *(partially addressed)*
+### TODO-001: Agent Context Window Management ✅ DONE
 **What:** Add sliding window or summary-based history pruning to `BankAgent`
-**Why:** `BankAgent.history` grows indefinitely. In a long simulation (1+ hour), accumulated messages will approach or exceed Claude's context window, causing API errors or degraded response quality.
-**Pros:** Simulation can run indefinitely; agents stay coherent
-**Cons:** Pruning strategies have tradeoffs — summarize (preserves meaning, costs tokens) vs. truncate (simple, loses context) vs. sliding window (good balance)
-**Context:** The `BankAgent` class (`agents/base_agent.py`) appends every message to `self.history` with no limit. The `speak()` method passes the full history to every API call. Start with a sliding window of last N messages; optionally add a summarization step using a smaller model. **Note (v0.1.1.0):** `_build_context_prompt()` in `meeting_orchestrator.py` now caps transcript to last 20 turns — this addresses the orchestrator prompt context but does NOT address BankAgent.history itself.
-**Effort:** S (human: ~2 days / CC: ~15 min) | **Priority:** P1 | **Depends on:** nothing
+**Context:** `BankAgent.__init__` now accepts `max_history: int = 0` (0 = unlimited, backward compatible). After each `speak()` / `stream_speak()`, history is trimmed to the last `max_history` messages. Observer singleton hardcodes 40 messages (20 turns). Orchestrator transcript context was already capped at 20 turns.
+**Completed:** v0.1.1.0
 
 ---
 
@@ -64,13 +61,10 @@
 **Status:** `api/observer_routes.py` is implemented. Remaining: add singleton caching, 30s timeout, and the floating chat widget in all dashboard HTML pages.
 **Effort:** S (human: ~1 day / CC: ~15 min) | **Priority:** P1 | **Depends on:** nothing
 
-### TODO-007: Scenario Engine with Live Agent Context Injection
+### TODO-007: Scenario Engine with Live Agent Context Injection ✅ DONE
 **What:** When a scenario fires, inject market shock as context into the next agent's prompt via `_build_context_prompt()` — agents respond to the shock in character
-**Why:** The Feynman moment — watching the trading desk react to a +200bp rate shock in real-time is the most compelling demo; closes the last gap between dashboards and simulation
-**Pros:** Makes scenario dashboard live; no new data model needed; shock params already defined in `scenarios_routes.SCENARIOS`
-**Cons:** Needs design for interleaving: ongoing meetings vs. triggered scenarios; race condition if scenario fires mid-meeting
-**Context:** Add a `ScenarioState` singleton (thread-safe dataclass with current active scenario + shock params). `_build_context_prompt()` in `meeting_orchestrator.py` checks `ScenarioState.active` and appends market conditions to the prompt prefix. `POST /api/scenarios/activate` sets the active scenario. `POST /api/boardroom/start` picks it up on the next meeting. **Note:** ScenarioState is in-memory only — server restart resets it. SQLite already has the historic data; the inconsistency is acceptable for v1.
-**Effort:** M (human: ~1.5 weeks / CC: ~45 min) | **Priority:** P1 | **Depends on:** nothing
+**Context:** `api/scenario_state.py` — thread-safe `_ScenarioState` singleton with `activate()` / `deactivate()` / `snapshot()`. New endpoints: `POST /api/scenarios/activate`, `DELETE /api/scenarios/activate`, `GET /api/scenarios/active`. `_build_context_prompt()` in `meeting_orchestrator.py` checks `scenario_state.snapshot()` and prepends the active scenario block with human-readable shock descriptions.
+**Completed:** v0.1.1.0
 
 ### TODO-009: Voice TTS — Personality-Matched Agent Speech ✅ DONE
 **What:** Each agent gets a distinct voice via Browser SpeechSynthesis API. A `TTSManager` abstraction makes it trivial to swap to ElevenLabs or OpenAI TTS later.
@@ -81,10 +75,7 @@
 **Effort:** S (human: ~2 days / CC: ~20 min) | **Priority:** P1 | **Depends on:** nothing
 **Completed:** v0.1.0.0 (2026-03-23)
 
-### TODO-008: Observer Singleton History Window
-**What:** Observer singleton (module-level cached agent in `api/observer_routes.py`) must apply a sliding window of last N=20 messages from the day it's implemented — do not wait for the generic TODO-001.
-**Why:** Observer singleton accumulates questions from all users across all sessions. Unlike boardroom agents (reset per meeting), the Observer has one persistent history that will overflow faster. A context window error on the Observer crashes the public Q&A feature.
-**Pros:** Keeps Observer available indefinitely; trivial implementation (`self.history = self.history[-40:]` after each speak())
-**Cons:** Observer loses memory of questions from >20 turns ago (acceptable trade-off)
-**Context:** Implement when the Observer singleton is created in `api/observer_routes.py`. Set `max_history = 40` (20 user + 20 assistant messages). Apply after each `agent.speak()` call before returning the response.
-**Effort:** XS (human: ~30 min / CC: ~2 min) | **Priority:** P1 | **Depends on:** Observer singleton implementation
+### TODO-008: Observer Singleton History Window ✅ DONE
+**What:** Observer singleton with 40-message history cap
+**Context:** `api/observer_routes.py` now has a module-level `_observer` singleton created on first request. History trimmed to `_OBSERVER_MAX_HISTORY = 40` after each `speak()` call.
+**Completed:** v0.1.1.0

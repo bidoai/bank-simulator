@@ -36,12 +36,14 @@ class BankAgent:
         title: str,
         system_prompt: str,
         client: Optional[anthropic.Anthropic] = None,
+        max_history: int = 0,
     ):
         self.name = name
         self.title = title
         self.system_prompt = system_prompt
         self.client = client or anthropic.Anthropic()
         self.history: list[dict] = []
+        self.max_history = max_history  # 0 = unlimited
 
     def speak(
         self,
@@ -73,6 +75,8 @@ class BankAgent:
         )
 
         self.history.append({"role": "assistant", "content": reply})
+        if self.max_history > 0 and len(self.history) > self.max_history:
+            self.history = self.history[-self.max_history:]
         log.debug("agent.spoke", agent=self.name, tokens=response.usage.output_tokens)
         return reply
 
@@ -104,6 +108,8 @@ class BankAgent:
             block.text for block in reply.content if block.type == "text"
         )
         self.history.append({"role": "assistant", "content": text})
+        if self.max_history > 0 and len(self.history) > self.max_history:
+            self.history = self.history[-self.max_history:]
         return text
 
     def reset_history(self) -> None:
