@@ -114,10 +114,14 @@ def test_with_valid_meeting_id_loads_context(client, monkeypatch, tmp_path):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     tc, mock_agent = client
 
-    # Create a real meeting with a turn using the in-process store
-    from api.meeting_store import store
-    mid = store.create_meeting("Test", "test topic", ["Alexandra Chen"])
-    store.add_turn(mid, "Alexandra Chen", "CEO", "The balance sheet looks fine.", "#e3b341")
+    # Use an isolated store so tests never write to the production DB
+    from api.meeting_store import MeetingStore
+    test_store = MeetingStore(tmp_path / "test.db")
+    test_store.initialize()
+    monkeypatch.setattr("api.meeting_store.store", test_store)
+
+    mid = test_store.create_meeting("Test", "test topic", ["Alexandra Chen"])
+    test_store.add_turn(mid, "Alexandra Chen", "CEO", "The balance sheet looks fine.", "#e3b341")
 
     mock_agent.speak.return_value = "Context-aware answer."
 

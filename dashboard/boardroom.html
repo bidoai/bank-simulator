@@ -1182,7 +1182,7 @@
                 const statusCls = m.status || "completed";
                 return `
                 <div class="session-item ${isActive ? 'active' : ''}"
-                     onclick="loadPastMeeting('${esc(m.id)}', ${JSON.stringify(esc(m.title))})">
+                     onclick="loadPastMeeting('${esc(m.id)}', '${esc(m.title)}')">
                     <div class="session-title">
                         <span class="session-status ${statusCls}"></span>${esc(m.title)}
                     </div>
@@ -1202,6 +1202,7 @@
     async function loadPastMeeting(meetingId, title) {
         viewingMeetingId = meetingId;
         clearConversation();
+        hideEmptyState();
 
         renderSystemMessage(`Viewing past session: "${title}"`);
 
