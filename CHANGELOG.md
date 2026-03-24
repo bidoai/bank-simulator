@@ -3,6 +3,20 @@
 All notable changes to Apex Global Bank Simulator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.1.0] - 2026-03-24
+
+### Added
+- 18 new tests for boardroom API routes (`tests/test_boardroom_routes.py`) covering all endpoints and `_auto_title()` helper
+
+### Changed
+- `api/main.py`: replaced deprecated `@app.on_event("startup")` with FastAPI `lifespan` context manager
+- `api/meeting_orchestrator.py`: capped `_build_context_prompt()` transcript to last 20 turns (TODO-001 partial fix — prevents unbounded context growth)
+
+### Fixed
+- `api/boardroom_broadcaster.py`: `connect()` now replays history before adding client to the broadcast set, preventing out-of-order message delivery on join
+
+---
+
 ## [0.1.0.0] - 2026-03-23
 
 ### Added

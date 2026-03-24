@@ -2,12 +2,12 @@
 
 ## P1 — High Priority
 
-### TODO-001: Agent Context Window Management
+### TODO-001: Agent Context Window Management *(partially addressed)*
 **What:** Add sliding window or summary-based history pruning to `BankAgent`
 **Why:** `BankAgent.history` grows indefinitely. In a long simulation (1+ hour), accumulated messages will approach or exceed Claude's context window, causing API errors or degraded response quality.
 **Pros:** Simulation can run indefinitely; agents stay coherent
 **Cons:** Pruning strategies have tradeoffs — summarize (preserves meaning, costs tokens) vs. truncate (simple, loses context) vs. sliding window (good balance)
-**Context:** The `BankAgent` class (`agents/base_agent.py`) appends every message to `self.history` with no limit. The `speak()` method passes the full history to every API call. Start with a sliding window of last N messages; optionally add a summarization step using a smaller model.
+**Context:** The `BankAgent` class (`agents/base_agent.py`) appends every message to `self.history` with no limit. The `speak()` method passes the full history to every API call. Start with a sliding window of last N messages; optionally add a summarization step using a smaller model. **Note (v0.1.1.0):** `_build_context_prompt()` in `meeting_orchestrator.py` now caps transcript to last 20 turns — this addresses the orchestrator prompt context but does NOT address BankAgent.history itself.
 **Effort:** S (human: ~2 days / CC: ~15 min) | **Priority:** P1 | **Depends on:** nothing
 
 ---
