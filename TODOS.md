@@ -45,6 +45,23 @@
 
 ---
 
+### TODO-010: Risk Integration Layer ✅ DONE
+**What:** `RiskService` + `CounterpartyRegistry` + `/api/risk/*` endpoints — closes the control loop between PositionManager, VaRCalculator, and LimitManager
+**Context:** Three new files: `infrastructure/risk/risk_service.py` (wires all three systems, runs MC VaR per desk, updates limits), `infrastructure/risk/counterparty_registry.py` (formal counterparty data with ratings, ISDA flags, PFE limits), `api/risk_routes.py` (7 REST endpoints: snapshot, limits, counterparties, positions, on-demand VaR). Decided in market risk boardroom session 2026-03-24.
+**Completed:** v0.1.2.0
+
+### TODO-011: Greeks Pipeline (DV01, Vega, CS01) — P2
+**What:** Pricer layer between PositionManager and risk metrics. DV01 for fixed income, Black-Scholes Greeks for equity derivatives, CS01 for CDS. Required to make sensitivity limits (DV01 $25M/bp, vega $15M/1%vol) enforceable.
+**Effort:** M | **Priority:** P2 | **Depends on:** nothing
+
+### TODO-012: Stressed VaR + FRTB Backtesting — P2
+**What:** Historical market data store for 2007-2009 GFC and 2020 COVID windows. Continuous backtesting runner to track IMA exceptions (3 in 250 days triggers revert to Standardised Approach).
+**Effort:** M | **Priority:** P2 | **Depends on:** market data feed
+
+### TODO-013: Correlation Regime Model — P2
+**What:** Two correlation matrices (normal / stress regime) with HMM regime detection from realized cross-asset vol. Static Cholesky in current MC VaR will catastrophically underestimate risk in a stress event (correlations spike to 1.0).
+**Effort:** S | **Priority:** P2 | **Depends on:** nothing
+
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
 - Production cloud deployment (pre-v1)

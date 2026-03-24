@@ -128,6 +128,13 @@ try:
 except ImportError:
     log.warning("api.observer_routes not found — Observer Q&A unavailable")
 
+try:
+    from api import risk_routes
+    app.include_router(risk_routes.router, prefix="/api")
+    log.info("risk_routes loaded")
+except ImportError:
+    log.warning("api.risk_routes not found — risk API endpoints unavailable")
+
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
@@ -175,6 +182,11 @@ async def models() -> FileResponse:
 @app.get("/scenarios")
 async def scenarios() -> FileResponse:
     return _html("scenarios.html")
+
+
+@app.get("/risk")
+async def risk() -> FileResponse:
+    return _html("risk.html")
 
 # ---------------------------------------------------------------------------
 # WebSocket: Boardroom live stream
