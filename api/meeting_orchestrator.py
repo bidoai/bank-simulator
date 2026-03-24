@@ -129,7 +129,8 @@ def _build_context_prompt(topic: str, transcript: list[dict], agent_name: str) -
     if transcript:
         lines.append("TRANSCRIPT SO FAR:")
         lines.append("─" * 60)
-        for turn in transcript:
+        # Cap to last 20 turns to prevent unbounded context growth (TODO-001)
+        for turn in transcript[-20:]:
             lines.append(f"{turn['agent']} ({turn['title']}):")
             lines.append(turn["text"])
             lines.append("")

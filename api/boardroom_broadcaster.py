@@ -51,10 +51,10 @@ class BoardroomBroadcaster:
     async def connect(self, websocket) -> None:
         """Accept a new WebSocket connection and replay history."""
         await websocket.accept()
-        self.clients.add(websocket)
-        log.info("boardroom.ws.connected", total=len(self.clients))
 
-        # Send full history so the client can reconstruct the conversation
+        # Snapshot and send history BEFORE adding to the live broadcast set.
+        # This ensures the client sees history in order, with no live messages
+        # interleaved before the replay completes.
         async with self._lock:
             history_snapshot = list(self._history)
 
@@ -62,6 +62,9 @@ class BoardroomBroadcaster:
             "type": "history",
             "messages": history_snapshot,
         })
+
+        self.clients.add(websocket)
+        log.info("boardroom.ws.connected", total=len(self.clients))
 
     async def disconnect(self, websocket) -> None:
         """Remove a client from the active set."""

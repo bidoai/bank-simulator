@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import structlog
@@ -42,10 +43,23 @@ log = structlog.get_logger(__name__)
 # Application
 # ---------------------------------------------------------------------------
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):  # noqa: ARG001
+    """Initialise the meeting store database at server startup."""
+    from api.meeting_store import store as _store
+    try:
+        _store.initialize()
+        log.info("meeting_store.ready")
+    except Exception as exc:
+        log.error("meeting_store.startup_failed", error=str(exc))
+    yield
+
+
 app = FastAPI(
     title="Apex Global Bank — Simulation Platform",
     docs_url="/api/docs",
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 # CORS — allow local dev frontends (Vite, live-server, etc.)
@@ -113,20 +127,6 @@ try:
     log.info("observer_routes loaded")
 except ImportError:
     log.warning("api.observer_routes not found — Observer Q&A unavailable")
-
-# ---------------------------------------------------------------------------
-# Startup
-# ---------------------------------------------------------------------------
-
-@app.on_event("startup")
-async def startup() -> None:
-    """Initialise the meeting store database at server startup."""
-    from api.meeting_store import store as _store
-    try:
-        _store.initialize()
-        log.info("meeting_store.ready")
-    except Exception as exc:
-        log.error("meeting_store.startup_failed", error=str(exc))
 
 # ---------------------------------------------------------------------------
 # Health check
