@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress Test Scenario Runner — Apex Global Bank</title>
+    <link rel="stylesheet" href="shared.css">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+            background: var(--bg, #0d1117);
+            color: var(--text, #c9d1d9);
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* Typography                                                           */
+        /* ------------------------------------------------------------------ */
+        h1 { font-size: 16px; color: var(--accent, #58a6ff); margin-bottom: 20px; letter-spacing: 1px; }
+        h2 { font-size: 11px; color: var(--muted, #8b949e); text-transform: uppercase;
+             letter-spacing: 1.5px; margin-bottom: 12px; }
+        h3 { font-size: 12px; color: var(--accent, #58a6ff); margin-bottom: 8px; }
+
+        /* ------------------------------------------------------------------ */
+        /* Layout                                                              */
+        /* ------------------------------------------------------------------ */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 16px;
+            max-width: 1400px;
+        }
+
+        .card {
+            background: var(--card, #161b22);
+            border: 1px solid var(--border, #30363d);
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .card.full-width { grid-column: 1 / -1; }
+
+        .left-col { display: flex; flex-direction: column; gap: 16px; }
+        .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+        /* ------------------------------------------------------------------ */
+        /* Scenario selector                                                   */
+        /* ------------------------------------------------------------------ */
+        .scenario-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid var(--border, #30363d);
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .scenario-option:hover { border-color: var(--accent, #58a6ff); }
+        .scenario-option.active {
+            border-color: var(--accent, #58a6ff);
+            background: rgba(88, 166, 255, 0.06);
+        }
+
+        .scenario-option input[type="radio"] { margin-top: 2px; accent-color: var(--accent, #58a6ff); }
+
+        .scenario-label { flex: 1; }
+        .scenario-name { color: var(--text, #c9d1d9); font-weight: 600; font-size: 12px; }
+        .scenario-desc { color: var(--muted, #8b949e); font-size: 11px; margin-top: 2px; }
+
+        /* ------------------------------------------------------------------ */
+        /* Shock parameters                                                    */
+        /* ------------------------------------------------------------------ */
+        .param-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .param-field label {
+            display: block;
+            font-size: 10px;
+            color: var(--muted, #8b949e);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .param-field input {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid var(--border, #30363d);
+            border-radius: 4px;
+            color: var(--text, #c9d1d9);
+            padding: 5px 8px;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .param-field input:read-only {
+            color: var(--muted, #8b949e);
+            cursor: default;
+        }
+
+        .param-field input:focus:not(:read-only) {
+            outline: none;
+            border-color: var(--accent, #58a6ff);
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* Run button                                                          */
+        /* ------------------------------------------------------------------ */
+        #run-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent, #58a6ff);
+            color: #0d1117;
+            border: none;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.15s, opacity 0.15s;
+        }
+
+        #run-btn:hover:not(:disabled) { background: #79c0ff; }
+        #run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .spinner {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border: 2px solid rgba(13, 17, 23, 0.3);
+            border-top-color: #0d1117;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ------------------------------------------------------------------ */
+        /* KPI comparison boxes                                                */
+        /* ------------------------------------------------------------------ */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .kpi-box {
+            background: #0d1117;
+            border: 1px solid var(--border, #30363d);
+            border-radius: 4px;
+            padding: 10px 12px;
+        }
+
+        .kpi-label {
+            font-size: 10px;
+            color: var(--muted, #8b949e);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+        }
+
+        .kpi-values {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .kpi-baseline {
+            font-size: 14px;
+            color: var(--muted, #8b949e);
+        }
+
+        .kpi-arrow { color: var(--muted, #8b949e); font-size: 11px; }
+
+        .kpi-stressed {
+            font-size: 14px;
+            color: var(--negative, #f85149);
+            font-weight: 700;
+        }
+
+        .kpi-delta {
+            font-size: 10px;
+            color: var(--negative, #f85149);
+            margin-top: 3px;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* Change table                                                        */
+        /* ------------------------------------------------------------------ */
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            color: var(--muted, #8b949e);
+            font-weight: normal;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px 8px;
+            border-bottom: 1px solid #21262d;
+        }
+        td { padding: 5px 8px; border-bottom: 1px solid #21262d; font-size: 12px; }
+        tr:last-child td { border-bottom: none; }
+        .positive { color: var(--positive, #3fb950); }
+        .negative { color: var(--negative, #f85149); }
+        .neutral  { color: var(--muted, #8b949e); }
+        .right    { text-align: right; }
+
+        /* ------------------------------------------------------------------ */
+        /* Library table                                                       */
+        /* ------------------------------------------------------------------ */
+        .badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .badge-pass { background: rgba(63, 185, 80, 0.15); color: var(--positive, #3fb950); border: 1px solid rgba(63, 185, 80, 0.3); }
+        .badge-fail { background: rgba(248, 81, 73, 0.15); color: var(--negative, #f85149); border: 1px solid rgba(248, 81, 73, 0.3); }
+
+        /* ------------------------------------------------------------------ */
+        /* Empty / waiting states                                              */
+        /* ------------------------------------------------------------------ */
+        .empty-state {
+            color: var(--muted, #8b949e);
+            text-align: center;
+            padding: 32px 20px;
+            font-size: 12px;
+        }
+
+        #results-placeholder { display: block; }
+        #results-content    { display: none; }
+    </style>
+</head>
+<body>
+
+<h1>Stress Test Scenario Runner — Apex Global Bank</h1>
+
+<div class="main-grid">
+
+    <!-- ================================================================ -->
+    <!-- LEFT COLUMN: Selector + Parameters                                -->
+    <!-- ================================================================ -->
+    <div class="left-col">
+
+        <!-- Scenario selector -->
+        <div class="card">
+            <h2>Scenario</h2>
+            <div id="scenario-list">
+                <!-- populated by JS -->
+            </div>
+        </div>
+
+        <!-- Shock parameters -->
+        <div class="card">
+            <h2>Shock Parameters</h2>
+            <div class="param-grid" id="shock-params">
+                <!-- populated by JS based on selection -->
+            </div>
+        </div>
+
+        <!-- Run button -->
+        <button id="run-btn" onclick="runScenario()">&#9654; Run Scenario</button>
+
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- RIGHT COLUMN: Results                                             -->
+    <!-- ================================================================ -->
+    <div class="right-col">
+
+        <!-- KPI comparison + chart -->
+        <div class="card">
+            <h2>Results</h2>
+
+            <div id="results-placeholder">
+                <p class="empty-state">Select a scenario and click Run Scenario to see results.</p>
+            </div>
+
+            <div id="results-content">
+                <!-- KPI boxes -->
+                <div class="kpi-grid" id="kpi-grid"></div>
+
+                <!-- Plotly exposure chart -->
+                <div id="exposure-chart" style="width:100%;height:280px;margin-bottom:4px;"></div>
+                <div style="font-size:10px;color:var(--muted,#8b949e);margin-bottom:16px;">
+                    PFE 97.5% profile — baseline (solid) vs stressed (dashed)
+                </div>
+
+                <!-- Change table -->
+                <h3>XVA Change Table</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th class="right">Baseline</th>
+                            <th class="right">Stressed</th>
+                            <th class="right">Δ Abs</th>
+                            <th class="right">Δ %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="change-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================================================================ -->
+<!-- SCENARIO LIBRARY (full width)                                    -->
+<!-- ================================================================ -->
+<div style="max-width:1400px;margin-top:16px;">
+    <div class="card">
+        <h2>Scenario Library — Historical Runs</h2>
+        <div id="library-container">
+            <p class="empty-state">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- JavaScript                                                        -->
+<!-- ================================================================ -->
+<script>
+    // -----------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------
+    let scenarios = [];
+    let selectedId = 'gfc';
+
+    const SHOCK_LABELS = {
+        ir_sigma_multiplier:    'IR Vol ×',
+        ir_level_shift:         'IR Level Shift',
+        fx_vol_multiplier:      'FX Vol ×',
+        eq_vol_multiplier:      'EQ Vol ×',
+        credit_spread_multiplier: 'Credit Spread ×',
+        ig_spread_multiplier:   'IG Spread ×',
+        hy_spread_multiplier:   'HY Spread ×',
+    };
+
+    // -----------------------------------------------------------------
+    // Boot
+    // -----------------------------------------------------------------
+    (async function init() {
+        await Promise.all([loadScenarios(), loadLibrary()]);
+    })();
+
+    // -----------------------------------------------------------------
+    // Load scenario list
+    // -----------------------------------------------------------------
+    async function loadScenarios() {
+        try {
+            const res = await fetch('/api/scenarios/list');
+            const data = await res.json();
+            scenarios = data.scenarios || [];
+            renderScenarioList();
+            setSelected(selectedId);
+        } catch (e) {
+            document.getElementById('scenario-list').innerHTML =
+                '<p class="empty-state">Failed to load scenarios.</p>';
+        }
+    }
+
+    function renderScenarioList() {
+        const el = document.getElementById('scenario-list');
+        el.innerHTML = scenarios.map(s => `
+            <label class="scenario-option${s.id === selectedId ? ' active' : ''}" id="opt-${s.id}" onclick="setSelected('${s.id}')">
+                <input type="radio" name="scenario" value="${s.id}" ${s.id === selectedId ? 'checked' : ''}>
+                <span class="scenario-label">
+                    <span class="scenario-name">${s.name}</span>
+                    <span class="scenario-desc">${s.description}</span>
+                </span>
+            </label>
+        `).join('');
+    }
+
+    function setSelected(id) {
+        selectedId = id;
+        // Update active state
+        document.querySelectorAll('.scenario-option').forEach(el => el.classList.remove('active'));
+        const opt = document.getElementById('opt-' + id);
+        if (opt) {
+            opt.classList.add('active');
+            opt.querySelector('input[type="radio"]').checked = true;
+        }
+        // Populate shock params
+        const scenario = scenarios.find(s => s.id === id);
+        if (scenario) renderShockParams(scenario);
+    }
+
+    function renderShockParams(scenario) {
+        const isCustom = scenario.id === 'custom';
+        const shocks = scenario.shocks || {};
+        const allKeys = isCustom
+            ? Object.keys(SHOCK_LABELS)
+            : Object.keys(shocks);
+
+        if (!allKeys.length && !isCustom) {
+            document.getElementById('shock-params').innerHTML =
+                '<p class="neutral" style="font-size:11px;grid-column:1/-1">No shock parameters defined for this scenario.</p>';
+            return;
+        }
+
+        const keys = isCustom ? Object.keys(SHOCK_LABELS) : allKeys;
+        document.getElementById('shock-params').innerHTML = keys.map(k => `
+            <div class="param-field">
+                <label>${SHOCK_LABELS[k] || k}</label>
+                <input
+                    type="number"
+                    id="shock-${k}"
+                    step="0.01"
+                    value="${isCustom ? (shocks[k] ?? 1.0) : (shocks[k] ?? '')}"
+                    ${isCustom ? '' : 'readonly'}
+                >
+            </div>
+        `).join('');
+    }
+
+    // -----------------------------------------------------------------
+    // Run scenario
+    // -----------------------------------------------------------------
+    async function runScenario() {
+        const btn = document.getElementById('run-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Running...';
+
+        const scenario = scenarios.find(s => s.id === selectedId);
+        let customShocks = {};
+
+        if (selectedId === 'custom' && scenario) {
+            Object.keys(SHOCK_LABELS).forEach(k => {
+                const el = document.getElementById('shock-' + k);
+                if (el && el.value !== '') customShocks[k] = parseFloat(el.value);
+            });
+        }
+
+        try {
+            const res = await fetch('/api/scenarios/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scenario_id: selectedId, custom_shocks: customShocks }),
+            });
+            const data = await res.json();
+            renderResults(data);
+        } catch (e) {
+            alert('Failed to run scenario: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '&#9654; Run Scenario';
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // Render results
+    // -----------------------------------------------------------------
+    function renderResults(data) {
+        document.getElementById('results-placeholder').style.display = 'none';
+        document.getElementById('results-content').style.display = 'block';
+
+        const b = data.baseline;
+        const s = data.stressed;
+
+        // KPI boxes
+        const kpis = [
+            { label: 'CVA',         base: b.cva,         stressed: s.cva,         fmt: v => v.toFixed(4) + 'MM' },
+            { label: 'FVA',         base: b.fva,         stressed: s.fva,         fmt: v => v.toFixed(4) + 'MM' },
+            { label: 'DVA',         base: b.dva,         stressed: s.dva,         fmt: v => v.toFixed(4) + 'MM' },
+            { label: 'Peak PFE',    base: b.pfe_peak_mm, stressed: s.pfe_peak_mm, fmt: v => '$' + v.toFixed(2) + 'MM' },
+            { label: 'EEPE',        base: b.eepe_mm,     stressed: s.eepe_mm,     fmt: v => '$' + v.toFixed(2) + 'MM' },
+        ];
+
+        document.getElementById('kpi-grid').innerHTML = kpis.map(k => {
+            const deltaPct = k.base !== 0 ? ((k.stressed - k.base) / Math.abs(k.base) * 100) : 0;
+            const worse = k.stressed < k.base; // more negative = worse for CVA/FVA; larger = worse for PFE
+            const cls = 'negative';
+            return `
+                <div class="kpi-box">
+                    <div class="kpi-label">${k.label}</div>
+                    <div class="kpi-values">
+                        <span class="kpi-baseline">${k.fmt(k.base)}</span>
+                        <span class="kpi-arrow">→</span>
+                        <span class="kpi-stressed">${k.fmt(k.stressed)}</span>
+                    </div>
+                    <div class="kpi-delta ${cls}">Δ ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}%</div>
+                </div>`;
+        }).join('');
+
+        // Plotly chart
+        renderChart(b.time_grid, b.pfe_profile, s.pfe_profile, data.scenario_name);
+
+        // Change table
+        document.getElementById('change-table-body').innerHTML = (data.change_table || []).map(row => {
+            const pct = row.delta_pct != null ? (row.delta_pct >= 0 ? '+' : '') + row.delta_pct.toFixed(1) + '%' : '—';
+            const cls = row.delta_pct != null && row.delta_pct > 0 ? 'negative' : (row.delta_pct < 0 ? 'positive' : 'neutral');
+            return `<tr>
+                <td><strong>${row.metric}</strong></td>
+                <td class="right neutral">${formatNum(row.baseline)}</td>
+                <td class="right negative">${formatNum(row.stressed)}</td>
+                <td class="right ${cls}">${formatNum(row.delta_abs)}</td>
+                <td class="right ${cls}">${pct}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function formatNum(v) {
+        if (v == null) return '—';
+        if (Math.abs(v) >= 1) return v.toFixed(2);
+        return v.toFixed(4);
+    }
+
+    function renderChart(timeGrid, basePfe, stressedPfe, scenarioName) {
+        const layout = {
+            template: 'plotly_dark',
+            paper_bgcolor: '#0d1117',
+            plot_bgcolor: '#0d1117',
+            margin: { t: 28, r: 16, b: 36, l: 48 },
+            xaxis: {
+                title: { text: 'Years', font: { size: 10, color: '#8b949e' } },
+                color: '#8b949e',
+                gridcolor: '#21262d',
+                zeroline: false,
+            },
+            yaxis: {
+                title: { text: 'PFE 97.5% (MM USD)', font: { size: 10, color: '#8b949e' } },
+                color: '#8b949e',
+                gridcolor: '#21262d',
+                zeroline: false,
+            },
+            legend: { font: { size: 10 }, bgcolor: 'rgba(0,0,0,0)' },
+            title: {
+                text: 'PFE Profile — Baseline vs ' + scenarioName,
+                font: { size: 11, color: '#8b949e' },
+                x: 0,
+            },
+        };
+
+        const traces = [
+            {
+                x: timeGrid,
+                y: basePfe,
+                name: 'Baseline',
+                mode: 'lines',
+                line: { color: '#58a6ff', width: 2, dash: 'solid' },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(88,166,255,0.06)',
+            },
+            {
+                x: timeGrid,
+                y: stressedPfe,
+                name: 'Stressed',
+                mode: 'lines',
+                line: { color: '#f85149', width: 2, dash: 'dash' },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(248,81,73,0.04)',
+            },
+        ];
+
+        Plotly.react('exposure-chart', traces, layout, { displayModeBar: false, responsive: true });
+    }
+
+    // -----------------------------------------------------------------
+    // Scenario library
+    // -----------------------------------------------------------------
+    async function loadLibrary() {
+        try {
+            const res = await fetch('/api/scenarios/library');
+            const data = await res.json();
+            renderLibrary(data.library || []);
+        } catch (e) {
+            document.getElementById('library-container').innerHTML =
+                '<p class="empty-state">Failed to load library.</p>';
+        }
+    }
+
+    function renderLibrary(rows) {
+        const el = document.getElementById('library-container');
+        if (!rows.length) { el.innerHTML = '<p class="empty-state">No historical runs.</p>'; return; }
+        el.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Run ID</th>
+                        <th>Date</th>
+                        <th>Scenario</th>
+                        <th class="right">Peak PFE (MM)</th>
+                        <th class="right">CVA Δ%</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(r => `<tr>
+                        <td class="neutral">${r.run_id}</td>
+                        <td>${r.date}</td>
+                        <td>${r.scenario}</td>
+                        <td class="right">$${r.peak_pfe_mm.toFixed(2)}</td>
+                        <td class="right negative">+${r.cva_change_pct.toFixed(1)}%</td>
+                        <td><span class="badge ${r.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${r.status}</span></td>
+                        <td class="neutral" style="font-size:11px">${r.notes}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+    }
+</script>
+</body>
+</html>

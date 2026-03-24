@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Floor — Apex Global Bank</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    body { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+
+    /* KPI bar */
+    .kpi-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .kpi-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 18px;
+      flex: 1;
+      min-width: 150px;
+    }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .kpi-value { font-size: 20px; font-weight: 600; color: var(--text); margin-top: 4px; }
+    .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .kpi-value.pos { color: var(--positive); }
+    .kpi-value.neg { color: var(--negative); }
+    .kpi-value.warn{ color: var(--warning); }
+
+    /* Main grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .full-width { grid-column: 1 / -1; }
+
+    /* Section header */
+    .section-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-header .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* Greeks table */
+    .greeks-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .greeks-table th {
+      text-align: right; color: var(--muted); font-weight: 400;
+      padding: 6px 8px; border-bottom: 1px solid var(--border);
+      font-size: 11px; text-transform: uppercase;
+    }
+    .greeks-table th:first-child { text-align: left; }
+    .greeks-table td {
+      text-align: right; padding: 7px 8px;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      font-variant-numeric: tabular-nums;
+    }
+    .greeks-table td:first-child { text-align: left; color: var(--text); }
+    .greeks-table td.desk-label { color: var(--muted); font-size: 11px; }
+    .greeks-table tr.total-row td { color: var(--accent); font-weight: 600; border-top: 1px solid var(--border); }
+    .greeks-table .pos { color: var(--positive); }
+    .greeks-table .neg { color: var(--negative); }
+
+    /* CCR gauge bars */
+    .ccr-list { display: flex; flex-direction: column; gap: 10px; }
+    .ccr-row { display: flex; flex-direction: column; gap: 4px; }
+    .ccr-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .ccr-cp { color: var(--text); }
+    .ccr-meta { color: var(--muted); font-size: 11px; }
+    .ccr-pct { font-weight: 600; }
+    .ccr-pct.ok { color: var(--positive); }
+    .ccr-pct.warn { color: var(--warning); }
+    .ccr-pct.breach { color: var(--negative); }
+    .gauge-bar {
+      height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+    .gauge-fill {
+      height: 100%; border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .gauge-fill.ok     { background: var(--positive); }
+    .gauge-fill.warn   { background: var(--warning); box-shadow: 0 0 6px rgba(210,153,34,.5); }
+    .gauge-fill.breach { background: var(--negative); box-shadow: 0 0 6px rgba(248,81,73,.5); }
+
+    /* P&L table */
+    .pnl-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .pnl-table th {
+      text-align: right; color: var(--muted); font-weight: 400;
+      padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px;
+    }
+    .pnl-table th:first-child { text-align: left; }
+    .pnl-table td {
+      text-align: right; padding: 7px 8px;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      font-variant-numeric: tabular-nums;
+    }
+    .pnl-table td:first-child { text-align: left; }
+    .pnl-table tr.total-row td { color: var(--accent); font-weight: 600; border-top: 1px solid var(--border); }
+
+    /* Blotter */
+    .blotter-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .blotter-table th {
+      text-align: left; color: var(--muted); font-weight: 400;
+      padding: 5px 8px; border-bottom: 1px solid var(--border); font-size: 10px;
+      text-transform: uppercase;
+    }
+    .blotter-table td {
+      padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.4);
+    }
+    .blotter-table td.time { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .blotter-table td.instrument { color: var(--text); }
+    .side-badge {
+      display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px;
+      font-weight: 600; text-transform: uppercase;
+    }
+    .side-badge.buy { background: rgba(63,185,80,.15); color: var(--positive); }
+    .side-badge.sell{ background: rgba(248,81,73,.15);  color: var(--negative); }
+    .side-badge.pay { background: rgba(210,153,34,.15); color: var(--warning); }
+    .status-chip {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      font-size: 10px; font-weight: 500;
+      background: rgba(63,185,80,.12); color: var(--positive);
+    }
+
+    /* Circuit breaker */
+    .cb-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: 5px;
+      background: var(--bg-secondary); margin-bottom: 6px;
+      border: 1px solid var(--border);
+    }
+    .cb-desk { font-size: 12px; color: var(--text); font-weight: 500; }
+    .cb-state {
+      font-size: 11px; font-weight: 600; padding: 2px 8px;
+      border-radius: 3px; text-transform: uppercase;
+    }
+    .cb-state.closed { background: rgba(63,185,80,.15); color: var(--positive); }
+    .cb-state.open   { background: rgba(248,81,73,.15);  color: var(--negative); }
+    .cb-pnl { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    /* Plotly chart containers */
+    #pnl-chart { height: 200px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">Apex Global Bank</div>
+    <div class="navbar-links">
+      <a href="/">Platform</a>
+      <a href="/boardroom">Boardroom</a>
+      <a href="/trading" class="active">Trading Floor</a>
+      <a href="/xva">XVA Analytics</a>
+      <a href="/models">Model Governance</a>
+      <a href="/scenarios">Scenarios</a>
+    </div>
+  </nav>
+
+  <!-- KPI bar -->
+  <div class="kpi-bar" id="kpi-bar">
+    <div class="kpi-box">
+      <div class="kpi-label">Daily P&amp;L</div>
+      <div class="kpi-value" id="kpi-daily">—</div>
+      <div class="kpi-sub">All desks</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">YTD P&amp;L</div>
+      <div class="kpi-value pos" id="kpi-ytd">—</div>
+      <div class="kpi-sub">All desks</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Portfolio Delta</div>
+      <div class="kpi-value" id="kpi-delta">—</div>
+      <div class="kpi-sub">Net USD</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Portfolio Vega</div>
+      <div class="kpi-value" id="kpi-vega">—</div>
+      <div class="kpi-sub">Net USD/vol pt</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">CCR Utilisation</div>
+      <div class="kpi-value" id="kpi-ccr">—</div>
+      <div class="kpi-sub">vs. total limit</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Circuit Breaker</div>
+      <div class="kpi-value pos" id="kpi-cb">CLOSED</div>
+      <div class="kpi-sub">System-wide</div>
+    </div>
+  </div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+
+    <!-- Greeks table -->
+    <div class="card">
+      <div class="section-header"><div class="dot"></div>Portfolio Greeks</div>
+      <table class="greeks-table">
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>Delta $</th>
+            <th>Gamma $k</th>
+            <th>Vega $k</th>
+            <th>Theta $</th>
+            <th>DV01 $</th>
+            <th>Δ Lim %</th>
+          </tr>
+        </thead>
+        <tbody id="greeks-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- CCR Limits -->
+    <div class="card">
+      <div class="section-header"><div class="dot" style="background:var(--warning)"></div>CCR Limit Utilisation</div>
+      <div class="ccr-list" id="ccr-list"></div>
+    </div>
+
+    <!-- P&L attribution -->
+    <div class="card">
+      <div class="section-header"><div class="dot" style="background:var(--positive)"></div>P&amp;L Attribution</div>
+      <div id="pnl-chart"></div>
+      <table class="pnl-table" style="margin-top:12px">
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>Daily</th>
+            <th>MTD</th>
+            <th>YTD</th>
+          </tr>
+        </thead>
+        <tbody id="pnl-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Circuit Breaker -->
+    <div class="card">
+      <div class="section-header"><div class="dot" style="background:var(--negative)"></div>Circuit Breakers</div>
+      <div id="cb-list"></div>
+    </div>
+
+    <!-- Blotter -->
+    <div class="card full-width">
+      <div class="section-header"><div class="dot" style="background:#79c0ff"></div>Recent Trades</div>
+      <table class="blotter-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>ID</th>
+            <th>Book</th>
+            <th>Instrument</th>
+            <th>Side</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="blotter-tbody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- main-grid -->
+
+  <script>
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    const fmt = (n, decimals = 0) => n == null ? '—' :
+      new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(n);
+
+    const fmtMM = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
+    const fmtK  = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
+    const fmtPnl = (n) => {
+      if (n == null) return '—';
+      const sign = n >= 0 ? '+' : '';
+      return `${sign}${fmtMM(n)}`;
+    };
+    const pnlClass = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
+    const colorClass = (pct) => pct > 100 ? 'breach' : pct > 80 ? 'warn' : 'ok';
+
+    // ── Fetch & render ────────────────────────────────────────────────────────
+
+    async function loadGreeks() {
+      const res = await fetch('/api/trading/greeks').catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      // KPI delta/vega
+      const p = data.portfolio;
+      const deltaEl = document.getElementById('kpi-delta');
+      deltaEl.textContent = fmtK(p.delta);
+      deltaEl.className = 'kpi-value ' + pnlClass(p.delta);
+      const vegaEl = document.getElementById('kpi-vega');
+      vegaEl.textContent = fmtK(p.vega);
+      vegaEl.className = 'kpi-value ' + pnlClass(p.vega);
+
+      const tbody = document.getElementById('greeks-tbody');
+      tbody.innerHTML = '';
+
+      data.books.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><div>${b.name}</div><div class="desk-label">${b.trader}</div></td>
+          <td class="${b.delta >= 0 ? 'pos' : 'neg'}">${fmtK(b.delta)}</td>
+          <td class="${b.gamma >= 0 ? 'pos' : 'neg'}">${fmtK(b.gamma)}</td>
+          <td class="${b.vega  >= 0 ? 'pos' : 'neg'}">${fmtK(b.vega)}</td>
+          <td class="${b.theta >= 0 ? 'pos' : 'neg'}">${fmtK(b.theta)}</td>
+          <td class="${b.dv01  >= 0 ? 'pos' : 'neg'}">${fmtK(b.dv01)}</td>
+          <td class="${b.delta_util_pct > 80 ? 'neg' : b.delta_util_pct > 60 ? 'warn' : 'pos'}">${b.delta_util_pct}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Totals row
+      const tot = data.portfolio;
+      const tr = document.createElement('tr');
+      tr.className = 'total-row';
+      tr.innerHTML = `
+        <td>Portfolio Total</td>
+        <td>${fmtK(tot.delta)}</td>
+        <td>${fmtK(tot.gamma)}</td>
+        <td>${fmtK(tot.vega)}</td>
+        <td>${fmtK(tot.theta)}</td>
+        <td>${fmtK(tot.dv01)}</td>
+        <td>—</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    async function loadCCR() {
+      const res = await fetch('/api/trading/ccr').catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      // KPI
+      const ccrEl = document.getElementById('kpi-ccr');
+      ccrEl.textContent = `${data.total_util_pct}%`;
+      ccrEl.className = 'kpi-value ' + colorClass(data.total_util_pct);
+
+      const list = document.getElementById('ccr-list');
+      list.innerHTML = '';
+      data.counterparties.forEach(cp => {
+        const cls = colorClass(cp.utilization);
+        const pct = Math.min(cp.utilization, 100);
+        const div = document.createElement('div');
+        div.className = 'ccr-row';
+        div.innerHTML = `
+          <div class="ccr-header">
+            <span class="ccr-cp">${cp.counterparty} <span style="color:var(--muted);font-size:10px">${cp.rating}</span></span>
+            <span class="ccr-meta">${cp.ead_mm}MM / ${cp.limit_mm}MM lim &nbsp;
+              <span class="ccr-pct ${cls}">${cp.utilization}%</span>
+            </span>
+          </div>
+          <div class="gauge-bar"><div class="gauge-fill ${cls}" style="width:${pct}%"></div></div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    async function loadPnl() {
+      const res = await fetch('/api/trading/pnl').catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      // KPI
+      const dailyEl = document.getElementById('kpi-daily');
+      dailyEl.textContent = fmtPnl(data.total.daily);
+      dailyEl.className = 'kpi-value ' + pnlClass(data.total.daily);
+      const ytdEl = document.getElementById('kpi-ytd');
+      ytdEl.textContent = fmtPnl(data.total.ytd);
+      ytdEl.className = 'kpi-value ' + pnlClass(data.total.ytd);
+
+      // P&L bar chart
+      const books  = data.books.map(b => b.name);
+      const daily  = data.books.map(b => b.daily / 1_000);
+      const colors = daily.map(v => v >= 0 ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.75)');
+
+      Plotly.newPlot('pnl-chart', [{
+        type: 'bar', x: books, y: daily,
+        marker: { color: colors },
+        name: 'Daily P&L ($k)',
+      }], {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        margin: { t: 5, b: 50, l: 40, r: 5 },
+        font: { family: 'monospace', size: 10, color: '#8b949e' },
+        xaxis: { tickfont: { size: 9 }, tickangle: -30, gridcolor: '#21262d' },
+        yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
+        showlegend: false,
+      }, { displayModeBar: false, responsive: true });
+
+      // Table
+      const tbody = document.getElementById('pnl-tbody');
+      tbody.innerHTML = '';
+      data.books.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><div style="color:var(--text)">${b.name}</div><div style="color:var(--muted);font-size:10px">${b.desk}</div></td>
+          <td class="${pnlClass(b.daily)}">${fmtPnl(b.daily)}</td>
+          <td class="${pnlClass(b.mtd)}">${fmtPnl(b.mtd)}</td>
+          <td class="${pnlClass(b.ytd)}">${fmtPnl(b.ytd)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const tot = data.total;
+      const tr = document.createElement('tr');
+      tr.className = 'total-row';
+      tr.innerHTML = `
+        <td>Total</td>
+        <td class="${pnlClass(tot.daily)}">${fmtPnl(tot.daily)}</td>
+        <td class="${pnlClass(tot.mtd)}">${fmtPnl(tot.mtd)}</td>
+        <td class="${pnlClass(tot.ytd)}">${fmtPnl(tot.ytd)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    async function loadCircuitBreaker() {
+      const res = await fetch('/api/trading/circuit-breaker').catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      const cbKpi = document.getElementById('kpi-cb');
+      cbKpi.textContent = data.system_state;
+      cbKpi.className = 'kpi-value ' + (data.system_state === 'CLOSED' ? 'pos' : 'neg');
+
+      const list = document.getElementById('cb-list');
+      list.innerHTML = '';
+      data.desks.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'cb-row';
+        div.innerHTML = `
+          <span class="cb-desk">${d.desk}</span>
+          <span class="cb-pnl ${pnlClass(d.daily_loss)}">${fmtPnl(d.daily_loss)}</span>
+          <span class="cb-state ${d.state.toLowerCase()}">${d.state}</span>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    async function loadBlotter() {
+      const res = await fetch('/api/trading/blotter').catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      const tbody = document.getElementById('blotter-tbody');
+      tbody.innerHTML = '';
+      data.trades.forEach(t => {
+        const sideCls = t.side.toLowerCase();
+        const qty = t.qty >= 1_000_000
+          ? `${(t.qty / 1_000_000).toFixed(0)}MM`
+          : t.qty >= 1_000 ? `${(t.qty / 1_000).toFixed(0)}k` : t.qty;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="time">${t.time}</td>
+          <td style="color:var(--muted)">${t.id}</td>
+          <td style="color:var(--accent)">${t.book}</td>
+          <td class="instrument">${t.instrument}</td>
+          <td><span class="side-badge ${sideCls}">${t.side}</span></td>
+          <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${qty}</td>
+          <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${t.price}</td>
+          <td><span class="status-chip">${t.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ── Boot ─────────────────────────────────────────────────────────────────
+
+    async function loadAll() {
+      await loadGreeks();
+      await loadCCR();
+      await loadPnl();
+      await loadCircuitBreaker();
+      await loadBlotter();
+    }
+
+    loadAll();
+    setInterval(loadAll, 10_000);  // refresh every 10s
+  </script>
+</body>
+</html>

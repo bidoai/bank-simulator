@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XVA Analytics — Apex Global Bank</title>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --card:     #161b22;
+      --card2:    #1c2128;
+      --border:   #30363d;
+      --text:     #c9d1d9;
+      --muted:    #8b949e;
+      --positive: #3fb950;
+      --negative: #f85149;
+      --accent:   #58a6ff;
+      --warning:  #e3b341;
+      --orange:   #ffa657;
+      --purple:   #bc8cff;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    .header-left { display: flex; align-items: center; gap: 16px; }
+
+    .header-logo {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .header-title {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .header-pipe { color: var(--border); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+    }
+
+    .badge.live { border-color: #238636; color: var(--positive); }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      display: inline-block;
+    }
+
+    /* ── Stress scenario selector ─────────────────────────────────── */
+    .stress-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stress-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+
+    .stress-btn {
+      padding: 3px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+
+    .stress-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .stress-btn.active { background: var(--accent); border-color: var(--accent); color: #0d1117; }
+    .stress-btn.clear-stress { border-color: var(--border); color: var(--muted); }
+    .stress-btn.clear-stress:hover { border-color: var(--negative); color: var(--negative); }
+
+    /* ── KPI bar ──────────────────────────────────────────────────── */
+    .kpi-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kpi-box {
+      background: var(--card);
+      padding: 10px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .kpi-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .kpi-value {
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: -0.5px;
+    }
+
+    .kpi-value.neg { color: var(--negative); }
+    .kpi-value.pos { color: var(--positive); }
+    .kpi-value.accent { color: var(--accent); }
+    .kpi-value.warn { color: var(--warning); }
+
+    .kpi-sub { font-size: 10px; color: var(--muted); }
+
+    /* ── Main grid ────────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      grid-template-rows: auto;
+      height: calc(100vh - 130px);
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 10px 14px;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cp-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #21262d;
+      transition: background 0.12s;
+    }
+
+    .cp-item:hover { background: #1c2128; }
+    .cp-item.active { background: #1f2937; border-left: 3px solid var(--accent); padding-left: 11px; }
+
+    .cp-left { display: flex; flex-direction: column; gap: 2px; }
+    .cp-name { font-size: 12px; color: var(--text); }
+
+    .cp-cva {
+      font-size: 10px;
+      color: var(--negative);
+    }
+
+    .cp-util-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+
+    .cp-util-pct {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .cp-util-bar {
+      width: 40px;
+      height: 3px;
+      background: #21262d;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .cp-util-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    /* ── Right pane ───────────────────────────────────────────────── */
+    .right-pane {
+      display: grid;
+      grid-template-rows: 310px 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Chart card ───────────────────────────────────────────────── */
+    .chart-card {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Bottom grid ──────────────────────────────────────────────── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      overflow: hidden;
+    }
+
+    .card {
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:last-child { border-right: none; }
+
+    .card-header {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .card-body { overflow-y: auto; flex: 1; }
+
+    /* ── Tables ───────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--card);
+      text-align: right;
+      font-size: 10px;
+      font-weight: normal;
+      color: var(--muted);
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    thead th:first-child { text-align: left; }
+
+    tbody td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #21262d;
+      text-align: right;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    tbody td:first-child { text-align: left; color: var(--text); }
+
+    tbody tr { cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: #1c2128; }
+    tbody tr.active { background: #1f2937; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    tfoot td {
+      padding: 5px 8px;
+      border-top: 1px solid var(--border);
+      text-align: right;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    tfoot td:first-child { text-align: left; }
+
+    .val-neg { color: var(--negative); }
+    .val-pos { color: var(--positive); }
+    .val-muted { color: var(--muted); }
+
+    /* ── Zone badges ──────────────────────────────────────────────── */
+    .zone-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .zone-green  { background: #1a3a1f; color: var(--positive); border: 1px solid #238636; }
+    .zone-yellow { background: #2e2500; color: var(--warning);  border: 1px solid #9e6a03; }
+    .zone-red    { background: #3d1a1a; color: var(--negative); border: 1px solid #da3633; }
+
+    /* ── Spinner ──────────────────────────────────────────────────── */
+    .spinner-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13,17,23,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    }
+
+    .spinner-overlay.hidden { display: none; }
+
+    .spinner-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .spinner-text { font-size: 11px; color: var(--muted); }
+
+    /* ── Run button ───────────────────────────────────────────────── */
+    .run-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: opacity 0.15s;
+    }
+
+    .run-btn:hover { opacity: 0.88; }
+    .run-btn:active { opacity: 0.75; }
+
+    /* ── Heatmap container ────────────────────────────────────────── */
+    #heatmap-chart, #exposure-chart { width: 100%; height: 100%; }
+
+    /* ── Source tag ───────────────────────────────────────────────── */
+    .source-tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .source-tag.pyxva { border-color: var(--positive); color: var(--positive); }
+    .source-tag.mock  { border-color: var(--warning);  color: var(--warning);  }
+
+    /* ── Scrollbar ────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Spinner -->
+<div id="spinner" class="spinner-overlay hidden">
+  <div class="spinner-box">
+    <div class="spinner"></div>
+    <div class="spinner-text" id="spinner-text">Running Monte Carlo...</div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <span class="header-logo">Apex Global Bank</span>
+    <span class="header-pipe">|</span>
+    <span class="header-title">XVA Analytics</span>
+    <span id="source-tag" class="source-tag mock">MOCK DATA</span>
+  </div>
+  <div class="header-right">
+    <span class="badge live"><span class="dot"></span>LIVE</span>
+    <button class="run-btn" onclick="runDemo()">
+      &#9654; Run Demo
+    </button>
+  </div>
+</div>
+
+<!-- Stress bar -->
+<div class="stress-bar">
+  <span class="stress-label">Stress:</span>
+  <button class="stress-btn" data-scenario="gfc" onclick="runStress(this)">GFC</button>
+  <button class="stress-btn" data-scenario="covid" onclick="runStress(this)">COVID</button>
+  <button class="stress-btn" data-scenario="rate_shock_200bp" onclick="runStress(this)">Rate +200bp</button>
+  <button class="stress-btn" data-scenario="credit_widening" onclick="runStress(this)">Credit Widening</button>
+  <button class="stress-btn clear-stress" onclick="clearStress()">&#x2715; Clear</button>
+</div>
+
+<!-- KPI bar -->
+<div class="kpi-bar">
+  <div class="kpi-box">
+    <span class="kpi-label">Total CVA</span>
+    <span class="kpi-value neg" id="kpi-cva">—</span>
+    <span class="kpi-sub">MM USD</span>
+  </div>
+  <div class="kpi-box">
+    <span class="kpi-label">Total FVA</span>
+    <span class="kpi-value neg" id="kpi-fva">—</span>
+    <span class="kpi-sub">Funding Value Adj.</span>
+  </div>
+  <div class="kpi-box">
+    <span class="kpi-label">Peak PFE</span>
+    <span class="kpi-value warn" id="kpi-pfe">—</span>
+    <span class="kpi-sub">97.5th pct · MM USD</span>
+  </div>
+  <div class="kpi-box">
+    <span class="kpi-label">Total EEPE</span>
+    <span class="kpi-value accent" id="kpi-eepe">—</span>
+    <span class="kpi-sub">Eff. Exp. Pos. Exposure</span>
+  </div>
+</div>
+
+<!-- Main grid -->
+<div class="main-grid">
+
+  <!-- Sidebar: counterparty list -->
+  <div class="sidebar">
+    <div class="sidebar-header">Counterparties</div>
+    <div id="cp-list"></div>
+  </div>
+
+  <!-- Right pane -->
+  <div class="right-pane">
+
+    <!-- Exposure profile chart -->
+    <div class="chart-card">
+      <div id="exposure-chart"></div>
+    </div>
+
+    <!-- Bottom row: XVA table | Heatmap | Backtest -->
+    <div class="bottom-grid">
+
+      <!-- XVA breakdown table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">XVA Breakdown</span>
+          <span style="font-size:10px;color:var(--muted)">MM USD</span>
+        </div>
+        <div class="card-body">
+          <table id="xva-table">
+            <thead>
+              <tr>
+                <th>Counterparty</th>
+                <th>CVA</th>
+                <th>DVA</th>
+                <th>BCVA</th>
+                <th>FVA</th>
+                <th>MVA</th>
+                <th>KVA</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="xva-tbody"></tbody>
+            <tfoot id="xva-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- PFE Heatmap -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">PFE Heatmap</span>
+          <span style="font-size:10px;color:var(--muted)">97.5th pct · MM USD</span>
+        </div>
+        <div class="card-body" style="overflow:hidden;min-height:0;">
+          <div id="heatmap-chart" style="height:100%;min-height:180px;"></div>
+        </div>
+      </div>
+
+      <!-- Backtest traffic light -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Backtest Traffic Light</span>
+          <span style="font-size:10px;color:var(--muted)">PFE Exceedance</span>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Horizon</th>
+                <th>Exceptions</th>
+                <th>N Obs</th>
+                <th>Zone</th>
+                <th>Kupiec p</th>
+              </tr>
+            </thead>
+            <tbody id="backtest-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// State
+// ============================================================
+let _data       = null;   // current RunResult
+let _stressData = null;   // current stress result (stressed sub-key)
+let _activeCP   = null;   // currently selected counterparty id
+
+// Ordered counterparty IDs
+const CP_IDS = [
+  "AGR_GOLDMAN",
+  "AGR_JPMORGAN",
+  "AGR_DEUTSCHE",
+  "AGR_BNP",
+  "AGR_HSBC",
+];
+
+const CP_DISPLAY = {
+  "AGR_GOLDMAN":  "Goldman Sachs",
+  "AGR_JPMORGAN": "JPMorgan Chase",
+  "AGR_DEUTSCHE": "Deutsche Bank",
+  "AGR_BNP":      "BNP Paribas",
+  "AGR_HSBC":     "HSBC",
+};
+
+// Backtest mock data (static)
+const BACKTEST_DATA = [
+  { horizon: "1 Month",  exceptions: 3,  n_obs: 250, kupiec: 0.312 },
+  { horizon: "3 Month",  exceptions: 6,  n_obs: 250, kupiec: 0.081 },
+  { horizon: "6 Month",  exceptions: 11, n_obs: 250, kupiec: 0.022 },
+  { horizon: "1 Year",   exceptions: 9,  n_obs: 250, kupiec: 0.154 },
+];
+
+// Heatmap tenors and their approximate time-grid index mapping
+const HEATMAP_TENORS  = ["3M", "6M", "1Y", "2Y", "5Y"];
+const HEATMAP_TIMES   = [0.25, 0.5, 1.0, 2.0, 5.0];
+
+// ============================================================
+// Utilities
+// ============================================================
+
+function fmt(v, decimals = 2) {
+  if (v == null || isNaN(v)) return "—";
+  const abs = Math.abs(v);
+  const s   = abs.toFixed(decimals);
+  return v < 0 ? `-${s}` : s;
+}
+
+function fmtSigned(v, decimals = 2) {
+  if (v == null || isNaN(v)) return "—";
+  const abs = Math.abs(v);
+  const s   = abs.toFixed(decimals);
+  return (v < 0 ? "-" : "+") + s;
+}
+
+function valClass(v) {
+  if (v == null || isNaN(v)) return "";
+  return v < 0 ? "val-neg" : v > 0 ? "val-pos" : "val-muted";
+}
+
+function utilColor(pct) {
+  if (pct < 60)  return "var(--positive)";
+  if (pct < 85)  return "var(--warning)";
+  return "var(--negative)";
+}
+
+// Interpolate a profile at a given time t using the time_grid
+function interpProfile(timeGrid, profile, t) {
+  if (!timeGrid || !profile) return 0;
+  const n = timeGrid.length;
+  if (t <= timeGrid[0]) return profile[0];
+  if (t >= timeGrid[n-1]) return profile[n-1];
+  for (let i = 1; i < n; i++) {
+    if (timeGrid[i] >= t) {
+      const dt = timeGrid[i] - timeGrid[i-1];
+      const alpha = dt > 0 ? (t - timeGrid[i-1]) / dt : 0;
+      return profile[i-1] * (1 - alpha) + profile[i] * alpha;
+    }
+  }
+  return profile[n-1];
+}
+
+// ============================================================
+// Spinner
+// ============================================================
+
+function showSpinner(msg = "Running Monte Carlo...") {
+  document.getElementById("spinner-text").textContent = msg;
+  document.getElementById("spinner").classList.remove("hidden");
+}
+
+function hideSpinner() {
+  document.getElementById("spinner").classList.add("hidden");
+}
+
+// ============================================================
+// API calls
+// ============================================================
+
+async function fetchJSON(url, options = {}) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function runDemo() {
+  showSpinner("Running XVA demo pipeline...");
+  try {
+    _stressData = null;
+    clearStressButtons();
+    const data = await fetchJSON("/api/xva/demo");
+    _data = data;
+    renderAll(data);
+  } catch (e) {
+    console.error("Demo failed:", e);
+    alert("API unavailable — rendering mock data.");
+    _data = getMockData();
+    renderAll(_data);
+  } finally {
+    hideSpinner();
+  }
+}
+
+async function runStress(btn) {
+  const scenario = btn.dataset.scenario;
+  showSpinner(`Stressing: ${scenario}...`);
+  // Toggle active button
+  document.querySelectorAll(".stress-btn[data-scenario]").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  try {
+    const result = await fetchJSON("/api/xva/stress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenario }),
+    });
+    _stressData = result.stressed;
+    if (!_data) {
+      _data = result.baseline;
+      renderAll(_data);
+    }
+    updateExposureChart(_activeCP || CP_IDS[0]);
+  } catch (e) {
+    console.error("Stress failed:", e);
+    // Apply mock stress locally
+    _stressData = applyMockStress(_data, scenario);
+    updateExposureChart(_activeCP || CP_IDS[0]);
+  } finally {
+    hideSpinner();
+  }
+}
+
+function clearStress() {
+  _stressData = null;
+  clearStressButtons();
+  if (_data) updateExposureChart(_activeCP || CP_IDS[0]);
+}
+
+function clearStressButtons() {
+  document.querySelectorAll(".stress-btn[data-scenario]").forEach(b => b.classList.remove("active"));
+}
+
+// ============================================================
+// Mock data (used when API is unavailable)
+// ============================================================
+
+function getMockData() {
+  const BASE_TIME_GRID = [0, 0.25, 0.5, 1.0, 2.0, 3.0, 5.0];
+  const BASE_EE        = [0, 0.80, 1.40, 2.10, 2.80, 2.20, 0.00];
+  const BASE_PFE       = [0, 2.10, 3.60, 5.40, 7.20, 5.60, 0.00];
+  const BASE_EE_MPOR   = [0, 1.05, 1.82, 2.73, 3.64, 2.86, 0.00];
+
+  const CP_PARAMS = {
+    "AGR_GOLDMAN":  { scale: 1.00, cva: -0.42, dva: 0.08,  bcva: -0.34, fva: -0.15, mva: -0.06, kva: -0.03, eepe: 1.12 },
+    "AGR_JPMORGAN": { scale: 1.40, cva: -0.38, dva: 0.07,  bcva: -0.31, fva: -0.11, mva: -0.04, kva: -0.02, eepe: 1.52 },
+    "AGR_DEUTSCHE": { scale: 0.85, cva: -0.71, dva: 0.06,  bcva: -0.65, fva: -0.22, mva: -0.08, kva: -0.04, eepe: 0.88 },
+    "AGR_BNP":      { scale: 0.60, cva: -0.28, dva: 0.05,  bcva: -0.23, fva: -0.09, mva: -0.03, kva: -0.01, eepe: 0.67 },
+    "AGR_HSBC":     { scale: 0.75, cva: -0.19, dva: 0.04,  bcva: -0.15, fva: -0.07, mva: -0.02, kva: -0.01, eepe: 0.82 },
+  };
+
+  const agreements = {};
+  for (const [id, p] of Object.entries(CP_PARAMS)) {
+    const s = p.scale;
+    const total_xva = p.cva - p.dva + p.fva + p.mva + p.kva;
+    agreements[id] = {
+      id,
+      counterparty_id: id.replace("AGR_", ""),
+      time_grid:       BASE_TIME_GRID,
+      ee_profile:      BASE_EE.map(v => +(v * s).toFixed(4)),
+      pfe_profile:     BASE_PFE.map(v => +(v * s).toFixed(4)),
+      ee_mpor_profile: BASE_EE_MPOR.map(v => +(v * s).toFixed(4)),
+      ...p,
+      total_xva: +total_xva.toFixed(4),
+    };
+  }
+
+  const allCva  = Object.values(agreements).reduce((a, x) => a + x.cva,  0);
+  const allFva  = Object.values(agreements).reduce((a, x) => a + x.fva,  0);
+  const allEepe = Object.values(agreements).reduce((a, x) => a + x.eepe, 0);
+  const peakPfe = Math.max(...Object.values(agreements).flatMap(a => a.pfe_profile));
+
+  return {
+    source: "mock",
+    time_grid: BASE_TIME_GRID,
+    total_cva:  +allCva.toFixed(4),
+    total_fva:  +allFva.toFixed(4),
+    peak_pfe:   +peakPfe.toFixed(4),
+    total_eepe: +allEepe.toFixed(4),
+    agreements,
+  };
+}
+
+const STRESS_MULTIPLIERS = {
+  gfc:              { cva: 3.2, pfe: 2.8, ee: 2.4 },
+  covid:            { cva: 2.1, pfe: 1.9, ee: 1.7 },
+  rate_shock_200bp: { cva: 1.8, pfe: 1.6, ee: 1.5 },
+  credit_widening:  { cva: 2.5, pfe: 1.4, ee: 1.3 },
+};
+
+function applyMockStress(data, scenario) {
+  const mult = STRESS_MULTIPLIERS[scenario] || { cva: 1.5, pfe: 1.4, ee: 1.3 };
+  const stressed = JSON.parse(JSON.stringify(data));
+  stressed.source = "mock_stress";
+  for (const agr of Object.values(stressed.agreements)) {
+    agr.pfe_profile     = agr.pfe_profile.map(v => +(v * mult.pfe).toFixed(4));
+    agr.ee_profile      = agr.ee_profile.map(v  => +(v * mult.ee).toFixed(4));
+    agr.ee_mpor_profile = agr.ee_mpor_profile.map(v => +(v * mult.ee).toFixed(4));
+    agr.cva             = +(agr.cva * mult.cva).toFixed(4);
+  }
+  return stressed;
+}
+
+// ============================================================
+// Render all
+// ============================================================
+
+function renderAll(data) {
+  updateSourceTag(data.source);
+  updateKPIs(data);
+  renderSidebar(data);
+  const firstCp = CP_IDS.find(id => data.agreements[id]) || Object.keys(data.agreements)[0];
+  _activeCP = firstCp;
+  renderExposureChart(data, firstCp);
+  renderXVATable(data);
+  renderHeatmap(data);
+  renderBacktest();
+  highlightSidebarItem(firstCp);
+  highlightTableRow(firstCp);
+}
+
+// ============================================================
+// Source tag
+// ============================================================
+
+function updateSourceTag(source) {
+  const tag = document.getElementById("source-tag");
+  if (source === "pyxva") {
+    tag.textContent = "PYXVA ENGINE";
+    tag.className   = "source-tag pyxva";
+  } else if (source === "mock_fallback") {
+    tag.textContent = "MOCK (fallback)";
+    tag.className   = "source-tag mock";
+  } else {
+    tag.textContent = "MOCK DATA";
+    tag.className   = "source-tag mock";
+  }
+}
+
+// ============================================================
+// KPIs
+// ============================================================
+
+function updateKPIs(data) {
+  document.getElementById("kpi-cva").textContent  = fmt(data.total_cva,  2);
+  document.getElementById("kpi-fva").textContent  = fmt(data.total_fva,  2);
+  document.getElementById("kpi-pfe").textContent  = fmt(data.peak_pfe,   2);
+  document.getElementById("kpi-eepe").textContent = fmt(data.total_eepe, 2);
+}
+
+// ============================================================
+// Sidebar
+// ============================================================
+
+function renderSidebar(data) {
+  const container = document.getElementById("cp-list");
+  container.innerHTML = "";
+
+  for (const cpId of CP_IDS) {
+    const agr = data.agreements[cpId];
+    if (!agr) continue;
+
+    const cpName = CP_DISPLAY[cpId] || cpId;
+    const cvaVal = fmt(agr.cva, 2);
+
+    // Mock utilization data
+    const utilPcts = { AGR_GOLDMAN: 56, AGR_JPMORGAN: 72, AGR_DEUTSCHE: 81, AGR_BNP: 44, AGR_HSBC: 33 };
+    const utilPct  = utilPcts[cpId] || 50;
+    const color    = utilColor(utilPct);
+
+    const item = document.createElement("div");
+    item.className = "cp-item";
+    item.id = `cp-item-${cpId}`;
+    item.innerHTML = `
+      <div class="cp-left">
+        <span class="cp-name">${cpName}</span>
+        <span class="cp-cva">CVA ${cvaVal} MM</span>
+      </div>
+      <div class="cp-util-wrap">
+        <span class="cp-util-pct">${utilPct}%</span>
+        <div class="cp-util-bar">
+          <div class="cp-util-fill" style="width:${utilPct}%;background:${color}"></div>
+        </div>
+      </div>`;
+    item.addEventListener("click", () => selectCounterparty(cpId));
+    container.appendChild(item);
+  }
+}
+
+function selectCounterparty(cpId) {
+  _activeCP = cpId;
+  updateExposureChart(cpId);
+  highlightSidebarItem(cpId);
+  highlightTableRow(cpId);
+}
+
+function highlightSidebarItem(cpId) {
+  document.querySelectorAll(".cp-item").forEach(el => el.classList.remove("active"));
+  const el = document.getElementById(`cp-item-${cpId}`);
+  if (el) el.classList.add("active");
+}
+
+// ============================================================
+// Exposure Profile Chart
+// ============================================================
+
+const PLOTLY_LAYOUT_BASE = {
+  template: "plotly_dark",
+  paper_bgcolor: "rgba(0,0,0,0)",
+  plot_bgcolor:  "rgba(0,0,0,0)",
+  margin:        { t: 40, l: 52, r: 16, b: 44 },
+  font:          { family: "'SF Mono','Menlo','Monaco',monospace", size: 11, color: "#8b949e" },
+  xaxis: {
+    title: { text: "Horizon (Years)", font: { size: 10 } },
+    gridcolor: "#21262d", zerolinecolor: "#30363d",
+    tickfont: { size: 10 },
+  },
+  yaxis: {
+    title: { text: "Exposure (MM USD)", font: { size: 10 } },
+    gridcolor: "#21262d", zerolinecolor: "#30363d",
+    tickfont: { size: 10 },
+    rangemode: "tozero",
+  },
+  legend: {
+    orientation: "h",
+    x: 0, y: 1.0,
+    bgcolor: "rgba(0,0,0,0)",
+    font: { size: 10 },
+  },
+  hovermode: "x unified",
+  hoverlabel: {
+    bgcolor: "#161b22",
+    bordercolor: "#30363d",
+    font: { family: "'SF Mono','Menlo','Monaco',monospace", size: 11 },
+  },
+};
+
+const PLOTLY_CONFIG = { responsive: true, displayModeBar: false };
+
+function buildExposureTraces(agr, stressAgr) {
+  const tg  = agr.time_grid;
+  const traces = [
+    {
+      x: tg, y: agr.ee_profile,
+      name: "EE",
+      mode: "lines",
+      line: { color: "#58a6ff", width: 2 },
+      hovertemplate: "EE: %{y:.3f} MM<extra></extra>",
+    },
+    {
+      x: tg, y: agr.pfe_profile,
+      name: "PFE 97.5%",
+      mode: "lines",
+      line: { color: "#f85149", width: 2, dash: "dash" },
+      hovertemplate: "PFE 97.5%: %{y:.3f} MM<extra></extra>",
+    },
+    {
+      x: tg, y: agr.ee_mpor_profile,
+      name: "EE (MPOR)",
+      mode: "lines",
+      line: { color: "#ffa657", width: 1.5, dash: "dot" },
+      hovertemplate: "EE MPOR: %{y:.3f} MM<extra></extra>",
+    },
+  ];
+
+  if (stressAgr) {
+    traces.push({
+      x: stressAgr.time_grid || tg,
+      y: stressAgr.pfe_profile,
+      name: "PFE (Stressed)",
+      mode: "lines",
+      line: { color: "#bc8cff", width: 2, dash: "dashdot" },
+      hovertemplate: "PFE Stressed: %{y:.3f} MM<extra></extra>",
+    });
+  }
+
+  return traces;
+}
+
+let _exposureInitialised = false;
+
+function renderExposureChart(data, cpId) {
+  const agr       = data.agreements[cpId];
+  const stressAgr = _stressData?.agreements?.[cpId];
+  if (!agr) return;
+
+  const cpName = CP_DISPLAY[cpId] || cpId;
+  const traces = buildExposureTraces(agr, stressAgr);
+  const layout = {
+    ...PLOTLY_LAYOUT_BASE,
+    title: {
+      text: `Exposure Profile — ${cpName}`,
+      font: { size: 12, color: "#c9d1d9" },
+      x: 0.01,
+    },
+  };
+
+  if (_exposureInitialised) {
+    Plotly.react("exposure-chart", traces, layout, PLOTLY_CONFIG);
+  } else {
+    Plotly.newPlot("exposure-chart", traces, layout, PLOTLY_CONFIG);
+    _exposureInitialised = true;
+  }
+}
+
+function updateExposureChart(cpId) {
+  if (!_data) return;
+  renderExposureChart(_data, cpId);
+}
+
+// ============================================================
+// XVA Breakdown Table
+// ============================================================
+
+function renderXVATable(data) {
+  const tbody = document.getElementById("xva-tbody");
+  const tfoot = document.getElementById("xva-tfoot");
+  tbody.innerHTML = "";
+
+  let totCva = 0, totDva = 0, totBcva = 0, totFva = 0, totMva = 0, totKva = 0, totXva = 0;
+
+  for (const cpId of CP_IDS) {
+    const agr = data.agreements[cpId];
+    if (!agr) continue;
+
+    totCva  += agr.cva   || 0;
+    totDva  += agr.dva   || 0;
+    totBcva += agr.bcva  || 0;
+    totFva  += agr.fva   || 0;
+    totMva  += agr.mva   || 0;
+    totKva  += agr.kva   || 0;
+    totXva  += agr.total_xva || 0;
+
+    const cpName = CP_DISPLAY[cpId] || cpId;
+    const tr = document.createElement("tr");
+    tr.id = `xva-row-${cpId}`;
+    tr.innerHTML = `
+      <td>${cpName}</td>
+      <td class="${valClass(agr.cva)}">${fmt(agr.cva)}</td>
+      <td class="${valClass(agr.dva)}">${fmt(agr.dva)}</td>
+      <td class="${valClass(agr.bcva)}">${fmt(agr.bcva)}</td>
+      <td class="${valClass(agr.fva)}">${fmt(agr.fva)}</td>
+      <td class="${valClass(agr.mva)}">${fmt(agr.mva)}</td>
+      <td class="${valClass(agr.kva)}">${fmt(agr.kva)}</td>
+      <td class="${valClass(agr.total_xva)}" style="font-weight:bold">${fmt(agr.total_xva)}</td>`;
+    tr.addEventListener("click", () => selectCounterparty(cpId));
+    tbody.appendChild(tr);
+  }
+
+  tfoot.innerHTML = `<tr>
+    <td>TOTAL</td>
+    <td class="${valClass(totCva)}">${fmt(totCva)}</td>
+    <td class="${valClass(totDva)}">${fmt(totDva)}</td>
+    <td class="${valClass(totBcva)}">${fmt(totBcva)}</td>
+    <td class="${valClass(totFva)}">${fmt(totFva)}</td>
+    <td class="${valClass(totMva)}">${fmt(totMva)}</td>
+    <td class="${valClass(totKva)}">${fmt(totKva)}</td>
+    <td class="${valClass(totXva)}">${fmt(totXva)}</td>
+  </tr>`;
+}
+
+function highlightTableRow(cpId) {
+  document.querySelectorAll("#xva-tbody tr").forEach(tr => tr.classList.remove("active"));
+  const row = document.getElementById(`xva-row-${cpId}`);
+  if (row) row.classList.add("active");
+}
+
+// ============================================================
+// PFE Heatmap
+// ============================================================
+
+let _heatmapInitialised = false;
+
+function renderHeatmap(data) {
+  const cpLabels = [];
+  const zValues  = [];
+
+  for (const cpId of CP_IDS) {
+    const agr = data.agreements[cpId];
+    if (!agr) continue;
+
+    cpLabels.push(CP_DISPLAY[cpId] || cpId);
+    const tg = agr.time_grid;
+    const row = HEATMAP_TIMES.map(t => interpProfile(tg, agr.pfe_profile, t));
+    zValues.push(row);
+  }
+
+  const trace = {
+    type: "heatmap",
+    z: zValues,
+    x: HEATMAP_TENORS,
+    y: cpLabels,
+    colorscale: [
+      [0.0, "#238636"],
+      [0.4, "#e3b341"],
+      [0.7, "#f0883e"],
+      [1.0, "#f85149"],
+    ],
+    reversescale: false,
+    showscale: true,
+    colorbar: {
+      thickness: 10,
+      len: 0.8,
+      tickfont: { size: 9, color: "#8b949e" },
+      title: { text: "MM", font: { size: 9, color: "#8b949e" } },
+    },
+    hovertemplate: "%{y}<br>%{x}: %{z:.3f} MM<extra></extra>",
+    texttemplate: "%{z:.2f}",
+    textfont: { size: 9, color: "#0d1117" },
+  };
+
+  const layout = {
+    ...PLOTLY_LAYOUT_BASE,
+    margin:  { t: 10, l: 100, r: 40, b: 40 },
+    xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: null, tickfont: { size: 10 } },
+    yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: null, tickfont: { size: 10 }, automargin: true, rangemode: "normal" },
+    legend: null,
+    hovermode: "closest",
+  };
+
+  if (_heatmapInitialised) {
+    Plotly.react("heatmap-chart", [trace], layout, PLOTLY_CONFIG);
+  } else {
+    Plotly.newPlot("heatmap-chart", [trace], layout, PLOTLY_CONFIG);
+    _heatmapInitialised = true;
+  }
+}
+
+// ============================================================
+// Backtest Traffic Light
+// ============================================================
+
+function renderBacktest() {
+  const tbody = document.getElementById("backtest-tbody");
+  tbody.innerHTML = "";
+
+  for (const row of BACKTEST_DATA) {
+    const exc = row.exceptions;
+    let zone, badgeClass;
+    if (exc <= 4)      { zone = "GREEN";  badgeClass = "zone-green";  }
+    else if (exc <= 9) { zone = "YELLOW"; badgeClass = "zone-yellow"; }
+    else               { zone = "RED";    badgeClass = "zone-red";    }
+
+    const kupiec = row.kupiec < 0.05
+      ? `<span class="val-neg">${row.kupiec.toFixed(3)}</span>`
+      : `<span class="val-pos">${row.kupiec.toFixed(3)}</span>`;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.horizon}</td>
+      <td style="text-align:right">${exc}</td>
+      <td style="text-align:right;color:var(--muted)">${row.n_obs}</td>
+      <td style="text-align:right"><span class="zone-badge ${badgeClass}">${zone}</span></td>
+      <td style="text-align:right">${kupiec}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ============================================================
+// Boot
+// ============================================================
+
+(function init() {
+  // Load mock data immediately so UI is not blank
+  _data = getMockData();
+  renderAll(_data);
+
+  // Try to hit the health endpoint — if server is live, auto-run demo
+  fetch("/api/xva/health")
+    .then(r => r.json())
+    .then(h => {
+      if (h.status === "ok") runDemo();
+    })
+    .catch(() => {/* server not running – stay on mock */});
+})();
+</script>
+</body>
+</html>
