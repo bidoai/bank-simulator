@@ -88,6 +88,34 @@ _AGENT_REGISTRY: dict[str, dict] = {
         "color":         "#8b949e",
         "voice_profile": {"gender": "male", "accent": "en-US", "rate": 0.88, "pitch": 0.92},
     },
+    "Dr. Fatima Al-Rashid": {
+        "module":        "agents.technology.cdo",
+        "creator":       "create_cdo",
+        "title":         "Chief Data Officer",
+        "color":         "#b39ddb",
+        "voice_profile": {"gender": "female", "accent": "en-US", "rate": 0.95, "pitch": 1.05},
+    },
+    "Jordan Pierce": {
+        "module":        "agents.audit.internal_audit",
+        "creator":       "create_internal_auditor",
+        "title":         "Head of Internal Audit",
+        "color":         "#c62828",
+        "voice_profile": {"gender": "neutral", "accent": "en-US", "rate": 0.88, "pitch": 0.97},
+    },
+    "Margaret Okonkwo": {
+        "module":        "agents.legal.general_counsel",
+        "creator":       "create_general_counsel",
+        "title":         "General Counsel & Corporate Secretary",
+        "color":         "#4fc3f7",
+        "voice_profile": {"gender": "female", "accent": "en-GB", "rate": 0.90, "pitch": 1.00},
+    },
+    "Dr. Samuel Achebe": {
+        "module":        "agents.risk_desk.model_validation_officer",
+        "creator":       "create_model_validation_officer",
+        "title":         "Head of Model Validation",
+        "color":         "#ce93d8",
+        "voice_profile": {"gender": "male", "accent": "en-US", "rate": 0.88, "pitch": 0.95},
+    },
 }
 
 # Default agent order for a full board meeting
