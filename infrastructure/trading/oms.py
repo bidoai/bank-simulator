@@ -84,6 +84,8 @@ class OrderManagementSystem:
         try:
             lim = risk_service.limit_manager.get_limit(limit_name)
             current = abs(lim.current_value)
+            if lim.hard_limit <= 0:
+                return True, f"Limit {limit_name} has no hard limit configured.", est_var
             projected_util = (current + est_var) / lim.hard_limit * 100.0
         except KeyError:
             return True, f"Limit {limit_name} not found; proceeding.", est_var
@@ -169,7 +171,7 @@ class OrderManagementSystem:
             try:
                 lim = risk_service.limit_manager.get_limit(limit_name)
                 var_after = abs(lim.current_value)
-                util = abs(lim.current_value) / lim.hard_limit * 100.0
+                util = abs(lim.current_value) / lim.hard_limit * 100.0 if lim.hard_limit > 0 else 0.0
                 limit_headroom_pct = max(0.0, 100.0 - util)
                 if util >= 100.0:
                     limit_status = "RED"
@@ -220,6 +222,8 @@ class OrderManagementSystem:
             "limit_status": limit_status,
         }
         self._fills.insert(0, blotter_entry)
+        if len(self._fills) > 1000:
+            self._fills = self._fills[:1000]
 
         log.info(
             "oms.trade_filled",

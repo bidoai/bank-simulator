@@ -24,6 +24,7 @@ class TradingBroadcaster:
     def __init__(self) -> None:
         self._clients: set = set()
         self._last_tick: float = 0.0
+        self._last_positions: float = 0.0
 
     # ── Connection ─────────────────────────────────────────────────────────────
 
@@ -51,11 +52,11 @@ class TradingBroadcaster:
         await self._broadcast({"type": "tick", "prices": prices})
 
     async def broadcast_positions(self, report: dict) -> None:
-        """Broadcast a full positions update, throttled."""
+        """Broadcast a full positions update, throttled independently from ticks."""
         now = time.monotonic()
-        if now - self._last_tick < _TICK_THROTTLE_S:
+        if now - self._last_positions < _TICK_THROTTLE_S:
             return
-        self._last_tick = now
+        self._last_positions = now
         await self._broadcast({"type": "positions", "data": report})
 
     # ── Internal ──────────────────────────────────────────────────────────────

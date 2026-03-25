@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+from pathlib import Path
 
 import aiosqlite
 import structlog
@@ -33,7 +34,7 @@ log = structlog.get_logger(__name__)
 
 router = APIRouter()
 
-_DB_PATH = "data/oms_trades.db"
+_DB_PATH = str(Path(__file__).parent.parent / "data" / "oms_trades.db")
 
 # ---------------------------------------------------------------------------
 # Request schema
