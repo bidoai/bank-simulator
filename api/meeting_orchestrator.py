@@ -100,7 +100,7 @@ _AGENT_REGISTRY: dict[str, dict] = {
         "creator":       "create_internal_auditor",
         "title":         "Head of Internal Audit",
         "color":         "#c62828",
-        "voice_profile": {"gender": "neutral", "accent": "en-US", "rate": 0.88, "pitch": 0.97},
+        "voice_profile": {"gender": "female", "accent": "en-US", "rate": 0.88, "pitch": 0.97},
     },
     "Margaret Okonkwo": {
         "module":        "agents.legal.general_counsel",

@@ -53,8 +53,23 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     except Exception as exc:
         log.error("meeting_store.startup_failed", error=str(exc))
 
-    # Ensure data/ directory exists for OMS SQLite
+    # Ensure data/ directory exists for OMS + new infrastructure SQLite files
     Path(__file__).parent.parent.joinpath("data").mkdir(exist_ok=True)
+
+    # Initialise event log
+    try:
+        from infrastructure.events.event_log import event_log as _event_log  # noqa: F841
+        log.info("event_log.ready")
+    except Exception as exc:
+        log.error("event_log.startup_failed", error=str(exc))
+
+    # Initialise instrument master and seed defaults
+    try:
+        from infrastructure.reference.instrument_master import instrument_master as _im
+        _im.seed_defaults()
+        log.info("instrument_master.ready")
+    except Exception as exc:
+        log.error("instrument_master.startup_failed", error=str(exc))
 
     # Start market data feed and wire into OMS + position mark-to-market
     try:
@@ -182,6 +197,41 @@ try:
     log.info("risk_routes loaded")
 except ImportError:
     log.warning("api.risk_routes not found — risk API endpoints unavailable")
+
+try:
+    from api import capital_routes
+    app.include_router(capital_routes.router, prefix="/api")
+    log.info("capital_routes loaded")
+except ImportError:
+    log.warning("api.capital_routes not found — regulatory capital API endpoints unavailable")
+
+try:
+    from api import treasury_routes
+    app.include_router(treasury_routes.router, prefix="/api")
+    log.info("treasury_routes loaded")
+except ImportError:
+    log.warning("api.treasury_routes not found — treasury FTP/ALM API endpoints unavailable")
+
+try:
+    from api import credit_routes
+    app.include_router(credit_routes.router, prefix="/api")
+    log.info("credit_routes loaded")
+except ImportError:
+    log.warning("api.credit_routes not found — credit ECL API endpoints unavailable")
+
+try:
+    from api import compliance_routes
+    app.include_router(compliance_routes.router, prefix="/api")
+    log.info("compliance_routes loaded")
+except ImportError:
+    log.warning("api.compliance_routes not found — AML compliance API endpoints unavailable")
+
+try:
+    from api import metrics_routes
+    app.include_router(metrics_routes.router, prefix="/api")
+    log.info("metrics_routes loaded")
+except ImportError:
+    log.warning("api.metrics_routes not found — metrics API endpoints unavailable")
 
 # ---------------------------------------------------------------------------
 # Health check

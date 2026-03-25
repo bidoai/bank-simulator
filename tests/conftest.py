@@ -65,6 +65,22 @@ class MockAnthropicClient:
         return MockMessage(self._response_text)
 
 
+@pytest.fixture(autouse=True)
+def reset_observer_singleton():
+    """Reset observer module singleton before/after each test for isolation."""
+    try:
+        import api.observer_routes as _obs
+        _obs._observer = None
+    except Exception:
+        pass
+    yield
+    try:
+        import api.observer_routes as _obs
+        _obs._observer = None
+    except Exception:
+        pass
+
+
 @pytest.fixture
 def mock_client() -> MockAnthropicClient:
     """A MockAnthropicClient that always succeeds."""
