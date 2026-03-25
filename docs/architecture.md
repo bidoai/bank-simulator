@@ -5,7 +5,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         APEX GLOBAL BANK                            │
-│                     AI Agent Simulator v1.0                         │
+│                     AI Agent Simulator v0.2                         │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────── AGENT LAYER ────────────────────────────────┐
@@ -14,18 +14,23 @@
 │  ─────────         ───────              ───────        ────────     │
 │  CEO               Lead Trader          CRO            Observer     │
 │  CTO               Trading Desk         Compliance     (narrates    │
-│  [CFO]             Quant Research       [CDO]           for reader) │
-│                    [Market Maker]       [CISO]                      │
-│                    [Head of IBD]        [Credit]                    │
+│  CFO               Quant Research       CDO             for reader) │
+│                    Market Maker         CISO                        │
+│                    Head of IBD          Credit                      │
 │                                                                     │
-│  [] = proposed future agents                                        │
+│  3LoD / LEGAL                           ADVISORY                    │
+│  ────────────                           ────────                    │
+│  Head of Internal Audit                 Meridian Consulting         │
+│  General Counsel                        (external board session)    │
+│  Model Validation Officer                                           │
 └─────────────────────────────────────────────────────────────────────┘
               │              │              │
               ▼              ▼              ▼
 ┌───────────────────── ORCHESTRATOR ──────────────────────────────────┐
 │  Boardroom — facilitates multi-agent discussion sessions            │
 │  • Turn management          • Cross-agent context injection         │
-│  • Observer narration       • Transcript export                     │
+│  • Observer narration       • Scenario state injection              │
+│  • Transcript export        • SQLite-backed meeting history         │
 └─────────────────────────────────────────────────────────────────────┘
               │
               ▼
@@ -33,19 +38,25 @@
 │                                                                     │
 │  MARKET DATA              TRADING              RISK                 │
 │  ──────────               ───────              ────                 │
-│  FeedHandler (GBM)        OrderBook (CLOB)     VaRCalculator        │
-│  Quote/OHLCV              ExecutionEngine      StressTester         │
-│  MarketDepth              PositionManager      LimitManager         │
-│                           AlgoEngine           PnLCalculator        │
+│  FeedHandler (GBM)        OMS (singleton)      RiskService          │
+│  Quote/OHLCV              PositionManager      VaRCalculator (MC)   │
+│  MarketDepth              GreeksCalculator     LimitManager         │
+│  11 instruments           TradingBroadcaster   CounterpartyRegistry │
+│                                                CorrelationRegime    │
+│                                                ConcentrationRisk    │
+│                                                RegulatoryCapital    │
 │                                                                     │
-│  COMPLIANCE                                                         │
-│  ──────────                                                         │
-│  AMLMonitor               KYCEngine            RegulatoryReporter   │
+│  CREDIT / COMPLIANCE      TREASURY             REFERENCE            │
+│  ────────────────────     ────────             ─────────            │
+│  IFRS9 ECL Engine         FTP Engine           InstrumentMaster     │
+│  AML Monitor              ALM Engine           EventLog             │
+│                                                PositionSnapshots    │
 └─────────────────────────────────────────────────────────────────────┘
               │
               ▼
 ┌───────────────────────── MODELS ────────────────────────────────────┐
-│  Instrument · Trade · Position · RiskMetrics · MarketData           │
+│  Instrument · Trade · TradeConfirmation · Position · RiskMetrics    │
+│  MarketData · MeetingTurn · BookPosition                            │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -59,43 +70,71 @@
 | CTO (Marcus Rivera) | Claude Opus 4.6 | Technology architecture, AI platform |
 | CRO (Dr. Priya Nair) | Claude Opus 4.6 | Risk framework, VaR, stress testing |
 | Lead Trader (James Okafor) | Claude Opus 4.6 | Trading strategy, desk management |
-| Trading Desk | Claude Opus 4.6 | Live execution, book management, real-time hedging |
+| Trading Desk | Claude Opus 4.6 | Live execution, book management |
 | Quant (Dr. Yuki Tanaka) | Claude Opus 4.6 | Pricing/risk models, alpha research |
 | Compliance (Sarah Mitchell) | Claude Opus 4.6 | Regulatory compliance, AML/KYC |
+| Head of Internal Audit (Jordan Pierce) | Claude Opus 4.6 | 3rd line — independent audit, Audit Committee |
+| General Counsel (Margaret Okonkwo) | Claude Opus 4.6 | GC/Corporate Secretary, ISDA, legal entity |
+| Model Validation Officer (Dr. Samuel Achebe) | Claude Opus 4.6 | SR 11-7 independent validation |
 | Observer | Claude Opus 4.6 | Narrator — explains banking to the reader |
 
-### Proposed Additional Agents
-
-| Agent | Priority | Rationale |
-|-------|----------|-----------|
-| CFO | High | Capital allocation, P&L reporting, investor relations |
-| Chief Credit Officer | High | Loan portfolio — often >50% of bank revenue |
-| Head of Operations | High | Settlement, clearing — the hidden machinery |
-| Head of Treasury | High | Liquidity, funding, balance sheet management |
-| CDO | Medium | Data governance — the AI fuel |
-| CISO | Medium | Cyber risk — existential threat |
-| Head of Investment Banking | Medium | Advisory revenue — M&A, ECM, DCM |
-| Head of Wealth Management | Medium | Fee income — private banking |
+Stub agents (factory functions, not yet deployed): CDO, CISO, Head of Operations, Head of Credit, Head of Market Risk, Head of Rates, Head of Equity Derivatives.
 
 ## Infrastructure
 
 ### Market Data Feed
-- **GBM simulation**: Geometric Brownian Motion price generation
-- **Instruments**: 9 instruments across equities, FX, rates, commodities
-- **Tick interval**: Configurable (default 500ms)
-- **Subscribers**: Callback pattern — agents register to receive quotes
+- **GBM simulation**: Geometric Brownian Motion price generation, 500ms tick interval
+- **Instruments**: 11 instruments (equities: AAPL/MSFT/SPY/NVDA; FX: EURUSD/GBPUSD; rates: US10Y/US2Y; options: AAPL_CALL_200; IRS: USD_IRS_5Y)
+- **Subscribers**: Callback pattern — OMS and PositionManager mark-to-market on every tick
 
-### Order Book
-- **Type**: Central Limit Order Book (CLOB)
-- **Priority**: Price-time (best price wins; ties go to earliest order)
-- **Order types**: Market, Limit (Stop and Algo planned)
-- **Thread safety**: Single-threaded asyncio model
+### Order Management System (OMS)
+- **Submit order**: fill at mid price → pre-trade VaR check → book position → compute Greeks → re-run Monte Carlo VaR snapshot → TradeConfirmation
+- **SQLite persistence**: every fill written to `data/oms_trades.db` via aiosqlite
+- **WebSocket**: fills, ticks, and position updates pushed to `/ws/trading` clients via `TradingBroadcaster`
+- **Blotter**: capped at 1,000 in-memory entries; GET /api/trading/blotter
+
+### Greeks Calculator
+- **Equities**: delta = qty × price (delta-1)
+- **Bonds (US10Y duration=8.5, US2Y duration=1.9)**: DV01 per bp
+- **FX**: USD notional delta
+- **Equity options** (`_CALL_` / `_PUT_` in ticker): full Black-Scholes (T=0.25, σ=0.30, r=0.045, multiplier=100)
+- **IRS (USD_IRS_5Y)**: DV01 = qty × 0.0004
+- Aggregates per-book and portfolio on demand
 
 ### Risk Engine
-- **VaR methods**: Historical Simulation, Parametric, Monte Carlo
-- **Confidence**: 99% (regulatory standard)
-- **Horizon**: 1-day (regulatory) or 10-day (Basel)
-- **Stress scenarios**: GFC 2008, COVID 2020, Rates Shock, Geopolitical
+- **VaR**: Monte Carlo (2,000 paths), 99% confidence, 1-day horizon; parametric for pre-trade checks
+- **Regime-aware**: normal vs stress correlation matrices (HMM-proxy detection via realized cross-asset vol)
+- **Limits**: desk-level VaR limits updated on every trade; headroom % returned in TradeConfirmation
+- **Regulatory capital**: Basel III SA RWA with CET1/Tier1/Total/Leverage ratios
+- **Concentration risk**: single-name 5%, sector 25%, geography 40% limits with HHI
+
+### Credit & Compliance
+- **IFRS 9 ECL**: Stage 1/2/3 classification, 50-obligor sample portfolio, ~1.5-3% coverage ratio
+- **AML Monitor**: 6 rule types (sanctions, large-tx, structuring, velocity, round-number, unusual pattern)
+
+### Treasury
+- **FTP Engine**: tenor-matched USD swap rate + product liquidity premiums per desk
+- **ALM Engine**: 7-bucket repricing gap, NII/EVE sensitivity (+200bps scenarios), behavioral deposit model
+
+## API
+
+```
+GET  /api/boardroom/meetings        — list all past boardroom sessions (SQLite)
+GET  /api/boardroom/meetings/{id}   — meeting detail + turns
+POST /api/boardroom/meetings        — start a new meeting
+POST /api/observer/chat             — ask the Observer anything about the simulation
+POST /api/trading/orders            — submit a market order (real OMS execution)
+GET  /api/trading/blotter           — live blotter from OMS
+GET  /api/trading/greeks            — portfolio and per-book Greeks from real positions
+GET  /api/trading/pnl               — P&L from PositionManager
+GET  /api/risk/snapshot             — full risk snapshot (VaR, limits, positions)
+GET  /api/capital/ratios            — Basel III capital ratios
+GET  /api/credit/ecl/portfolio      — IFRS 9 ECL summary
+GET  /api/compliance/aml/alerts     — AML alerts
+GET  /api/treasury/alm/report       — ALM NII/EVE report
+WS   /ws/boardroom                  — real-time boardroom transcript stream
+WS   /ws/trading                    — fill / tick / positions events
+```
 
 ## Running the Simulator
 
@@ -107,28 +146,40 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env: ANTHROPIC_API_KEY=sk-ant-...
 
-# Run founding board meeting
+# Start the API server (all 6 dashboard panels)
+uvicorn api.main:app --reload
+
+# Open in browser
+open http://localhost:8000
+
+# Run founding board meeting (standalone CLI)
 python main.py
 
 # List agents
 python main.py --list-agents
-
-# Dry run (no API calls)
-python main.py --dry-run
-
-# Custom export path
-python main.py --export my_transcript.md
 ```
+
+## Dashboard Pages
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Home | `/` | Landing page with system overview |
+| Boardroom | `/boardroom` | Live multi-agent AI boardroom meeting |
+| Trading | `/trading` | Trade execution demo + live OMS blotter |
+| XVA | `/xva` | CVA/DVA/FVA analytics |
+| Models | `/models` | SR 11-7 model governance registry |
+| Scenarios | `/scenarios` | Market stress scenario launcher |
 
 ## Learning Objectives
 
-After running the founding board meeting scenario, you will understand:
+After exploring the simulator, you will understand:
 
-1. **Bank structure**: The functional divisions (front/middle/back office) and how they interact
-2. **Revenue model**: How banks actually make money (NIM, trading, fees)
-3. **Risk management**: VaR, stress testing, Greeks, and why they matter
-4. **Trading operations**: Market-making, order flow, hedging, and execution
-5. **Regulatory framework**: Basel III, Dodd-Frank, MiFID II at a conceptual level
-6. **AI in banking**: Where it creates value and where it creates new risks
-7. **Technology**: Why banking technology is so complex (latency, reliability, legacy debt)
-8. **Compliance**: AML/KYC, the three lines of defense, and what happens when it fails
+1. **Bank structure**: Front/middle/back office divisions and how they interact
+2. **Revenue model**: Net interest margin, trading P&L, fee income
+3. **Risk management**: VaR (parametric vs Monte Carlo), Greeks, correlation regimes, limit frameworks
+4. **Trade lifecycle**: OMS → fill → Greeks → VaR re-run → limit check → blotter → WebSocket broadcast
+5. **Regulatory capital**: Basel III SA RWA, CET1 ratios, leverage ratio
+6. **Credit risk**: IFRS 9 ECL staging, PD/LGD/EAD framework
+7. **Treasury management**: FTP pricing, ALM/NII/EVE sensitivity, duration gap
+8. **Compliance**: AML transaction monitoring, three lines of defense
+9. **AI in banking**: Multi-agent simulation, cost model, agent persona design
