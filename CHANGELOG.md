@@ -3,6 +3,35 @@
 All notable changes to Apex Global Bank Simulator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.2.0.0] - 2026-03-25
+
+### Added
+- **OMS + Trade Execution Pipeline**: end-to-end demo — click a button → fill at mid price → Greeks → VaR before/after → live dashboard update (`infrastructure/trading/oms.py`, `api/oms_routes.py`)
+- **GreeksCalculator**: Black-Scholes for equity options, DV01 for bonds/IRS, delta-1 for equities and FX; aggregates per-book and portfolio greeks on demand (`infrastructure/trading/greeks.py`)
+- **TradingBroadcaster**: WebSocket singleton for `/ws/trading` pushing fill, tick, and positions events to the trading dashboard (`api/trading_broadcaster.py`)
+- **MarketDataFeed subscription**: ticks now mark-to-market all positions and broadcast live price updates to connected clients
+- **SQLite OMS persistence**: every filled order is written to `data/oms_trades.db` via aiosqlite in a fire-and-forget background task
+- **New agents**: Jordan Pierce (Internal Audit), Margaret Okonkwo (General Counsel), Dr. Samuel Achebe (Model Validation Officer), plus CDO/CISO/Ops/risk-desk stubs
+- **Risk engines**: two-regime correlation model, SA RWA regulatory capital, concentration risk monitor (`infrastructure/risk/`)
+- **Credit & Compliance modules**: IFRS 9 ECL engine (Stage 1/2/3 classification), AML transaction monitor with pattern detection (`infrastructure/credit/`, `infrastructure/compliance/`)
+- **Treasury modules**: FTP engine (tenor-matched swap rates), ALM engine (NII/EVE sensitivity and duration gap) (`infrastructure/treasury/`)
+- **Infrastructure foundation**: event log, instrument master reference data, position snapshots, API metrics (`infrastructure/events/`, `infrastructure/reference/`, `infrastructure/metrics/`, `infrastructure/persistence/`)
+- **Consulting scenario**: Meridian Consulting advisory board meeting with full scenario script (`agents/consulting/`, `scenarios/consulting_review_meeting.py`)
+- **Shared navigation**: universal fixed navbar injected by `dashboard/shared_nav.js` across all 6 dashboard pages; brand click navigates to home
+
+### Changed
+- Trading dashboard (`dashboard/trading.html`): replaced mock hardcoded data with live OMS; added 6 demo trade buttons, manual trade form, confirmation modal with Greeks + VaR before/after; WebSocket-driven updates (30s polling fallback)
+- `api/main.py`: lifespan now starts MarketDataFeed, wires OMS, subscribes tick callbacks, initialises all new infrastructure singletons; oms_routes registered before trading_routes for endpoint shadowing
+- `infrastructure/market_data/feed_handler.py`: added NVDA and US2Y to SEED_PRICES; `stop()` made async
+
+### Fixed
+- `api/oms_routes.py`: `_DB_PATH` changed from relative string to absolute `Path(__file__)` anchor
+- `infrastructure/trading/oms.py`: ZeroDivisionError guard when `hard_limit == 0`; `_fills` list capped at 1,000 entries
+- `api/trading_broadcaster.py`: `broadcast_positions` now uses independent `_last_positions` throttle (was sharing `_last_tick`, suppressing tick messages when positions were broadcast)
+- `.gitignore`: added `.DS_Store` rule; untracked stale `.DS_Store` from repo root
+
+---
+
 ## [0.1.1.0] - 2026-03-24
 
 ### Added

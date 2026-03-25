@@ -50,9 +50,10 @@
 **Context:** Three new files: `infrastructure/risk/risk_service.py` (wires all three systems, runs MC VaR per desk, updates limits), `infrastructure/risk/counterparty_registry.py` (formal counterparty data with ratings, ISDA flags, PFE limits), `api/risk_routes.py` (7 REST endpoints: snapshot, limits, counterparties, positions, on-demand VaR). Decided in market risk boardroom session 2026-03-24.
 **Completed:** v0.1.2.0
 
-### TODO-011: Greeks Pipeline (DV01, Vega, CS01) — P2
-**What:** Pricer layer between PositionManager and risk metrics. DV01 for fixed income, Black-Scholes Greeks for equity derivatives, CS01 for CDS. Required to make sensitivity limits (DV01 $25M/bp, vega $15M/1%vol) enforceable.
-**Effort:** M | **Priority:** P2 | **Depends on:** nothing
+### TODO-011: Greeks Pipeline (DV01, Vega, CS01) ✅ DONE
+**What:** Pricer layer between PositionManager and risk metrics. DV01 for fixed income, Black-Scholes Greeks for equity derivatives, CS01 for CDS.
+**Context:** `infrastructure/trading/greeks.py` — `GreeksCalculator` with BSM for options, DV01 for bonds/IRS, delta-1 for equities/FX. Aggregates per-book and portfolio. Exposed via `GET /api/trading/greeks` (live from real positions).
+**Completed:** v0.2.0.0
 
 ### TODO-012: Stressed VaR + FRTB Backtesting — P2
 **What:** Historical market data store for 2007-2009 GFC and 2020 COVID windows. Continuous backtesting runner to track IMA exceptions (3 in 250 days triggers revert to Standardised Approach).
@@ -124,6 +125,11 @@
 ### TODO-024: DFAST/CCAR Stress Testing Framework — P2
 **What:** Multi-year forward capital adequacy projection under baseline, adverse, severely adverse scenarios. Uses regulatory_capital engine + scenario generator.
 **Effort:** M | **Priority:** P2 | **Depends on:** TODO-016
+
+### TODO-025: OMS Hardening (concurrency, event loop, pre-trade consistency) — P3
+**What:** Harden the OMS for concurrent use: add asyncio.Lock around `submit_order`, offload `risk_service.run_snapshot()` to a thread-pool executor (blocks event loop ~100ms), make `_persist_trade` non-fire-and-forget, align pre-trade (parametric VaR) and post-trade (Monte Carlo VaR) methodologies.
+**Why:** Adversarial review identified these as latent issues. For a single-user demo they don't matter; for multi-user or production they would cause data corruption.
+**Effort:** S (CC: ~15 min) | **Priority:** P3 | **Depends on:** nothing
 
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
