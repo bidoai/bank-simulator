@@ -25,9 +25,16 @@ class BookPosition:
     desk: str
     instrument: str          # ticker / ID
     quantity: float          # positive = long, negative = short
-    avg_cost: float          # average cost basis (FIFO)
+    avg_cost: float          # weighted-average of remaining FIFO lots
     last_price: float        # current market price
     currency: str = "USD"
+
+    def __post_init__(self):
+        # FIFO lot queue: list of [qty, price] pairs in arrival order.
+        # Seeded from (quantity, avg_cost) when constructed with a non-zero position.
+        self._lots: list[list[float]] = (
+            [[abs(self.quantity), self.avg_cost]] if self.quantity != 0 else []
+        )
 
     @property
     def notional(self) -> float:
@@ -51,37 +58,58 @@ class BookPosition:
         self.last_price = new_price
         return self.unrealised_pnl - old_pnl
 
+    def _update_avg_cost(self) -> None:
+        """Recompute avg_cost from remaining FIFO lots."""
+        if not self._lots or self.quantity == 0:
+            self.avg_cost = 0.0
+        else:
+            total_cost = sum(q * p for q, p in self._lots)
+            total_qty = sum(q for q, _ in self._lots)
+            self.avg_cost = total_cost / total_qty if total_qty else 0.0
+
     def apply_trade(self, qty: float, price: float) -> float:
         """
         Apply a new trade. Returns realised P&L from any closing trades.
-        Uses FIFO cost basis.
+        Uses true FIFO cost basis: oldest lot is consumed first when closing.
         """
         realised = 0.0
-        # Closing trade (reducing or flipping position)
-        if self.quantity != 0 and (self.quantity * qty < 0):
-            closing_qty = min(abs(qty), abs(self.quantity))
-            if self.quantity > 0:  # we're long, selling
-                realised = closing_qty * (price - self.avg_cost)
-                self.quantity += qty  # qty is negative
-            else:  # we're short, buying back
-                realised = closing_qty * (self.avg_cost - price)
-                self.quantity += qty  # qty is positive
 
-            # If flipped, start new position
-            if self.quantity == 0:
-                self.avg_cost = 0.0
-            elif self.quantity * qty > 0:  # flipped sign
-                self.avg_cost = price
+        if self.quantity != 0 and (self.quantity * qty < 0):
+            # Closing (and possibly flipping) trade
+            closing_long = self.quantity > 0   # True → we're long, trade is a sell
+            remaining = abs(qty)
+
+            while remaining > 1e-10 and self._lots:
+                lot_qty, lot_price = self._lots[0]
+                consumed = min(remaining, lot_qty)
+                if closing_long:
+                    realised += consumed * (price - lot_price)
+                else:
+                    realised += consumed * (lot_price - price)
+                remaining -= consumed
+                lot_qty -= consumed
+                if lot_qty < 1e-10:
+                    self._lots.pop(0)
+                else:
+                    self._lots[0] = [lot_qty, lot_price]
+
+            self.quantity += qty
+
+            if abs(self.quantity) < 1e-10:
+                self.quantity = 0.0
+                self._lots.clear()
+            elif remaining > 1e-10:
+                # Position flipped; open a new lot for the excess
+                self._lots = [[remaining, price]]
+
+            self._update_avg_cost()
             return realised
 
-        # Opening or adding to position
-        new_total_qty = self.quantity + qty
-        if new_total_qty != 0:
-            self.avg_cost = (
-                (self.quantity * self.avg_cost + qty * price) / new_total_qty
-            )
-        self.quantity = new_total_qty
-        return realised
+        # Opening or adding to existing position
+        self.quantity += qty
+        self._lots.append([qty, price])
+        self._update_avg_cost()
+        return 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -278,8 +306,11 @@ class PositionManager:
             return {"firm": "APEX", "total_pnl": 0.0, "message": "No positions"}
 
         by_desk: dict[str, dict] = {}
-        for desk in self.DESK_BOOKS:
-            by_desk[desk] = self.get_desk_report(desk)
+        all_desks = sorted({b.desk for b in all_books})
+        for desk in all_desks:
+            report = self.get_desk_report(desk)
+            if "error" not in report:
+                by_desk[desk] = report
 
         total_realised   = sum(b.realised_pnl   for b in all_books)
         total_unrealised = sum(b.unrealised_pnl for b in all_books)

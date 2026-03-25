@@ -182,7 +182,7 @@ def get_greeks() -> dict:
             delta_limit = 500_000_000
 
         try:
-            veg_lim = risk_service.limit_manager.get_limit("EQUITY_VEGA")
+            veg_lim = risk_service.limit_manager.get_limit("VEGA_FIRM")
             vega_limit = veg_lim.hard_limit
         except (KeyError, AttributeError):
             vega_limit = 50_000_000
