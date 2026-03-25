@@ -149,6 +149,74 @@
 
     /* Plotly chart containers */
     #pnl-chart { height: 200px; }
+
+    /* Trade execution panel */
+    .trade-panel {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .demo-trades {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    }
+    .demo-btn {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 5px; padding: 8px 10px; cursor: pointer;
+      font-family: monospace; font-size: 11px; color: var(--text);
+      text-align: left; transition: border-color 0.2s;
+    }
+    .demo-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .demo-btn .btn-side  { font-weight: 600; font-size: 10px; display: block; margin-bottom: 2px; }
+    .demo-btn .btn-side.buy  { color: var(--positive); }
+    .demo-btn .btn-side.sell { color: var(--negative); }
+    .demo-btn .btn-ticker { font-size: 13px; font-weight: 600; color: var(--text); }
+    .demo-btn .btn-detail { color: var(--muted); font-size: 10px; }
+
+    .manual-form {
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 6px; align-items: end;
+    }
+    .form-group label { font-size: 10px; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 3px; }
+    .form-group select, .form-group input {
+      width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 4px; padding: 6px 8px; color: var(--text);
+      font-family: monospace; font-size: 12px;
+    }
+    .exec-btn {
+      background: var(--accent); border: none; border-radius: 5px; color: #0d1117;
+      font-family: monospace; font-size: 12px; font-weight: 700;
+      padding: 7px 16px; cursor: pointer; white-space: nowrap;
+    }
+    .exec-btn:hover { opacity: 0.85; }
+    .exec-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* WS live indicator */
+    .ws-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); display: inline-block; margin-right: 4px;
+    }
+    .ws-dot.live { background: var(--positive); box-shadow: 0 0 6px rgba(63,185,80,.6); }
+
+    /* Confirmation modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #161b22; border: 1px solid var(--border);
+      border-radius: 8px; padding: 24px; min-width: 380px; max-width: 480px;
+    }
+    .modal-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .modal-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+    .modal-field-value { font-size: 13px; color: var(--text); font-weight: 500; }
+    .modal-section { font-size: 11px; color: var(--muted); margin-bottom: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+    .var-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; }
+    .modal-close {
+      width: 100%; margin-top: 14px; background: var(--bg-secondary);
+      border: 1px solid var(--border); border-radius: 4px; color: var(--text);
+      font-family: monospace; font-size: 12px; padding: 7px; cursor: pointer;
+    }
+    .modal-close:hover { border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -163,6 +231,24 @@
       <a href="/scenarios">Scenarios</a>
     </div>
   </nav>
+
+  <!-- Confirmation modal -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-box">
+      <div class="modal-title" id="modal-title">Trade Confirmed</div>
+      <div class="modal-grid" id="modal-grid"></div>
+      <div class="modal-section">
+        VaR Impact &nbsp;
+        <span id="modal-var-before" style="color:var(--text)">—</span>
+        <span style="color:var(--muted)"> → </span>
+        <span id="modal-var-after"  style="color:var(--text)">—</span>
+        <span id="modal-limit-badge" class="status-chip" style="margin-left:8px">—</span>
+      </div>
+      <div class="modal-section" id="modal-greeks"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="modal-pretrade"></div>
+      <button class="modal-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
 
   <!-- KPI bar -->
   <div class="kpi-bar" id="kpi-bar">
@@ -195,6 +281,13 @@
       <div class="kpi-label">Circuit Breaker</div>
       <div class="kpi-value pos" id="kpi-cb">CLOSED</div>
       <div class="kpi-sub">System-wide</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-label">Live Feed</div>
+      <div class="kpi-value" id="kpi-feed" style="font-size:14px">
+        <span class="ws-dot" id="ws-dot"></span><span id="ws-label">connecting…</span>
+      </div>
+      <div class="kpi-sub">WebSocket</div>
     </div>
   </div>
 
@@ -269,6 +362,81 @@
       </table>
     </div>
 
+    <!-- Trade Execution panel -->
+    <div class="card full-width">
+      <div class="section-header"><div class="dot" style="background:var(--accent)"></div>Trade Execution</div>
+      <div class="trade-panel">
+
+        <!-- Demo catalog -->
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Demo trades — click to execute:</div>
+        <div class="demo-trades">
+          <button class="demo-btn" onclick="demoTrade(0)">
+            <span class="btn-side buy">BUY</span>
+            <span class="btn-ticker">AAPL</span>
+            <span class="btn-detail">5,000 shares — equity long</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(1)">
+            <span class="btn-side sell">SELL</span>
+            <span class="btn-ticker">US10Y</span>
+            <span class="btn-detail">10,000 contracts — rates short / DV01</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(2)">
+            <span class="btn-side buy">BUY</span>
+            <span class="btn-ticker">AAPL_CALL_200</span>
+            <span class="btn-detail">500 contracts — BSM Greeks</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(3)">
+            <span class="btn-side buy">BUY</span>
+            <span class="btn-ticker">EURUSD</span>
+            <span class="btn-detail">5MM notional — FX delta</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(4)">
+            <span class="btn-side buy">BUY</span>
+            <span class="btn-ticker">NVDA</span>
+            <span class="btn-detail">8,000 shares — pushes VaR toward limit</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(5)">
+            <span class="btn-side sell">SELL</span>
+            <span class="btn-ticker">SPY</span>
+            <span class="btn-detail">2,000 shares — hedge, reduces delta</span>
+          </button>
+        </div>
+
+        <!-- Manual form -->
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:4px">Or enter manually:</div>
+        <div class="manual-form">
+          <div class="form-group">
+            <label>Desk</label>
+            <select id="form-desk">
+              <option value="EQUITY">EQUITY</option>
+              <option value="RATES">RATES</option>
+              <option value="FX">FX</option>
+              <option value="CREDIT">CREDIT</option>
+              <option value="DERIVATIVES">DERIVATIVES</option>
+              <option value="COMMODITIES">COMMODITIES</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ticker</label>
+            <input id="form-ticker" type="text" placeholder="AAPL" value="AAPL">
+          </div>
+          <div class="form-group">
+            <label>Side</label>
+            <select id="form-side">
+              <option value="buy">BUY</option>
+              <option value="sell">SELL</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Quantity</label>
+            <input id="form-qty" type="number" placeholder="1000" value="1000" min="1">
+          </div>
+          <button class="exec-btn" id="exec-btn" onclick="manualTrade()">Execute</button>
+        </div>
+
+      </div>
+    </div>
+
   </div><!-- main-grid -->
 
   <script>
@@ -280,15 +448,12 @@
         maximumFractionDigits: decimals,
       }).format(n);
 
-    const fmtMM = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
-    const fmtK  = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
-    const fmtPnl = (n) => {
-      if (n == null) return '—';
-      const sign = n >= 0 ? '+' : '';
-      return `${sign}${fmtMM(n)}`;
-    };
-    const pnlClass = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
+    const fmtMM  = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
+    const fmtK   = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
+    const fmtPnl = (n) => { if (n == null) return '—'; return `${n >= 0 ? '+' : ''}${fmtMM(n)}`; };
+    const pnlClass   = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
     const colorClass = (pct) => pct > 100 ? 'breach' : pct > 80 ? 'warn' : 'ok';
+    const statusColor = (s) => s === 'GREEN' ? 'var(--positive)' : s === 'RED' ? 'var(--negative)' : 'var(--warning)';
 
     // ── Fetch & render ────────────────────────────────────────────────────────
 
@@ -476,18 +641,141 @@
       });
     }
 
+    // ── Demo trade catalog ────────────────────────────────────────────────────
+
+    const DEMO_TRADES = [
+      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'AAPL',         side:'buy',  qty:5000},
+      {desk:'RATES',       book_id:'RATES_BOOK_1', ticker:'US10Y',        side:'sell', qty:10000},
+      {desk:'DERIVATIVES', book_id:'DERIV_BOOK_1', ticker:'AAPL_CALL_200',side:'buy',  qty:500},
+      {desk:'FX',          book_id:'FX_BOOK_1',    ticker:'EURUSD',       side:'buy',  qty:5000000},
+      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'NVDA',         side:'buy',  qty:8000},
+      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'SPY',          side:'sell', qty:2000},
+    ];
+
+    const DESK_BOOKS = {
+      EQUITY:'EQ_BOOK_1', RATES:'RATES_BOOK_1', FX:'FX_BOOK_1',
+      CREDIT:'CREDIT_BOOK_1', DERIVATIVES:'DERIV_BOOK_1', COMMODITIES:'COMM_BOOK_1',
+    };
+
+    function demoTrade(idx) {
+      const t = DEMO_TRADES[idx];
+      submitOrder(t.desk, t.book_id, t.ticker, t.side, t.qty);
+    }
+
+    function manualTrade() {
+      const ticker  = document.getElementById('form-ticker').value.trim().toUpperCase();
+      const side    = document.getElementById('form-side').value;
+      const qty     = parseFloat(document.getElementById('form-qty').value);
+      const desk    = document.getElementById('form-desk').value;
+      if (!ticker || !qty || qty <= 0) { alert('Enter ticker and qty'); return; }
+      submitOrder(desk, DESK_BOOKS[desk] || 'EQ_BOOK_1', ticker, side, qty);
+    }
+
+    async function submitOrder(desk, book_id, ticker, side, qty) {
+      const btn = document.getElementById('exec-btn');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/trading/orders', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({desk, book_id, ticker, side, qty}),
+        }).catch(() => null);
+        if (!res) { alert('Network error'); return; }
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert('Order failed: ' + (err.detail || res.statusText));
+          return;
+        }
+        const conf = await res.json();
+        showConfirmation(conf);
+        // Refresh panels immediately
+        await Promise.all([loadGreeks(), loadPnl(), loadBlotter()]);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // ── Confirmation modal ────────────────────────────────────────────────────
+
+    function showConfirmation(conf) {
+      const fmtP = (n) => n == null ? '—' : `$${(n/1_000_000).toFixed(2)}MM`;
+
+      const title = document.getElementById('modal-title');
+      title.textContent = `${conf.side} ${fmt(conf.quantity)} ${conf.ticker} — FILLED`;
+      title.style.color = conf.side === 'BUY' ? 'var(--positive)' : 'var(--negative)';
+
+      document.getElementById('modal-grid').innerHTML = `
+        <div><div class="modal-field-label">UTI</div><div class="modal-field-value" style="font-size:10px">${conf.uti.slice(0,16)}…</div></div>
+        <div><div class="modal-field-label">Fill Price</div><div class="modal-field-value">$${conf.fill_price.toFixed(4)}</div></div>
+        <div><div class="modal-field-label">Notional</div><div class="modal-field-value">${fmtP(conf.notional)}</div></div>
+        <div><div class="modal-field-label">Book</div><div class="modal-field-value">${conf.book_id}</div></div>
+      `;
+
+      document.getElementById('modal-var-before').textContent = fmtP(conf.var_before);
+      document.getElementById('modal-var-after').textContent  = fmtP(conf.var_after);
+
+      const badge = document.getElementById('modal-limit-badge');
+      badge.textContent = conf.limit_status;
+      badge.style.color = statusColor(conf.limit_status);
+
+      const g = conf.greeks || {};
+      document.getElementById('modal-greeks').innerHTML =
+        `Greeks (incremental) — Δ: ${fmtK(g.delta)} | Γ: ${fmtK(g.gamma)} | ν: ${fmtK(g.vega)} | DV01: ${fmtK(g.dv01)}`;
+
+      document.getElementById('modal-pretrade').textContent = conf.pre_trade_message || '';
+
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('confirm-modal').classList.remove('active');
+    }
+
+    // Close modal on overlay click
+    document.getElementById('confirm-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // ── WebSocket ─────────────────────────────────────────────────────────────
+
+    let ws = null;
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${proto}://${location.host}/ws/trading`);
+      const dot   = document.getElementById('ws-dot');
+      const label = document.getElementById('ws-label');
+
+      ws.onopen = () => {
+        dot.classList.add('live');
+        label.textContent = 'live';
+      };
+      ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'fill') {
+          loadBlotter();   // new trade booked
+        } else if (msg.type === 'positions') {
+          loadPnl();       // P&L moved
+        }
+        // 'tick' messages are used only for WS health indicator
+      };
+      ws.onclose = () => {
+        dot.classList.remove('live');
+        label.textContent = 'reconnecting…';
+        setTimeout(connectWS, 3000);
+      };
+      ws.onerror = () => ws.close();
+      setInterval(() => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({type:'ping'})); }, 25_000);
+    }
+
     // ── Boot ─────────────────────────────────────────────────────────────────
 
     async function loadAll() {
-      await loadGreeks();
-      await loadCCR();
-      await loadPnl();
-      await loadCircuitBreaker();
-      await loadBlotter();
+      await Promise.all([loadGreeks(), loadCCR(), loadPnl(), loadCircuitBreaker(), loadBlotter()]);
     }
 
     loadAll();
-    setInterval(loadAll, 10_000);  // refresh every 10s
+    connectWS();
+    setInterval(loadAll, 30_000);  // fallback poll every 30s
   </script>
 </body>
 </html>

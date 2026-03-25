@@ -45,14 +45,54 @@ log = structlog.get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # noqa: ARG001
-    """Initialise the meeting store database at server startup."""
+    """Initialise services at server startup."""
     from api.meeting_store import store as _store
     try:
         _store.initialize()
         log.info("meeting_store.ready")
     except Exception as exc:
         log.error("meeting_store.startup_failed", error=str(exc))
+
+    # Ensure data/ directory exists for OMS SQLite
+    Path(__file__).parent.parent.joinpath("data").mkdir(exist_ok=True)
+
+    # Start market data feed and wire into OMS + position mark-to-market
+    try:
+        from infrastructure.market_data.feed_handler import MarketDataFeed
+        from infrastructure.trading.oms import oms
+        from infrastructure.risk.risk_service import risk_service
+        from api.trading_broadcaster import trading_broadcaster
+
+        _feed = MarketDataFeed()
+
+        # Sync callback: mark positions to market on every tick, then broadcast
+        def _on_tick(quote) -> None:
+            risk_service.position_manager.mark_to_market(quote.ticker, float(quote.mid))
+            # Schedule async broadcast without blocking the tick loop
+            asyncio.ensure_future(
+                trading_broadcaster.broadcast_tick({quote.ticker: float(quote.mid)})
+            )
+
+        for ticker in _feed.get_all_quotes():
+            _feed.subscribe(ticker, _on_tick)
+
+        oms.set_feed(_feed)
+
+        # Initialise OMS SQLite table
+        from api.oms_routes import _init_db
+        await _init_db()
+
+        # Start feed as background task
+        asyncio.ensure_future(_feed.start())
+        log.info("market_data.feed_started")
+    except Exception as exc:
+        log.error("market_data.startup_failed", error=str(exc))
+        _feed = None
+
     yield
+
+    if _feed is not None:
+        await _feed.stop()
 
 
 app = FastAPI(
@@ -113,6 +153,14 @@ try:
     log.info("scenarios_routes loaded")
 except ImportError:
     log.warning("api.scenarios_routes not found — scenarios API endpoints unavailable")
+
+# oms_routes MUST be registered before trading_routes — it shadows /blotter, /greeks, /pnl, /ccr
+try:
+    from api import oms_routes
+    app.include_router(oms_routes.router, prefix="/api")
+    log.info("oms_routes loaded")
+except ImportError:
+    log.warning("api.oms_routes not found — OMS endpoints unavailable")
 
 try:
     from api import trading_routes
@@ -225,6 +273,37 @@ async def ws_boardroom(websocket: WebSocket) -> None:
         pass
     finally:
         await _br.disconnect(websocket)
+
+
+@app.websocket("/ws/trading")
+async def ws_trading(websocket: WebSocket) -> None:
+    """
+    Live trading data stream — pushes fills and price ticks to the dashboard.
+    Message types: fill, tick, positions.
+    """
+    try:
+        from api.trading_broadcaster import trading_broadcaster as _tbr
+    except ImportError:
+        await websocket.accept()
+        await websocket.send_text(json.dumps({"type": "error", "message": "trading broadcaster unavailable"}))
+        return
+
+    await _tbr.connect(websocket)
+    try:
+        while True:
+            try:
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=60.0)
+                if isinstance(data, dict) and data.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+            except asyncio.TimeoutError:
+                try:
+                    await websocket.send_json({"type": "pong"})
+                except Exception:
+                    break
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await _tbr.disconnect(websocket)
 
 
 async def broadcast_boardroom_message(message: dict) -> None:

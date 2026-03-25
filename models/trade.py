@@ -101,6 +101,27 @@ class Trade(BaseModel):
         return multiplier * self.notional
 
 
+class TradeConfirmation(BaseModel):
+    """Response DTO returned by the OMS after a successful order fill."""
+    trade_id: str
+    uti: str
+    ticker: str
+    side: str
+    quantity: float
+    fill_price: float
+    notional: float
+    desk: str
+    book_id: str
+    executed_at: datetime
+    greeks: dict               # {delta, gamma, vega, theta, rho, dv01}
+    var_before: float
+    var_after: float
+    limit_headroom_pct: float
+    limit_status: str          # GREEN / YELLOW / ORANGE / RED
+    pre_trade_approved: bool
+    pre_trade_message: str
+
+
 class OrderBook(BaseModel):
     """
     The live order book for a single instrument — bids and asks.
