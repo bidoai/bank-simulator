@@ -41,7 +41,7 @@
         .shell {
             display: grid;
             grid-template-rows: var(--header-h) 1fr;
-            height: 100vh;
+            height: calc(100vh - 44px); /* 44px = global nav height */
         }
 
         /* ── Header ────────────────────────────────────────────────────────── */
@@ -703,18 +703,14 @@
             border-radius: 2px;
         }
     </style>
+    <script src="/static/shared_nav.js" defer></script>
 </head>
 <body>
 
 <div class="shell">
 
-    <!-- ── Header ──────────────────────────────────────────────────────────── -->
+    <!-- ── Header (page controls only; brand/tabs in global nav) ──────────── -->
     <header class="header">
-        <a href="/" class="header-logo">
-            <div class="bank-icon">A</div>
-            APEX GLOBAL BANK
-        </a>
-        <div class="header-divider"></div>
         <div class="header-title">Boardroom</div>
         <div class="header-spacer"></div>
         <button id="btn-mute" class="btn-mute" onclick="toggleMute()" title="Toggle voice narration">🔊</button>

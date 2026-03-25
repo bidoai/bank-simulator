@@ -44,17 +44,11 @@
       align-items: center;
       justify-content: space-between;
       position: sticky;
-      top: 0;
+      top: 44px;   /* sits just below the 44px global nav */
       z-index: 100;
     }
     .topbar-left { display: flex; align-items: center; gap: 16px; }
-    .topbar-brand {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
+
     .topbar-divider { width: 1px; height: 20px; background: var(--border); }
     .topbar-title { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
@@ -543,14 +537,13 @@
       .detail-meta { border-right: none; border-bottom: 1px solid var(--border2); }
     }
   </style>
+  <script src="/static/shared_nav.js" defer></script>
 </head>
 <body>
 
-<!-- ── Top navigation bar ─────────────────────────────────────────────────── -->
+<!-- ── Page sub-header (page-specific controls only; brand/tabs in global nav) -->
 <div class="topbar">
   <div class="topbar-left">
-    <a href="/" class="topbar-brand" style="text-decoration:none;color:inherit;cursor:pointer">Apex Global Bank</a>
-    <div class="topbar-divider"></div>
     <span class="topbar-title">Model Governance Portal</span>
   </div>
   <div class="topbar-right">

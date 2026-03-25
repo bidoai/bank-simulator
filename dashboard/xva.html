@@ -409,6 +409,7 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   </style>
+  <script src="/static/shared_nav.js" defer></script>
 </head>
 <body>
 
@@ -420,21 +421,29 @@
   </div>
 </div>
 
-<!-- Header -->
-<div class="header">
-  <div class="header-left">
-    <a href="/" class="header-logo" style="text-decoration:none;color:inherit;cursor:pointer">Apex Global Bank</a>
-    <span class="header-pipe">|</span>
-    <span class="header-title">XVA Analytics</span>
-    <span id="source-tag" class="source-tag mock">MOCK DATA</span>
-  </div>
-  <div class="header-right">
-    <span class="badge live"><span class="dot"></span>LIVE</span>
-    <button class="run-btn" onclick="runDemo()">
-      &#9654; Run Demo
-    </button>
-  </div>
-</div>
+<!-- XVA page controls injected into global nav right slot after nav loads -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var slot = document.getElementById('apex-nav-right');
+    if (slot) {
+      slot.innerHTML =
+        '<span id="source-tag" class="source-tag mock" style="' +
+          'font-size:10px;padding:2px 8px;border-radius:3px;' +
+          'background:#21262d;color:#8b949e;border:1px solid #30363d;' +
+          'font-family:ui-monospace,monospace;' +
+        '">MOCK DATA</span>' +
+        '<span class="badge live" style="' +
+          'display:flex;align-items:center;gap:4px;' +
+          'font-size:10px;color:#3fb950;' +
+        '"><span style="width:6px;height:6px;border-radius:50%;background:#3fb950;display:inline-block;"></span>LIVE</span>' +
+        '<button onclick="runDemo()" style="' +
+          'background:#58a6ff;border:none;border-radius:4px;color:#0d1117;' +
+          'font-family:ui-monospace,monospace;font-size:11px;font-weight:700;' +
+          'padding:5px 12px;cursor:pointer;' +
+        '">&#9654; Run Demo</button>';
+    }
+  });
+</script>
 
 <!-- Stress bar -->
 <div class="stress-bar">
