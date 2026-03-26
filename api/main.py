@@ -240,6 +240,13 @@ try:
 except ImportError:
     log.warning("api.collateral_routes not found — collateral API endpoints unavailable")
 
+try:
+    from api import stress_routes
+    app.include_router(stress_routes.router, prefix="/api")
+    log.info("stress_routes loaded")
+except ImportError:
+    log.warning("api.stress_routes not found — DFAST stress API endpoints unavailable")
+
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
