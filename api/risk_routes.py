@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from infrastructure.risk.risk_service import risk_service
 from infrastructure.risk.counterparty_registry import counterparty_registry
 from infrastructure.risk.var_calculator import VaRCalculator
+from infrastructure.risk.risk_position_reader import RiskPositionReader
+from models.legal_entity import get_all_entities
 
 router = APIRouter(prefix="/risk", tags=["risk"])
 
@@ -86,3 +88,37 @@ def compute_var(body: Optional[VaRRequest] = Body(default=None)) -> dict:
 def get_positions() -> dict:
     """Firm-wide position report from PositionManager."""
     return risk_service.get_position_report()
+
+
+@router.get("/entities")
+def get_entities() -> list[dict]:
+    """All Apex legal entities (booking model)."""
+    return get_all_entities()
+
+
+@router.get("/independence-check")
+def independence_check() -> dict:
+    """
+    3LoD CQRS independence check.
+
+    Compares PositionManager (1st-line, in-memory) notional against
+    RiskPositionReader (2nd-line, EventLog-sourced) notional.
+    Divergence > 1% indicates a control gap.
+    """
+    pm_notional = risk_service.position_manager.get_firm_report().get("gross_notional", 0.0)
+
+    reader = RiskPositionReader()
+    rpr_notional = reader.total_notional()
+
+    if pm_notional > 0:
+        divergence_pct = abs(pm_notional - rpr_notional) / pm_notional * 100
+    else:
+        divergence_pct = 0.0
+
+    status = "ALIGNED" if divergence_pct < 1.0 else "DIVERGED"
+    return {
+        "pm_total_notional": pm_notional,
+        "rpr_total_notional": rpr_notional,
+        "divergence_pct": round(divergence_pct, 4),
+        "status": status,
+    }
