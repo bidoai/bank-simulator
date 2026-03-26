@@ -363,35 +363,93 @@
         }
 
         .agent-picker {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
             margin-top: 4px;
         }
 
-        .agent-chip {
-            display: inline-flex;
+        .agent-pick-card {
+            display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px 6px;
+            height: 52px;
+            border-radius: 6px;
             border: 1px solid var(--border);
             cursor: pointer;
             transition: all 0.15s;
-            color: var(--text-muted);
             background: var(--bg-base);
             user-select: none;
+            position: relative;
+            overflow: hidden;
         }
 
-        .agent-chip .chip-dot {
-            width: 6px; height: 6px;
+        .agent-pick-card:hover {
+            border-color: var(--text-dim);
+            background: var(--bg-elevated);
+        }
+
+        .agent-pick-card.selected {
+            background: var(--bg-elevated);
+        }
+
+        .agent-pick-avatar {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            border: 1px solid transparent;
         }
 
-        .agent-chip.selected {
-            border-color: currentColor;
-            background: rgba(255,255,255,0.06);
+        .agent-pick-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .agent-pick-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .agent-pick-role {
+            font-size: 10px;
+            color: #8b949e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .agent-pick-check {
+            position: absolute;
+            top: 3px;
+            right: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .agent-pick-card.selected .agent-pick-check {
+            opacity: 1;
         }
 
         .modal-footer {
@@ -788,7 +846,7 @@
                     spellcheck="false"
                 >
                 <button class="btn btn-send" onclick="sendQuestion()">Send</button>
-                <button class="btn btn-export" onclick="exportTranscript()">Export Transcript</button>
+                <button class="btn btn-export" id="btn-export" onclick="exportTranscript()">Export</button>
             </div>
 
         </main>
@@ -825,14 +883,17 @@
     // ── Constants ─────────────────────────────────────────────────────────────
 
     const AGENT_META = [
-        { name: "Alexandra Chen",  title: "Chief Executive Officer",    color: "#e3b341" },
-        { name: "Dr. Priya Nair",  title: "Chief Risk Officer",         color: "#f85149" },
-        { name: "Dr. Yuki Tanaka", title: "Head of Quant Research",     color: "#58a6ff" },
-        { name: "James Okafor",    title: "Head of Global Markets",     color: "#3fb950" },
-        { name: "Sarah Mitchell",  title: "Chief Compliance Officer",   color: "#bc8cff" },
-        { name: "Marcus Rivera",   title: "Chief Technology Officer",   color: "#79c0ff" },
-        { name: "Amara Diallo",    title: "Head of Treasury & ALM",     color: "#ffa657" },
-        { name: "The Observer",    title: "Independent Narrator",       color: "#8b949e" },
+        { name: "Alexandra Chen",    title: "Chief Executive Officer",    color: "#e3b341" },
+        { name: "Dr. Priya Nair",    title: "Chief Risk Officer",         color: "#f85149" },
+        { name: "Dr. Yuki Tanaka",   title: "Head of Quant Research",     color: "#58a6ff" },
+        { name: "James Okafor",      title: "Head of Global Markets",     color: "#3fb950" },
+        { name: "Sarah Mitchell",    title: "Chief Compliance Officer",   color: "#bc8cff" },
+        { name: "Marcus Rivera",     title: "Chief Technology Officer",   color: "#79c0ff" },
+        { name: "Amara Diallo",      title: "Head of Treasury & ALM",     color: "#ffa657" },
+        { name: "The Observer",      title: "Independent Narrator",       color: "#8b949e" },
+        { name: "Jordan Pierce",     title: "Head of Internal Audit",     color: "#ff7b72" },
+        { name: "Margaret Okonkwo",  title: "General Counsel",            color: "#d2a8ff" },
+        { name: "Dr. Samuel Achebe", title: "Model Validation Officer",   color: "#79c0ff" },
     ];
 
     // ── Voice profiles — swap provider here when upgrading to ElevenLabs / OpenAI TTS ──
@@ -1012,15 +1073,25 @@
         }
 
         const picker = document.getElementById("agent-picker");
-        picker.innerHTML = availableAgents.map(a => `
-            <div class="agent-chip ${selectedAgents.has(a.name) ? 'selected' : ''}"
-                 style="color:${a.color}"
+        picker.innerHTML = availableAgents.map(a => {
+            const parts = a.name.replace(/^Dr\.\s+/, "").split(" ");
+            const initials = (parts[0][0] + (parts[parts.length - 1][0] || "")).toUpperCase();
+            const bg   = a.color + "33";
+            const sel  = selectedAgents.has(a.name);
+            const borderStyle = sel ? `border-color:${a.color}` : "";
+            return `
+            <div class="agent-pick-card ${sel ? 'selected' : ''}"
+                 style="${borderStyle}"
                  onclick="toggleAgent('${esc(a.name)}')"
                  id="chip-${slugify(a.name)}">
-                <span class="chip-dot" style="background:${a.color}"></span>
-                ${esc(a.name.split(" ")[0])}
-            </div>
-        `).join("");
+                <span class="agent-pick-check" style="color:${a.color}">✓</span>
+                <div class="agent-pick-avatar" style="background:${bg};color:${a.color};border-color:${a.color}">${initials}</div>
+                <div class="agent-pick-info">
+                    <span class="agent-pick-name">${esc(a.name)}</span>
+                    <span class="agent-pick-role">${esc(a.title)}</span>
+                </div>
+            </div>`;
+        }).join("");
 
         document.getElementById("modal-overlay").classList.add("open");
         document.getElementById("modal-topic").focus();
@@ -1032,13 +1103,16 @@
 
     function toggleAgent(name) {
         const chip = document.getElementById("chip-" + slugify(name));
+        const agentMeta = availableAgents.find(a => a.name === name);
         if (selectedAgents.has(name)) {
             if (selectedAgents.size <= 1) return;  // keep at least one
             selectedAgents.delete(name);
             chip.classList.remove("selected");
+            chip.style.borderColor = "";
         } else {
             selectedAgents.add(name);
             chip.classList.add("selected");
+            if (agentMeta) chip.style.borderColor = agentMeta.color;
         }
     }
 
@@ -1387,6 +1461,12 @@
     }
 
     function exportTranscript() {
+        // If viewing a past meeting, download via server endpoint
+        if (viewingMeetingId) {
+            window.location = `/api/boardroom/meetings/${viewingMeetingId}/export`;
+            return;
+        }
+        // Live session: export from in-memory log
         if (!messageLog.length) {
             alert("No messages to export yet.");
             return;
