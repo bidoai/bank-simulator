@@ -12,14 +12,14 @@ log = structlog.get_logger(__name__)
 _DDL = """
 CREATE TABLE IF NOT EXISTS position_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticker TEXT NOT NULL,
+    instrument TEXT NOT NULL,
     book_id TEXT NOT NULL,
     quantity REAL NOT NULL,
     avg_cost REAL NOT NULL,
-    realized_pnl REAL NOT NULL DEFAULT 0,
-    unrealized_pnl REAL NOT NULL DEFAULT 0,
+    realised_pnl REAL NOT NULL DEFAULT 0,
+    unrealised_pnl REAL NOT NULL DEFAULT 0,
     snapshot_time TEXT NOT NULL,
-    UNIQUE(ticker, book_id)
+    UNIQUE(instrument, book_id)
 );
 """
 
@@ -45,22 +45,22 @@ class PositionSnapshotStore:
                 conn.execute(
                     """
                     INSERT INTO position_snapshots
-                        (ticker, book_id, quantity, avg_cost, realized_pnl, unrealized_pnl, snapshot_time)
+                        (instrument, book_id, quantity, avg_cost, realised_pnl, unrealised_pnl, snapshot_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(ticker, book_id) DO UPDATE SET
+                    ON CONFLICT(instrument, book_id) DO UPDATE SET
                         quantity = excluded.quantity,
                         avg_cost = excluded.avg_cost,
-                        realized_pnl = excluded.realized_pnl,
-                        unrealized_pnl = excluded.unrealized_pnl,
+                        realised_pnl = excluded.realised_pnl,
+                        unrealised_pnl = excluded.unrealised_pnl,
                         snapshot_time = excluded.snapshot_time
                     """,
                     (
-                        position_dict["ticker"],
+                        position_dict["instrument"],
                         position_dict["book_id"],
                         position_dict["quantity"],
                         position_dict["avg_cost"],
-                        position_dict.get("realized_pnl", 0.0),
-                        position_dict.get("unrealized_pnl", 0.0),
+                        position_dict.get("realised_pnl", 0.0),
+                        position_dict.get("unrealised_pnl", 0.0),
                         snapshot_time,
                     ),
                 )
@@ -73,22 +73,22 @@ class PositionSnapshotStore:
                     conn.execute(
                         """
                         INSERT INTO position_snapshots
-                            (ticker, book_id, quantity, avg_cost, realized_pnl, unrealized_pnl, snapshot_time)
+                            (instrument, book_id, quantity, avg_cost, realised_pnl, unrealised_pnl, snapshot_time)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(ticker, book_id) DO UPDATE SET
+                        ON CONFLICT(instrument, book_id) DO UPDATE SET
                             quantity = excluded.quantity,
                             avg_cost = excluded.avg_cost,
-                            realized_pnl = excluded.realized_pnl,
-                            unrealized_pnl = excluded.unrealized_pnl,
+                            realised_pnl = excluded.realised_pnl,
+                            unrealised_pnl = excluded.unrealised_pnl,
                             snapshot_time = excluded.snapshot_time
                         """,
                         (
-                            pos["ticker"],
+                            pos["instrument"],
                             pos["book_id"],
                             pos["quantity"],
                             pos["avg_cost"],
-                            pos.get("realized_pnl", 0.0),
-                            pos.get("unrealized_pnl", 0.0),
+                            pos.get("realised_pnl", 0.0),
+                            pos.get("unrealised_pnl", 0.0),
                             snapshot_time,
                         ),
                     )
@@ -96,7 +96,9 @@ class PositionSnapshotStore:
 
     def load_all(self) -> list[dict]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM position_snapshots ORDER BY ticker, book_id").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM position_snapshots ORDER BY instrument, book_id"
+            ).fetchall()
         return [dict(r) for r in rows]
 
 
