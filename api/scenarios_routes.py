@@ -1,13 +1,17 @@
 """FastAPI routes for stress test scenario runner."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
+import structlog
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from api.scenario_state import scenario_state
+
+log = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -24,6 +28,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "fx_vol_multiplier": 1.89,
             "eq_vol_multiplier": 2.03,
             "credit_spread_multiplier": 2.67,
+            "equity_shock_pct": -0.45,
         },
         "stress_multiplier": 1.42,
     },
@@ -35,6 +40,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "fx_vol_multiplier": 1.55,
             "eq_vol_multiplier": 2.80,
             "credit_spread_multiplier": 1.90,
+            "equity_shock_pct": -0.35,
         },
         "stress_multiplier": 1.21,
     },
@@ -46,6 +52,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "fx_vol_multiplier": 1.20,
             "eq_vol_multiplier": 1.30,
             "credit_spread_multiplier": 1.40,
+            "equity_shock_pct": 0.0,
         },
         "stress_multiplier": 1.18,
     },
@@ -56,6 +63,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "ig_spread_multiplier": 3.0,
             "hy_spread_multiplier": 4.0,
             "credit_spread_multiplier": 3.0,
+            "equity_shock_pct": 0.0,
         },
         "stress_multiplier": 1.85,
     },
@@ -206,6 +214,26 @@ async def run_scenario(req: RunRequest) -> JSONResponse:
     })
 
 
+async def _run_dfast_on_scenario(shock: dict) -> None:
+    try:
+        from infrastructure.stress.dfast_engine import dfast_engine
+        eq_shock = shock.get("equity_shock_pct", 0.0)
+        if eq_shock <= -0.30:
+            scenario_name = "severely_adverse"
+        elif eq_shock <= -0.10:
+            scenario_name = "adverse"
+        else:
+            scenario_name = "baseline"
+        result = dfast_engine.run_scenario(scenario_name)
+        # Cache result on dfast_engine for GET /api/stress/dfast
+        dfast_engine._last_result = result
+        log.info("dfast.auto_run", scenario=scenario_name, quarters=9)
+    except ImportError:
+        log.debug("dfast.engine_not_available")
+    except Exception as exc:
+        log.error("dfast.auto_run_failed", error=str(exc))
+
+
 @router.post("/activate")
 async def activate_scenario(req: RunRequest) -> JSONResponse:
     """
@@ -224,6 +252,8 @@ async def activate_scenario(req: RunRequest) -> JSONResponse:
     scenario = SCENARIOS[scenario_id]
     shocks = req.custom_shocks if scenario_id == "custom" and req.custom_shocks else scenario["shocks"]
     scenario_state.activate(scenario_id, scenario["name"], shocks)
+    shocks_snap = scenario_state.snapshot().get("shocks", {})
+    asyncio.create_task(_run_dfast_on_scenario(shocks_snap))
     return JSONResponse({
         "activated": True,
         "scenario_id": scenario_id,
