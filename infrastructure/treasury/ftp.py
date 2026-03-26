@@ -118,13 +118,13 @@ class FTPEngine:
         desks: dict[str, dict] = defaultdict(lambda: {"notional": 0.0, "tenor_weighted": 0.0})
 
         for pos in positions:
-            desk = pos.get("book_id") or pos.get("desk") or "UNKNOWN"
+            desk = pos.get("desk") or "UNKNOWN"
             notional = abs(float(pos.get("notional") or 0.0))
             if notional == 0.0:
                 qty = abs(float(pos.get("quantity", 0.0)))
                 price = abs(float(pos.get("avg_cost", 0.0)))
                 notional = qty * price
-            product_type = self._product_type(pos.get("ticker", ""))
+            product_type = self._product_type(pos.get("instrument", ""))
             tenor = self.PRODUCT_TENOR.get(product_type, self.PRODUCT_TENOR["default"])
 
             desks[desk]["notional"] += notional

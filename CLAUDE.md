@@ -24,14 +24,14 @@ pip install -r requirements.txt
 cp .env.example .env  # add ANTHROPIC_API_KEY
 python main.py                        # founding board meeting
 python main.py --list-agents          # list all agents
-uvicorn api.app:app --reload          # dashboard backend
+uvicorn api.main:app --reload         # dashboard backend
 ```
 
 ## Critical Invariants — Never Break
 
 - Every agent call costs real Anthropic API tokens. **Never trigger agents in a loop without a termination condition.**
 - `BankAgent.history` has no size cap — always use a sliding window (last N messages) before passing to API. See TODO-001.
-- `BoardroomBroadcaster._history` must be capped at 1,000 messages (TODO-004) — never grow unbounded.
+- `BoardroomBroadcaster._history` is capped at 200 messages — never grow unbounded.
 - API keys live in `.env` only — never hardcode `ANTHROPIC_API_KEY`.
 - Dashboard WebSocket binds to `127.0.0.1` only.
 

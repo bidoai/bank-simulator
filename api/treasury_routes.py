@@ -8,13 +8,20 @@ router = APIRouter(prefix="/treasury", tags=["treasury"])
 
 
 def _get_positions() -> list[dict]:
-    """Pull live positions from the risk service."""
-    try:
-        from infrastructure.risk.risk_service import risk_service
-        snapshot = risk_service.get_snapshot()
-        return snapshot.get("positions", [])
-    except Exception:
-        return []
+    """Pull live positions from the shared PositionManager (owned by risk_service)."""
+    from infrastructure.risk.risk_service import risk_service
+    return risk_service.position_manager.get_all_positions()
+
+
+def _get_desk_pnl() -> dict[str, float]:
+    """Return desk-level total P&L keyed by desk name."""
+    from infrastructure.risk.risk_service import risk_service
+    firm = risk_service.get_position_report()
+    return {
+        desk: data.get("total_pnl", 0.0)
+        for desk, data in firm.get("by_desk", {}).items()
+        if "error" not in data
+    }
 
 
 # ── FTP routes ─────────────────────────────────────────────────────────────
@@ -28,19 +35,7 @@ async def ftp_summary():
 @router.get("/ftp/adjusted-pnl")
 async def ftp_adjusted_pnl():
     from infrastructure.treasury.ftp import ftp_engine
-    try:
-        from infrastructure.trading.pnl_calculator import PnLCalculator
-        from infrastructure.trading.position_manager import PositionManager
-        pnl_calc = PnLCalculator()
-        pm = PositionManager()
-        desk_pnl = {
-            pos.book_id: float(pos.unrealized_pnl or 0.0)
-            for pos in pm.get_all_positions().values()
-        }
-    except Exception:
-        desk_pnl = {}
-    positions = _get_positions()
-    return ftp_engine.get_adjusted_pnl(positions, desk_pnl)
+    return ftp_engine.get_adjusted_pnl(_get_positions(), _get_desk_pnl())
 
 
 @router.get("/ftp/curve")
