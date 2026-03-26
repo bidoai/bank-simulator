@@ -95,6 +95,7 @@
       transition: border-color 0.2s, transform 0.15s;
       position: relative;
       overflow: hidden;
+      text-decoration: none;
     }
 
     .panel-card::before {
@@ -109,6 +110,13 @@
     }
 
     .panel-card:hover {
+      border-color: var(--panel-color, var(--accent));
+      transform: translateY(-2px);
+    }
+
+    .panel-card:focus-visible {
+      outline: 2px solid var(--panel-color, var(--accent));
+      outline-offset: 3px;
       border-color: var(--panel-color, var(--accent));
       transform: translateY(-2px);
     }
@@ -281,7 +289,7 @@
   <div class="panels-grid">
 
     <!-- Boardroom -->
-    <div class="panel-card" style="--panel-color: #e3b341;">
+    <a href="/boardroom" class="panel-card" style="--panel-color: #e3b341;">
       <div class="panel-header">
         <div>
           <div class="panel-label">Executive</div>
@@ -302,12 +310,12 @@
       </ul>
       <div class="panel-footer">
         <span class="panel-badge">WebSocket</span>
-        <a href="/boardroom" class="panel-launch">Launch &rarr;</a>
+        <span class="panel-launch">Launch &rarr;</span>
       </div>
-    </div>
+    </a>
 
     <!-- Trading Floor -->
-    <div class="panel-card" style="--panel-color: #3fb950;">
+    <a href="/trading" class="panel-card" style="--panel-color: #3fb950;">
       <div class="panel-header">
         <div>
           <div class="panel-label">Markets</div>
@@ -327,12 +335,12 @@
       </ul>
       <div class="panel-footer">
         <span class="panel-badge">REST + WS</span>
-        <a href="/trading" class="panel-launch">Launch &rarr;</a>
+        <span class="panel-launch">Launch &rarr;</span>
       </div>
-    </div>
+    </a>
 
     <!-- XVA Analytics -->
-    <div class="panel-card" style="--panel-color: #58a6ff;">
+    <a href="/xva" class="panel-card" style="--panel-color: #58a6ff;">
       <div class="panel-header">
         <div>
           <div class="panel-label">Derivatives</div>
@@ -353,12 +361,12 @@
       </ul>
       <div class="panel-footer">
         <span class="panel-badge">pyxva engine</span>
-        <a href="/xva" class="panel-launch">Launch &rarr;</a>
+        <span class="panel-launch">Launch &rarr;</span>
       </div>
-    </div>
+    </a>
 
     <!-- Model Governance -->
-    <div class="panel-card" style="--panel-color: #bc8cff;">
+    <a href="/models" class="panel-card" style="--panel-color: #bc8cff;">
       <div class="panel-header">
         <div>
           <div class="panel-label">Risk</div>
@@ -379,12 +387,12 @@
       </ul>
       <div class="panel-footer">
         <span class="panel-badge">SR 11-7</span>
-        <a href="/models" class="panel-launch">Launch &rarr;</a>
+        <span class="panel-launch">Launch &rarr;</span>
       </div>
-    </div>
+    </a>
 
     <!-- Scenarios -->
-    <div class="panel-card" style="--panel-color: #ffa657;">
+    <a href="/scenarios" class="panel-card" style="--panel-color: #ffa657;">
       <div class="panel-header">
         <div>
           <div class="panel-label">Stress Testing</div>
@@ -405,9 +413,9 @@
       </ul>
       <div class="panel-footer">
         <span class="panel-badge">Monte Carlo</span>
-        <a href="/scenarios" class="panel-launch">Launch &rarr;</a>
+        <span class="panel-launch">Launch &rarr;</span>
       </div>
-    </div>
+    </a>
 
   </div>
 
