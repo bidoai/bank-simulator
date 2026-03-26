@@ -408,6 +408,113 @@
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── XVA source badge ─────────────────────────────────────────── */
+    .badge-demo { color: #e3b341; }
+    .badge-live { color: #3fb950; }
+
+    /* ── Pre-trade panel ──────────────────────────────────────────── */
+    #preTradePanelFull {
+      position: fixed;
+      right: 0;
+      top: 88px;
+      width: 280px;
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 14px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: calc(100vh - 88px);
+      overflow-y: auto;
+    }
+
+    #preTradePanelFull .pt-title {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 4px;
+    }
+
+    #preTradePanelFull label {
+      font-size: 10px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    #preTradePanelFull select,
+    #preTradePanelFull input[type="number"] {
+      width: 100%;
+      padding: 5px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    #preTradePanelFull .pt-estimate-btn {
+      width: 100%;
+      padding: 6px;
+      background: var(--accent);
+      border: none;
+      border-radius: 4px;
+      color: #0d1117;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    #preTradePanelFull .pt-estimate-btn:hover { opacity: 0.88; }
+
+    #ptResults {
+      margin-top: 8px;
+      font-size: 11px;
+      display: none;
+    }
+
+    #ptResults .pt-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #ptResults .pt-row:last-child { border-bottom: none; }
+
+    #preTradePanelTab {
+      display: none;
+      position: fixed;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-right: none;
+      padding: 8px 6px;
+      z-index: 500;
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--muted);
+      writing-mode: vertical-rl;
+      border-radius: 4px 0 0 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 1199px) {
+      #preTradePanelFull { display: none; }
+      #preTradePanelTab { display: block; }
+      #preTradePanelFull.open { display: flex; }
+    }
   </style>
   <script src="/static/shared_nav.js" defer></script>
 </head>
@@ -432,6 +539,7 @@
           'background:#21262d;color:#8b949e;border:1px solid #30363d;' +
           'font-family:ui-monospace,monospace;' +
         '">MOCK DATA</span>' +
+        '<span id="xvaBadge" class="badge badge-demo">&#9679; DEMO</span>' +
         '<span class="badge live" style="' +
           'display:flex;align-items:center;gap:4px;' +
           'font-size:10px;color:#3fb950;' +
@@ -561,6 +669,42 @@
     </div>
   </div>
 </div>
+
+<!-- Pre-trade XVA estimator panel -->
+<div id="preTradePanelFull">
+  <div class="pt-title">Pre-Trade XVA Estimator</div>
+  <label>Counterparty</label>
+  <select id="ptCounterparty">
+    <option value="Goldman Sachs">Goldman Sachs</option>
+    <option value="JPMorgan">JPMorgan</option>
+    <option value="Deutsche Bank">Deutsche Bank</option>
+    <option value="BNP Paribas">BNP Paribas</option>
+    <option value="HSBC">HSBC</option>
+  </select>
+  <label>Product</label>
+  <select id="ptProduct">
+    <option value="irs">IRS</option>
+    <option value="fx_forward">FX Forward</option>
+    <option value="fixed_rate_bond">Bond</option>
+  </select>
+  <label>Notional (USD)</label>
+  <input type="number" id="ptNotional" placeholder="100000000" value="100000000" min="0">
+  <label>Tenor</label>
+  <select id="ptTenor">
+    <option value="1">1Y</option>
+    <option value="2">2Y</option>
+    <option value="5" selected>5Y</option>
+    <option value="10">10Y</option>
+  </select>
+  <button class="pt-estimate-btn" onclick="estimatePreTrade()">Estimate XVA</button>
+  <div id="ptResults">
+    <div class="pt-row"><span style="color:var(--muted)">CVA Charge</span><span id="ptCVA" class="val-neg"></span></div>
+    <div class="pt-row"><span style="color:var(--muted)">FVA Charge</span><span id="ptFVA" class="val-neg"></span></div>
+    <div class="pt-row"><span style="color:var(--muted)">Total XVA</span><span id="ptTotal" class="val-neg" style="font-weight:bold;"></span></div>
+    <div class="pt-row"><span style="color:var(--muted)">Spread Used</span><span id="ptSpread" style="color:var(--muted)"></span></div>
+  </div>
+</div>
+<div id="preTradePanelTab" onclick="document.getElementById('preTradePanelFull').classList.toggle('open')">Pre-Trade XVA</div>
 
 <script>
 // ============================================================
@@ -1146,6 +1290,67 @@ function renderBacktest() {
       <td style="text-align:right"><span class="zone-badge ${badgeClass}">${zone}</span></td>
       <td style="text-align:right">${kupiec}</td>`;
     tbody.appendChild(tr);
+  }
+}
+
+// ============================================================
+// Pre-trade XVA estimator
+// ============================================================
+
+async function estimatePreTrade() {
+  const counterparty = document.getElementById('ptCounterparty').value;
+  const product      = document.getElementById('ptProduct').value;
+  const notional     = parseFloat(document.getElementById('ptNotional').value) || 0;
+  const tenor        = parseFloat(document.getElementById('ptTenor').value) || 1;
+
+  try {
+    const resp = await fetch('/api/xva/pre-trade', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({counterparty, product, notional, tenor}),
+    });
+    if (!resp.ok) throw new Error('API error');
+    const d = await resp.json();
+    const fmt = v => '$' + v.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    document.getElementById('ptCVA').textContent   = fmt(d.cva);
+    document.getElementById('ptFVA').textContent   = fmt(d.fva);
+    document.getElementById('ptTotal').textContent = fmt(d.total_xva);
+    document.getElementById('ptSpread').textContent = (d.spread_used * 10000).toFixed(0) + 'bps';
+    document.getElementById('ptResults').style.display = 'block';
+  } catch (e) {
+    console.warn('pre-trade estimate failed', e);
+  }
+}
+
+// ============================================================
+// WebSocket — live XVA updates
+// ============================================================
+
+(function setupXvaWs() {
+  try {
+    const wsXva = new WebSocket(`ws://${location.host}/ws/xva`);
+    wsXva.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'xva_refresh') {
+        updateXVAFromWebSocket(msg.data);
+      }
+    };
+  } catch (e) {
+    console.debug('xva ws unavailable', e);
+  }
+})();
+
+function updateXVAFromWebSocket(data) {
+  // Update source badge
+  const badge = document.getElementById('xvaBadge');
+  if (badge) {
+    badge.textContent = data.source === 'live' ? '● LIVE (pyxva)' : '● DEMO';
+    badge.className = 'badge ' + (data.source === 'live' ? 'badge-live' : 'badge-demo');
+  }
+  // Update CVA KPI tile if present
+  if (data.total_cva !== undefined) {
+    const cvaEl = document.getElementById('kvCVA');
+    if (cvaEl) cvaEl.textContent = '$' + (data.total_cva / 1e6).toFixed(2) + 'M';
   }
 }
 

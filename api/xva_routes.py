@@ -4,7 +4,8 @@ from __future__ import annotations
 import math
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/xva", tags=["xva"])
 
@@ -441,17 +442,78 @@ def run_xva(body: dict = None):
 def demo_xva():
     """
     Instant demo run with sample portfolio (5 counterparties).
-    Uses pyxva if available, else returns pre-computed mock data.
+    Delegates to xva_service.get_cached() for consistent data.
     """
-    if _PYXVA_AVAILABLE:
-        try:
-            engine = RiskEngine(sample_config(n_paths=2_000))
-            run_result = engine.run()
-            return _serialise_run_result(run_result)
-        except Exception as exc:
-            return {**_mock_run_result(), "source": "mock_fallback", "error": str(exc)}
+    from infrastructure.xva.service import xva_service
+    return xva_service.get_cached()
 
-    return _mock_run_result()
+
+# ---------------------------------------------------------------------------
+# Live XVA endpoint
+# ---------------------------------------------------------------------------
+
+@router.get("/live")
+async def get_xva_live() -> dict:
+    """Refresh XVA from OMS blotter via pyxva pipeline."""
+    from infrastructure.xva.service import xva_service
+    return await xva_service.refresh()
+
+
+# ---------------------------------------------------------------------------
+# Pre-trade XVA estimator
+# ---------------------------------------------------------------------------
+
+class PreTradeRequest(BaseModel):
+    counterparty: str
+    product: str   # "irs", "fx_forward", "fixed_rate_bond"
+    notional: float
+    tenor: float   # years
+
+
+@router.post("/pre-trade")
+def get_pretrade_xva(req: PreTradeRequest) -> dict:
+    """Parametric CVA estimate: CVA ≈ -LGD × spread × EEPE × notional × tenor"""
+    from infrastructure.risk.counterparty_registry import counterparty_registry
+    LGD = 0.6
+    # Get spread from registry
+    spread = 0.015
+    try:
+        report = counterparty_registry.get_report()
+        for cp in report:
+            if req.counterparty.lower() in cp.get("name", "").lower():
+                spread = cp.get("credit_spread", 0.015)
+                break
+    except Exception:
+        pass
+    # EEPE approximation: 20% of notional for IRS/FX, 5% for bonds
+    eepe_pct = 0.20 if req.product in ("irs", "fx_forward") else 0.05
+    cva = -LGD * spread * eepe_pct * req.notional * req.tenor
+    fva = cva * 0.25  # FVA ≈ 25% of CVA (simplified)
+    return {
+        "counterparty": req.counterparty,
+        "product": req.product,
+        "notional": req.notional,
+        "tenor": req.tenor,
+        "cva": round(cva, 2),
+        "fva": round(fva, 2),
+        "total_xva": round(cva + fva, 2),
+        "spread_used": spread,
+    }
+
+
+# ---------------------------------------------------------------------------
+# WebSocket /ws/xva
+# ---------------------------------------------------------------------------
+
+@router.websocket("/ws/xva")
+async def ws_xva(websocket: WebSocket):
+    from infrastructure.xva.broadcaster import xva_broadcaster
+    await xva_broadcaster.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        xva_broadcaster.disconnect(websocket)
 
 
 # ---------------------------------------------------------------------------
