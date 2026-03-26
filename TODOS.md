@@ -110,6 +110,13 @@
 
 ---
 
+### TODO-025: Collateral Simulation Module ✅ DONE
+**What:** `infrastructure/collateral/` — CSA/CollateralAccount/MarginCall data model, VMEngine with daily margin call lifecycle, SIMM approximation (IR + CRQ risk classes), three named stress scenarios (COVID Week, Lehman Event, Gilt Crisis). Seven REST endpoints at `/api/collateral/*`.
+**Context:** Decided in collateral mechanics boardroom session 2026-03-26. Five seeded CSAs (Goldman Sachs, JPMorgan, Deutsche Bank, Meridian Capital, LCH cleared). SIMM pre-nets same-tenor DV01 before aggregation. VM engine handles threshold band, MTA gating, dispute/late/default behaviour flags, close-out netting. Collateral module sits between PositionManager and XVAAdapter — fixes CVA error introduced by TODO-002/005. 45 tests, all green.
+**Completed:** v0.1.4.0
+
+---
+
 ## Phase 2 — Still open (60-180 day plan)
 
 ### TODO-022: Legal Entity / Booking Model — P1
@@ -126,7 +133,7 @@
 **What:** Multi-year forward capital adequacy projection under baseline, adverse, severely adverse scenarios. Uses regulatory_capital engine + scenario generator.
 **Effort:** M | **Priority:** P2 | **Depends on:** TODO-016
 
-### TODO-025: OMS Hardening (concurrency, event loop, pre-trade consistency) — P3
+### TODO-026: OMS Hardening (concurrency, event loop, pre-trade consistency) — P3
 **What:** Harden the OMS for concurrent use: add asyncio.Lock around `submit_order`, offload `risk_service.run_snapshot()` to a thread-pool executor (blocks event loop ~100ms), make `_persist_trade` non-fire-and-forget, align pre-trade (parametric VaR) and post-trade (Monte Carlo VaR) methodologies.
 **Why:** Adversarial review identified these as latent issues. For a single-user demo they don't matter; for multi-user or production they would cause data corruption.
 **Effort:** S (CC: ~15 min) | **Priority:** P3 | **Depends on:** nothing

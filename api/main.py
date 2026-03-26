@@ -233,6 +233,13 @@ try:
 except ImportError:
     log.warning("api.metrics_routes not found — metrics API endpoints unavailable")
 
+try:
+    from api import collateral_routes
+    app.include_router(collateral_routes.router, prefix="/api")
+    log.info("collateral_routes loaded")
+except ImportError:
+    log.warning("api.collateral_routes not found — collateral API endpoints unavailable")
+
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
