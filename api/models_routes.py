@@ -1,11 +1,14 @@
 """FastAPI routes for model governance portal."""
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
+import anthropic
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -15,7 +18,21 @@ router = APIRouter(prefix="/models", tags=["models"])
 
 _REGISTRY_PATH = Path(__file__).parent.parent / "model_docs" / "registry.json"
 _DOCS_DIR = Path(__file__).parent.parent / "model_docs" / "xva"
+_MDD_DIR = Path(__file__).parent.parent / "model_docs"
 _ALLOWED_SUFFIXES = {".tex", ".md", ".pdf"}
+
+# Models owned by front-office quant (Tanaka answers as owner/builder)
+_TANAKA_MODELS = {"APEX-MDL-0004", "APEX-MDL-0005", "APEX-MDL-0006"}
+
+# Allowlist populated lazily from registry.json
+_VALID_MODEL_IDS: set[str] = set()
+
+
+def _ensure_allowlist() -> None:
+    if not _VALID_MODEL_IDS:
+        registry = _load_registry()
+        for m in registry.get("models", []):
+            _VALID_MODEL_IDS.add(m["id"])
 
 
 def _load_registry() -> dict[str, Any]:
@@ -124,3 +141,88 @@ def get_doc(model_id: str, filename: str) -> FileResponse:
         media_type=media_type_map.get(suffix, "application/octet-stream"),
         filename=filename,
     )
+
+
+# ---------------------------------------------------------------------------
+# Model Q&A — POST /api/models/chat
+# ---------------------------------------------------------------------------
+
+class ModelChatRequest(BaseModel):
+    model_id: str
+    question: str
+    stream: bool = True
+
+
+def _get_persona(model_id: str) -> tuple[str, str]:
+    """Return (name, role_description) for the responding persona."""
+    if model_id in _TANAKA_MODELS:
+        return (
+            "Dr. Yuki Tanaka",
+            "Quant Researcher and model owner. You built this model and understand "
+            "every implementation detail. Answer from a front-office quant perspective: "
+            "focus on usage, calibration, assumptions, and practical implications. "
+            "Be technically precise but accessible to risk managers.",
+        )
+    return (
+        "Dr. Samuel Achebe",
+        "Model Validation Officer. You are the independent validator who reviewed "
+        "this model under SR 11-7. Answer from a second-line risk perspective: "
+        "focus on validation findings, limitations, open issues, regulatory compliance, "
+        "and compensating controls. Be rigorous and flag known weaknesses honestly.",
+    )
+
+
+def _load_mdd_content(model_card: dict) -> str:
+    """Load the MDD markdown file for a model card. Returns empty string if not found."""
+    short = model_card.get("short", "")
+    if not short:
+        return ""
+    mdd_path = _MDD_DIR / f"mdd_{short}_v1.0.md"
+    if mdd_path.exists():
+        return mdd_path.read_text(encoding="utf-8")
+    return ""
+
+
+@router.post("/chat")
+async def model_chat(req: ModelChatRequest):
+    """
+    Q&A on a model card. Streams SSE responses (text/event-stream).
+    model_id must be in the registry allowlist — unknown IDs return 422.
+    Persona: Tanaka (BSM/HW1F/LMM) or Achebe (all others).
+    """
+    _ensure_allowlist()
+    if req.model_id not in _VALID_MODEL_IDS:
+        raise HTTPException(status_code=422, detail=f"Unknown model_id: {req.model_id}")
+
+    model_card = _get_model(req.model_id)
+    persona_name, persona_desc = _get_persona(req.model_id)
+    mdd_content = _load_mdd_content(model_card)
+
+    system_prompt = f"""You are {persona_name}, {persona_desc}
+
+MODEL CARD:
+{json.dumps(model_card, indent=2)}
+
+{"MDD DOCUMENT:" + chr(10) + mdd_content if mdd_content else ""}
+
+Answer the user's question about this model. Be concise and accurate.
+Do not invent information not present in the model card or MDD.
+If you don't know something, say so clearly."""
+
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+
+    async def generate():
+        try:
+            with client.messages.stream(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                system=system_prompt,
+                messages=[{"role": "user", "content": req.question}],
+            ) as stream:
+                for text in stream.text_stream:
+                    yield f"data: {json.dumps({'text': text, 'persona': persona_name})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'persona': persona_name})}\n\n"
+        except Exception as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
