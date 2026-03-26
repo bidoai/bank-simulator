@@ -31,6 +31,8 @@ SEED_PRICES: dict[str, dict] = {
     "AAPL_CALL_200": {"price": 3.50, "vol": 0.50,   "spread_bps": 50.0},
     "USD_IRS_5Y":  {"price": 100.00,  "vol": 0.02,  "spread_bps": 5.0},
     "CL1":         {"price": 78.40,   "vol": 0.30,  "spread_bps": 3.0},
+    "NVDA":        {"price": 875.00,  "vol": 0.35,  "spread_bps": 2.0},
+    "US2Y":        {"price": 99.10,   "vol": 0.02,  "spread_bps": 1.5},
 }
 
 
@@ -111,7 +113,7 @@ class MarketDataFeed:
                         log.error("market_data.callback_error", ticker=ticker, error=str(e))
             await asyncio.sleep(self.tick_interval_ms / 1000)
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         self._running = False
         log.info("market_data.feed_stopped")
 

@@ -58,6 +58,12 @@ AGENT_STYLES: dict[str, dict] = {
     "Elena Vasquez":       {"color": "bold dark_orange",  "emoji": "🏛️ "},
     "Dr. Rebecca Chen":    {"color": "bold orchid",       "emoji": "🔍"},
     "Thomas Nakamura":     {"color": "bold sky_blue1",    "emoji": "💧"},
+    # Audit
+    "Jordan Pierce":       {"color": "bold dark_red",     "emoji": "🔍"},
+    # Legal
+    "Margaret Okonkwo":    {"color": "bold steel_blue",   "emoji": "⚖️"},
+    # Model Validation
+    "Dr. Samuel Achebe":   {"color": "bold purple",       "emoji": "🧮"},
     # Narrator
     "The Observer":        {"color": "italic dim white",  "emoji": "🔭"},
 }

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Global Bank — Simulation Platform</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <style>
+    body { max-width: 1200px; margin: 0 auto; padding: 20px 24px; }
+
+    .hero {
+      padding: 40px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .hero-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .hero-title span {
+      color: var(--accent);
+    }
+
+    .hero-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+      max-width: 600px;
+      line-height: 1.7;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .status-dot.live {
+      background: var(--positive);
+      box-shadow: 0 0 6px rgba(63, 185, 80, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.error {
+      background: var(--negative);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+
+    #api-status-text {
+      color: var(--muted);
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .panels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .panel-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      transition: border-color 0.2s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--panel-color, var(--border));
+      opacity: 0.7;
+    }
+
+    .panel-card:hover {
+      border-color: var(--panel-color, var(--accent));
+      transform: translateY(-2px);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .panel-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--panel-color, var(--muted));
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .panel-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      flex: 1;
+      margin-bottom: 16px;
+    }
+
+    .panel-features {
+      list-style: none;
+      margin-bottom: 18px;
+    }
+
+    .panel-features li {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 2px 0;
+    }
+
+    .panel-features li::before {
+      content: '— ';
+      color: var(--panel-color, var(--border));
+    }
+
+    .panel-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-badge {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .panel-launch {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--panel-color, var(--accent));
+      font-size: 12px;
+      font-weight: 500;
+      transition: gap 0.15s;
+    }
+
+    .panel-launch:hover {
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    /* Agent count pill */
+    .agent-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      background: rgba(88, 166, 255, 0.08);
+      border: 1px solid rgba(88, 166, 255, 0.2);
+      color: var(--accent);
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 700px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .panels-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script src="/static/shared_nav.js" defer></script>
+</head>
+<body>
+
+  <!-- Navigation injected by shared_nav.js -->
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-title">
+      <span>Apex Global Bank</span> — Simulation Platform
+    </div>
+    <p class="hero-subtitle">
+      An AI-powered investment bank operating in real time. Sixteen Claude-powered agents
+      collaborate across the boardroom, trading floor, risk desk, and compliance function —
+      each with a distinct mandate, memory, and voice.
+    </p>
+    <div class="status-row">
+      <span class="status-dot" id="api-dot"></span>
+      <span id="api-status-text">Checking API...</span>
+    </div>
+  </section>
+
+  <!-- Platform stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <span class="stat-value">16+</span>
+      <span class="stat-label">AI Agents</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">5</span>
+      <span class="stat-label">Dashboards</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">claude-opus-4-6</span>
+      <span class="stat-label">Model</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">SR 11-7</span>
+      <span class="stat-label">Model Risk Standard</span>
+    </div>
+  </div>
+
+  <!-- Panel cards -->
+  <p class="section-title">Dashboards</p>
+  <div class="panels-grid">
+
+    <!-- Boardroom -->
+    <div class="panel-card" style="--panel-color: #e3b341;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-label">Executive</div>
+          <div class="panel-title">Boardroom</div>
+        </div>
+        <span class="agent-count">CEO &amp; CRO</span>
+      </div>
+      <p class="panel-desc">
+        Watch AI agents deliberate in real time. The CEO, CRO, Quant, Compliance Officer,
+        and others stream their reasoning live via WebSocket as they respond to market
+        events, risk alerts, and each other.
+      </p>
+      <ul class="panel-features">
+        <li>Live agent conversation stream</li>
+        <li>Colour-coded agent voices</li>
+        <li>Thinking / reasoning display</li>
+        <li>Session transcript export</li>
+      </ul>
+      <div class="panel-footer">
+        <span class="panel-badge">WebSocket</span>
+        <a href="/boardroom" class="panel-launch">Launch &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Trading Floor -->
+    <div class="panel-card" style="--panel-color: #3fb950;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-label">Markets</div>
+          <div class="panel-title">Trading Floor</div>
+        </div>
+        <span class="agent-count">Trader &amp; Treasury</span>
+      </div>
+      <p class="panel-desc">
+        Real-time view of open positions, daily P&amp;L, counterparty credit risk (CCR)
+        limits, and the trading book. Includes circuit-breaker state and order blotter.
+      </p>
+      <ul class="panel-features">
+        <li>Open positions &amp; live P&amp;L</li>
+        <li>CCR exposure vs. limits</li>
+        <li>Order blotter (last 100 fills)</li>
+        <li>Circuit-breaker status</li>
+      </ul>
+      <div class="panel-footer">
+        <span class="panel-badge">REST + WS</span>
+        <a href="/trading" class="panel-launch">Launch &rarr;</a>
+      </div>
+    </div>
+
+    <!-- XVA Analytics -->
+    <div class="panel-card" style="--panel-color: #58a6ff;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-label">Derivatives</div>
+          <div class="panel-title">XVA Analytics</div>
+        </div>
+        <span class="agent-count">Quant</span>
+      </div>
+      <p class="panel-desc">
+        Counterparty valuation adjustments computed by the pyxva engine. Visualise
+        PFE profiles, CVA/DVA/FVA per netting set, and drill into collateral
+        and margin impact under various CSA structures.
+      </p>
+      <ul class="panel-features">
+        <li>PFE profile chart (Hull-White 1F)</li>
+        <li>CVA / DVA / FVA breakdown</li>
+        <li>Netting set explorer</li>
+        <li>Live pipeline re-run</li>
+      </ul>
+      <div class="panel-footer">
+        <span class="panel-badge">pyxva engine</span>
+        <a href="/xva" class="panel-launch">Launch &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Model Governance -->
+    <div class="panel-card" style="--panel-color: #bc8cff;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-label">Risk</div>
+          <div class="panel-title">Model Governance</div>
+        </div>
+        <span class="agent-count">Compliance</span>
+      </div>
+      <p class="panel-desc">
+        SR 11-7 compliant model inventory. Track model status, validation findings,
+        use-case approvals, and ongoing monitoring thresholds for all quantitative
+        models in production.
+      </p>
+      <ul class="panel-features">
+        <li>Model inventory &amp; status</li>
+        <li>Validation findings tracker</li>
+        <li>SR 11-7 compliance checklist</li>
+        <li>Model performance monitoring</li>
+      </ul>
+      <div class="panel-footer">
+        <span class="panel-badge">SR 11-7</span>
+        <a href="/models" class="panel-launch">Launch &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Scenarios -->
+    <div class="panel-card" style="--panel-color: #ffa657;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-label">Stress Testing</div>
+          <div class="panel-title">Scenario Runner</div>
+        </div>
+        <span class="agent-count">CRO &amp; Quant</span>
+      </div>
+      <p class="panel-desc">
+        Run historical and hypothetical stress scenarios across the entire book.
+        Compare P&amp;L impact, VaR breach probability, and capital adequacy
+        under user-defined shock configurations.
+      </p>
+      <ul class="panel-features">
+        <li>Historical scenarios (2008, 2020, 2022)</li>
+        <li>Custom shock designer</li>
+        <li>Multi-asset correlation shocks</li>
+        <li>Capital adequacy output</li>
+      </ul>
+      <div class="panel-footer">
+        <span class="panel-badge">Monte Carlo</span>
+        <a href="/scenarios" class="panel-launch">Launch &rarr;</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    Apex Global Bank &mdash; Simulation Platform &nbsp;&middot;&nbsp; Powered by Claude claude-opus-4-6
+  </footer>
+
+  <script>
+    // Check API health on load
+    async function checkHealth() {
+      const dot  = document.getElementById('api-dot');
+      const text = document.getElementById('api-status-text');
+      try {
+        const res  = await fetch('/api/health');
+        const data = await res.json();
+        if (data.status === 'ok') {
+          dot.classList.add('live');
+          text.style.color = 'var(--positive)';
+          text.textContent = `API online — ${data.bank}`;
+        } else {
+          throw new Error('unexpected status');
+        }
+      } catch {
+        dot.classList.add('error');
+        text.style.color = 'var(--negative)';
+        text.textContent = 'API offline — start the server with: uvicorn api.main:app --reload --port 8000';
+      }
+    }
+
+    checkHealth();
+  </script>
+
+</body>
+</html>

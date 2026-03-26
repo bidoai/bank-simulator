@@ -25,3 +25,5 @@ htmlcov/
 
 # Claude Code internal
 .claude/
+*.DS_Store
+.DS_Store

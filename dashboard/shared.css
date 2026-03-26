@@ -1,0 +1,542 @@
+/* ==========================================================================
+   Apex Global Bank — Shared Design System
+   All dashboard panels import this file via /static/shared.css
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Custom Properties
+   -------------------------------------------------------------------------- */
+:root {
+  --bg:        #0d1117;
+  --card:      #161b22;
+  --border:    #30363d;
+  --border-subtle: #21262d;
+  --text:      #c9d1d9;
+  --muted:     #8b949e;
+  --positive:  #3fb950;
+  --negative:  #f85149;
+  --accent:    #58a6ff;
+  --warning:   #e3b341;
+
+  /* Agent accent colors */
+  --agent-ceo:        #e3b341;
+  --agent-cro:        #f85149;
+  --agent-quant:      #58a6ff;
+  --agent-trader:     #3fb950;
+  --agent-compliance: #bc8cff;
+  --agent-observer:   #8b949e;
+  --agent-cto:        #79c0ff;
+  --agent-treasury:   #ffa657;
+
+  /* Spacing */
+  --gap:    16px;
+  --radius: 6px;
+
+  /* Typography */
+  --font:      'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  --font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   Reset
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+html {
+  font-size: var(--font-size);
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--font-size);
+  line-height: 1.5;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  font-size: 16px;
+  color: var(--accent);
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+h3 {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation Bar
+   -------------------------------------------------------------------------- */
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.navbar .navbar-brand {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+  margin-right: 16px;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navbar a {
+  color: var(--muted);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.navbar a:hover {
+  color: var(--text);
+  background: var(--card);
+  text-decoration: none;
+}
+
+.navbar a.active {
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Grid Layouts
+   -------------------------------------------------------------------------- */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gap);
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+
+@media (max-width: 900px) {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Card
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+}
+
+.card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* --------------------------------------------------------------------------
+   Color Utility Classes
+   -------------------------------------------------------------------------- */
+.positive  { color: var(--positive); }
+.negative  { color: var(--negative); }
+.neutral   { color: var(--muted); }
+.accent    { color: var(--accent); }
+.warning   { color: var(--warning); }
+.text-muted { color: var(--muted); }
+
+/* --------------------------------------------------------------------------
+   Badge / Pill Labels
+   -------------------------------------------------------------------------- */
+.badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  line-height: 1.5;
+}
+
+.badge.green  { color: var(--positive); border-color: rgba(63, 185, 80, 0.4);  background: rgba(63, 185, 80, 0.1); }
+.badge.yellow { color: var(--warning);  border-color: rgba(227, 179, 65, 0.4); background: rgba(227, 179, 65, 0.1); }
+.badge.red    { color: var(--negative); border-color: rgba(248, 81, 73, 0.4);  background: rgba(248, 81, 73, 0.1); }
+.badge.blue   { color: var(--accent);   border-color: rgba(88, 166, 255, 0.4); background: rgba(88, 166, 255, 0.1); }
+.badge.purple { color: #bc8cff;         border-color: rgba(188, 140, 255, 0.4); background: rgba(188, 140, 255, 0.1); }
+
+/* --------------------------------------------------------------------------
+   Button
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: rgba(88, 166, 255, 0.15);
+  text-decoration: none;
+}
+
+.btn:active {
+  background: rgba(88, 166, 255, 0.25);
+}
+
+.btn.btn-primary {
+  background: var(--accent);
+  color: #0d1117;
+}
+
+.btn.btn-primary:hover {
+  background: #79b8ff;
+  color: #0d1117;
+}
+
+.btn.btn-danger {
+  color: var(--negative);
+  border-color: var(--negative);
+}
+
+.btn.btn-danger:hover {
+  background: rgba(248, 81, 73, 0.15);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Connection Status Indicator
+   -------------------------------------------------------------------------- */
+#status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  margin-bottom: 16px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+#status.connected {
+  border-color: rgba(63, 185, 80, 0.5);
+  color: var(--positive);
+}
+
+#status.disconnected {
+  border-color: rgba(248, 81, 73, 0.5);
+  color: var(--negative);
+}
+
+/* --------------------------------------------------------------------------
+   Empty State
+   -------------------------------------------------------------------------- */
+.empty-state {
+  color: var(--muted);
+  text-align: center;
+  padding: 28px 16px;
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Agent Conversation Cards
+   -------------------------------------------------------------------------- */
+.agent-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: var(--card);
+  animation: fadeIn 0.2s ease-in;
+}
+
+.agent-card .agent-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.agent-card .agent-name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.agent-card .agent-title {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.agent-card .agent-timestamp {
+  color: var(--muted);
+  font-size: 10px;
+  margin-left: auto;
+}
+
+.agent-card .agent-body {
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.agent-card .agent-thinking {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  border-left: 2px solid var(--border);
+}
+
+/* Agent color accents */
+.agent-card.ceo        { border-left: 3px solid var(--agent-ceo); }
+.agent-card.cro        { border-left: 3px solid var(--agent-cro); }
+.agent-card.quant      { border-left: 3px solid var(--agent-quant); }
+.agent-card.trader     { border-left: 3px solid var(--agent-trader); }
+.agent-card.compliance { border-left: 3px solid var(--agent-compliance); }
+.agent-card.observer   { border-left: 3px solid var(--agent-observer); }
+.agent-card.cto        { border-left: 3px solid var(--agent-cto); }
+.agent-card.treasury   { border-left: 3px solid var(--agent-treasury); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbar (WebKit — dark theme)
+   -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Gauge / Progress Bar
+   -------------------------------------------------------------------------- */
+.gauge-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.gauge-label {
+  width: 160px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.gauge-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 12px;
+}
+
+.gauge-fill {
+  height: 100%;
+  background: var(--positive);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.gauge-fill.warning { background: var(--warning); }
+.gauge-fill.danger  { background: var(--negative); }
+
+.gauge-value {
+  width: 64px;
+  text-align: right;
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Hero / Landing Panel Cards
+   -------------------------------------------------------------------------- */
+.panel-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+
+.panel-card:hover {
+  border-color: var(--accent);
+}
+
+.panel-card .panel-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.panel-card .panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-card .panel-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.panel-card .panel-link {
+  display: inline-block;
+  color: var(--accent);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.panel-card .panel-link:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Misc Utilities
+   -------------------------------------------------------------------------- */
+.mono   { font-family: var(--font); }
+.small  { font-size: 11px; }
+.right  { text-align: right; }
+.center { text-align: center; }
+.flex   { display: flex; align-items: center; gap: 8px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.mt-8   { margin-top: 8px; }
+.mt-16  { margin-top: 16px; }
+.mb-8   { margin-bottom: 8px; }
+.mb-16  { margin-bottom: 16px; }
+.gap-8  { gap: 8px; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

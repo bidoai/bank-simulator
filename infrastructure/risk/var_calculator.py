@@ -23,6 +23,11 @@ from typing import Optional
 import structlog
 
 from models.risk_metrics import VaRResult
+from infrastructure.risk.correlation_regime import (
+    CorrelationRegime,
+    CorrelationRegimeModel,
+    regime_model,
+)
 
 log = structlog.get_logger()
 
@@ -128,6 +133,8 @@ class VaRCalculator:
         correlations: Optional[np.ndarray] = None,
         n_simulations: int = 10_000,
         book_id: str = "default",
+        regime: Optional[CorrelationRegime] = None,
+        recent_returns: Optional[np.ndarray] = None,
     ) -> VaRResult:
         """
         Monte Carlo VaR.
@@ -137,24 +144,48 @@ class VaRCalculator:
         and complex correlations. Used for derivatives-heavy books.
 
         In production, banks run 250,000+ simulations on GPU clusters.
+
+        regime: if provided, use the regime-appropriate Cholesky from
+                CorrelationRegimeModel for the 6-ticker canonical portfolio.
+                If None, auto-detect from recent_returns (or default NORMAL).
+        recent_returns: optional shape (T, N) array for regime detection.
         """
         tickers = list(positions.keys())
         n = len(tickers)
         daily_vols = np.array([vols.get(t, 0.20) / np.sqrt(252) for t in tickers])
 
-        if correlations is None:
-            # Default to a moderate positive correlation (typical equity book)
-            corr = np.full((n, n), 0.5)
-            np.fill_diagonal(corr, 1.0)
-        else:
-            corr = correlations
+        # Resolve active regime (needed for both branch selection and result metadata)
+        active_regime: CorrelationRegime = (
+            regime if regime is not None
+            else regime_model.get_current_regime(recent_returns)
+        )
 
-        # Cholesky decomposition for correlated random numbers
-        try:
-            L = np.linalg.cholesky(corr)
-        except np.linalg.LinAlgError:
-            # If matrix not positive definite, use diagonal
-            L = np.diag(daily_vols)
+        # Determine Cholesky factor L
+        if correlations is not None:
+            # Caller supplied explicit correlation matrix — use it directly
+            try:
+                L = np.linalg.cholesky(correlations)
+            except np.linalg.LinAlgError:
+                L = np.diag(np.ones(n))
+        elif set(tickers) <= set(regime_model.TICKERS):
+            # Portfolio is a subset of the canonical 6 tickers — use regime model
+            idx = [regime_model.TICKERS.index(t) for t in tickers]
+            base = regime_model.NORMAL_CORR if active_regime == CorrelationRegime.NORMAL else regime_model.STRESS_CORR
+            sub_corr = base[np.ix_(idx, idx)]
+            try:
+                L = np.linalg.cholesky(sub_corr)
+            except np.linalg.LinAlgError:
+                L = np.diag(np.ones(n))
+            log.debug("var_calculator.regime_cholesky", regime=active_regime.value, tickers=tickers)
+        else:
+            # Mixed / unknown tickers — fall back to moderate positive correlation
+            base_corr = 0.85 if active_regime == CorrelationRegime.STRESS else 0.50
+            corr = np.full((n, n), base_corr)
+            np.fill_diagonal(corr, 1.0)
+            try:
+                L = np.linalg.cholesky(corr)
+            except np.linalg.LinAlgError:
+                L = np.diag(np.ones(n))
 
         # Generate correlated returns
         rng = np.random.default_rng(42)
@@ -170,6 +201,8 @@ class VaRCalculator:
         es = float(np.mean(tail)) if len(tail) > 0 else var
 
         scale = np.sqrt(self.horizon_days)
+        # Store last-used regime so callers can read it without breaking the interface
+        self._last_regime = active_regime.value
         return VaRResult(
             book_id=book_id,
             confidence_level=Decimal(str(self.confidence)),
