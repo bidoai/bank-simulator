@@ -11,37 +11,25 @@
 
 ## P2 — Backlog
 
-### TODO-002: XVA Position Field Mapping
+### TODO-002: XVA Position Field Mapping ✅ DONE
 **What:** Complete `XVAAdapter.from_positions()` — map `Position.symbol`, `.quantity`, `.avg_entry_price` to pyxva Trade fields
-**Why:** Without this, XVA always shows mock data even when live trades exist in the simulation
-**Pros:** Enables live XVA numbers once pyxva integration is unblocked
-**Cons:** Blocked on Position schema being finalized and pyxva API being stable
-**Context:** `infrastructure/xva/adapter.py` line 25 — `from_positions()` returns `[]` with TODO comment. Also: extend `from_trade()` with float leg, payment dates, day count conventions. Verify `../pyxva` API is stable before implementing.
-**Effort:** S (human: ~1 day / CC: ~10 min) | **Priority:** P2 | **Depends on:** pyxva live integration (deferred scope)
+**Context:** `SimulationXVAService._map_fills_to_pyxva_config()` in `infrastructure/xva/service.py` maps OMS blotter fills to pyxva config. Equity tickers (AAPL/MSFT/SPY/NVDA) excluded from pyxva; CVA computed analytically. Non-equity tickers routed by product type (IRS, FX forward, bond, options).
+**Completed:** v0.3.0.0
 
-### TODO-003: Model Governance AI (Quant Agent Q&A)
-**What:** `/api/models/chat` endpoint + chat UI on `models.html` — the Quant agent (Dr. Yuki Tanaka) answers questions about any model card in the registry
-**Why:** Transforms a static JSON registry into an interactive SR 11-7 compliance tool. "SR 11-7 compliance with AI" is a genuine fintech product category.
-**Pros:** High differentiation, low cost (Quant agent already exists, Observer Q&A pattern from Expansion 4 provides the template)
-**Cons:** Requires system prompt engineering for model card Q&A; needs model card JSON to be passed as context
-**Context:** `model_docs/registry.json` has 6+ model cards. Pattern: user selects a model, types a question, Quant agent responds with awareness of the card's findings, validation status, and model math. Reuse Observer Q&A endpoint pattern.
-**Effort:** S (human: ~3 days / CC: ~15 min) | **Priority:** P2 | **Depends on:** Observer Q&A (Expansion 4)
+### TODO-003: Model Governance AI (Quant Agent Q&A) ✅ DONE
+**What:** `/api/models/chat` endpoint + chat UI on `models.html` — multi-persona Q&A on model cards
+**Context:** `api/models_routes.py` — `POST /api/models/chat` with model_id allowlist from `registry.json`. Dr. Yuki Tanaka answers for BSM/HW1F/LMM (APEX-MDL-0004/0005/0006); Dr. Samuel Achebe for all others. SSE streaming, system prompt includes full model card JSON + MDD markdown content.
+**Completed:** v0.3.0.0
 
-### TODO-004: BoardroomBroadcaster History Pagination
-**What:** Cap `BoardroomBroadcaster._history` in-memory at 1,000 messages; serve older messages from SQLite via a paginated API endpoint
-**Why:** Current list grows without bound. At 1KB/message, a 10-hour simulation = ~100MB in memory.
-**Pros:** Stable memory usage in long-running simulations
-**Cons:** Requires pagination API for dashboard to load history in pages; more complex WebSocket reconnect logic
-**Context:** `api/boardroom_broadcaster.py` — `self._history: list` has no size cap. Fix: `if len(self._history) > 1000: self._history = self._history[-1000:]` and write older messages to SQLite. Add `GET /api/boardroom/history?page=N` endpoint for dashboard to load older messages.
-**Effort:** S (human: ~1 day / CC: ~10 min) | **Priority:** P2 | **Depends on:** SQLite persistence (Expansion 3)
+### TODO-004: BoardroomBroadcaster History Cap ✅ DONE
+**What:** Cap `BoardroomBroadcaster._history` at 200 messages
+**Context:** `api/boardroom_broadcaster.py` — `_MAX_HISTORY = 200` with cap enforced at lines 98-99 and 149-150.
+**Completed:** v0.1.x (pre-existing, confirmed by eng review)
 
-### TODO-005: pyxva Live XVA Integration
-**What:** Wire `XVAAdapter.run_pipeline()` to actual simulation trades. As trades accumulate, CVA/DVA/FVA numbers on the XVA dashboard reflect real trade activity.
-**Why:** Makes XVA dashboard quantitatively meaningful, not decorative
-**Pros:** Completes the quantitative finance story; makes the product credible to quants
-**Cons:** Depends on pyxva API stability (it's a local dep at `../pyxva`); Position schema must be finalized first
-**Context:** `infrastructure/xva/adapter.py` — `run_pipeline()` works but `from_positions()` returns `[]`. Fix sequence: (1) complete TODO-002, (2) create a `SimulationXVAService` that calls `XVAAdapter.from_positions(positions)` and `run_pipeline()` on a schedule, (3) cache results in SQLite, (4) serve from `/api/xva/summary`.
-**Effort:** M (human: ~1 week / CC: ~30 min) | **Priority:** P2 | **Depends on:** TODO-002, Expansion 3
+### TODO-005: pyxva Live XVA Integration ✅ DONE
+**What:** Wire `XVAAdapter.run_pipeline()` to actual simulation trades
+**Context:** `infrastructure/xva/service.py` (stream-b) — `SimulationXVAService` with asyncio.Lock guard, auto-refresh on OMS trade submit, cached results. `XVABroadcaster` pushes live updates via `/ws/xva`. Dashboard badge switches DEMO → LIVE.
+**Completed:** v0.3.0.0
 
 ---
 
@@ -119,24 +107,43 @@
 
 ## Phase 2 — Still open (60-180 day plan)
 
-### TODO-022: Legal Entity / Booking Model — P1
-**What:** Add `legal_entity_id` foreign key to Trade and Position. Entity registry with jurisdiction, regulatory regime, ISDA flags. Netting set construction at entity level.
-**Why:** XVA netting calculations are wrong without entity structure. Required before TODO-005.
-**Effort:** M | **Priority:** P1 | **Depends on:** TODO-014 (event log)
+### TODO-022: Legal Entity / Booking Model ✅ DONE
+**What:** `models/legal_entity.py` — 4 Apex legal entities with jurisdiction, regime, netting flag. `DESK_ENTITY` maps trading desks to booking entities. `GET /api/risk/entities` endpoint.
+**Completed:** v0.3.0.0
 
-### TODO-023: 3LoD Independent Data Layer (CQRS) — P1
-**What:** RiskService becomes an independent event consumer, building its own risk position from the canonical event stream rather than sharing PositionManager state with the trading desk.
-**Why:** Victoria Ashworth finding: "second line reads from the same data as first line — that is a control failure."
-**Effort:** M | **Priority:** P1 | **Depends on:** TODO-014 (event log)
+### TODO-023: 3LoD Independent Data Layer (CQRS) ✅ DONE
+**What:** `PositionManager.add_trade()` now publishes `TradeBooked` to EventLog. `RiskPositionReader.rebuild()` replays only those events — pure second-line read path. `GET /api/risk/independence-check` compares PositionManager notional vs RiskPositionReader notional; returns ALIGNED/DIVERGED.
+**Completed:** v0.3.0.0
 
-### TODO-024: DFAST/CCAR Stress Testing Framework — P2
-**What:** Multi-year forward capital adequacy projection under baseline, adverse, severely adverse scenarios. Uses regulatory_capital engine + scenario generator.
-**Effort:** M | **Priority:** P2 | **Depends on:** TODO-016
+### TODO-024: DFAST/CCAR Stress Testing Framework ✅ DONE
+**What:** `infrastructure/stress/dfast_engine.py` — 9-quarter CET1 projection under baseline/adverse/severely_adverse scenarios. `GET /api/stress/dfast` and `/api/stress/dfast/{scenario}`. DFAST panel in `dashboard/scenarios.html` with Plotly CET1 chart + Basel 4.5% minimum line.
+**Completed:** v0.3.0.0
 
 ### TODO-026: OMS Hardening (concurrency, event loop, pre-trade consistency) — P3
 **What:** Harden the OMS for concurrent use: add asyncio.Lock around `submit_order`, offload `risk_service.run_snapshot()` to a thread-pool executor (blocks event loop ~100ms), make `_persist_trade` non-fire-and-forget, align pre-trade (parametric VaR) and post-trade (Monte Carlo VaR) methodologies.
 **Why:** Adversarial review identified these as latent issues. For a single-user demo they don't matter; for multi-user or production they would cause data corruption.
 **Effort:** S (CC: ~15 min) | **Priority:** P3 | **Depends on:** nothing
+
+### TODO-027: Treasury Route Repair + State Ownership Hardening ✅ DONE
+**What:** Fix all three treasury route failures and enforce single PositionManager ownership.
+**Context:**
+- `_get_positions()` was calling nonexistent `risk_service.get_snapshot()` (AttributeError swallowed) → now calls `risk_service.position_manager.get_all_positions()` directly
+- `/ftp/adjusted-pnl` was constructing a detached `PositionManager()` (empty, never saw a trade) and calling `.values()` on a list → removed; desk P&L now comes from `risk_service.get_position_report()["by_desk"]`
+- Dead `PnLCalculator` import removed
+- FTP engine `calculate_desk_charges()` was grouping by `book_id` and using `pos.get("ticker")` — changed to group by `desk` and use `pos.get("instrument")` to match live position schema
+- All blanket `except Exception: return []` removed; errors now surface as proper HTTP 500s
+- `infrastructure/persistence/position_snapshots.py` field names aligned: `ticker` → `instrument`, `realized_pnl`/`unrealized_pnl` → `realised_pnl`/`unrealised_pnl`
+**Completed:** 2026-03-26 (feature/clickable-landing-cards)
+
+### TODO-028: Docs Reconciliation ✅ DONE
+**What:** Align CLAUDE.md, README.md, and docs/architecture.md with actual code.
+**Context:**
+- CLAUDE.md: fixed uvicorn entrypoint (`api.app:app` → `api.main:app`), fixed broadcaster cap (1,000 → 200)
+- docs/architecture.md: full rewrite — startup sequence, all 40+ routes, WebSocket message shapes, all data flows, DB schemas, singleton map, risk limit table, Greeks table, agent roster
+- README.md: created (was missing)
+**Completed:** 2026-03-26
+
+---
 
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
