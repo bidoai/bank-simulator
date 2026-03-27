@@ -190,14 +190,26 @@
             padding: 7px 8px;
             border-radius: 5px;
             margin-bottom: 2px;
-            cursor: default;
-            transition: background 0.15s;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            border: 1px solid transparent;
         }
 
         .agent-card:hover { background: var(--bg-elevated); }
 
+        .agent-card:focus-visible {
+            outline: none;
+            border-color: #4493f8;
+            background: var(--bg-elevated);
+        }
+
         .agent-card.speaking {
             background: var(--bg-elevated);
+        }
+
+        .agent-card.selected {
+            background: rgba(68, 147, 248, 0.12);
+            border-color: rgba(68, 147, 248, 0.45);
         }
 
         .agent-indicator {
@@ -233,6 +245,59 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .agent-summary {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-base);
+        }
+
+        .agent-summary-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .agent-summary-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .agent-summary-role {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .agent-summary-badge {
+            flex-shrink: 0;
+            padding: 3px 7px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: var(--bg-surface);
+        }
+
+        .agent-summary-text {
+            font-size: 11px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .agent-summary-focus {
+            margin-top: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.5;
         }
 
         /* ── Session list ──────────────────────────────────────────────────── */
@@ -733,6 +798,21 @@
                 <div id="agents-list">
                     <!-- populated by JS -->
                 </div>
+                <div class="agent-summary" id="agent-summary" aria-live="polite">
+                    <div class="agent-summary-header">
+                        <div>
+                            <div class="agent-summary-name" id="agent-summary-name">Alexandra Chen</div>
+                            <div class="agent-summary-role" id="agent-summary-role">Chief Executive Officer</div>
+                        </div>
+                        <div class="agent-summary-badge" id="agent-summary-badge">Selected</div>
+                    </div>
+                    <div class="agent-summary-text" id="agent-summary-text">
+                        Sets the strategic direction of the meeting and pushes the room toward decisions that affect franchise growth, capital allocation, and operating tempo.
+                    </div>
+                    <div class="agent-summary-focus" id="agent-summary-focus">
+                        Typical lens: strategy, accountability, and execution risk.
+                    </div>
+                </div>
             </div>
 
             <!-- Sessions -->
@@ -825,15 +905,117 @@
     // ── Constants ─────────────────────────────────────────────────────────────
 
     const AGENT_META = [
-        { name: "Alexandra Chen",  title: "Chief Executive Officer",    color: "#e3b341" },
-        { name: "Dr. Priya Nair",  title: "Chief Risk Officer",         color: "#f85149" },
-        { name: "Dr. Yuki Tanaka", title: "Head of Quant Research",     color: "#58a6ff" },
-        { name: "James Okafor",    title: "Head of Global Markets",     color: "#3fb950" },
-        { name: "Sarah Mitchell",  title: "Chief Compliance Officer",   color: "#bc8cff" },
-        { name: "Marcus Rivera",   title: "Chief Technology Officer",   color: "#79c0ff" },
-        { name: "Amara Diallo",    title: "Head of Treasury & ALM",     color: "#ffa657" },
-        { name: "The Observer",    title: "Independent Narrator",       color: "#8b949e" },
+        {
+            name: "Alexandra Chen",
+            title: "Chief Executive Officer",
+            color: "#e3b341",
+            summary: "Sets the strategic direction of the meeting and pushes the room toward decisions that affect franchise growth, capital allocation, and operating tempo.",
+            focus: "Typical lens: strategy, accountability, and execution risk.",
+        },
+        {
+            name: "Dr. Priya Nair",
+            title: "Chief Risk Officer",
+            color: "#f85149",
+            summary: "Pressure-tests proposals against market, credit, liquidity, and operational risk so enthusiasm does not outrun the bank's control framework.",
+            focus: "Typical lens: downside protection, limit discipline, and tail scenarios.",
+        },
+        {
+            name: "Dr. Yuki Tanaka",
+            title: "Head of Quant Research",
+            color: "#58a6ff",
+            summary: "Translates complex market structure and model behavior into tradeoffs the board can use when debating pricing, hedging, and scenario analysis.",
+            focus: "Typical lens: model validity, assumptions, and signal quality.",
+        },
+        {
+            name: "James Okafor",
+            title: "Head of Global Markets",
+            color: "#3fb950",
+            summary: "Represents the revenue engine of the bank and frames how market structure, client demand, and trading execution convert into P&L opportunity.",
+            focus: "Typical lens: monetization, flow, and market timing.",
+        },
+        {
+            name: "Sarah Mitchell",
+            title: "Chief Compliance Officer",
+            color: "#bc8cff",
+            summary: "Flags conduct, surveillance, and regulatory issues early so strategic decisions remain executable within the bank's supervisory obligations.",
+            focus: "Typical lens: policy alignment, controls, and regulatory exposure.",
+        },
+        {
+            name: "Marcus Rivera",
+            title: "Chief Technology Officer",
+            color: "#79c0ff",
+            summary: "Assesses whether the platform, data, and engineering stack can support the operating model the board is asking the firm to run.",
+            focus: "Typical lens: system resilience, delivery risk, and platform leverage.",
+        },
+        {
+            name: "Amara Diallo",
+            title: "Head of Treasury & ALM",
+            color: "#ffa657",
+            summary: "Anchors the discussion in funding, balance sheet capacity, and liquidity transfer costs so plans remain financeable under stress.",
+            focus: "Typical lens: liquidity, capital usage, and balance sheet efficiency.",
+        },
+        {
+            name: "The Observer",
+            title: "Independent Narrator",
+            color: "#8b949e",
+            summary: "Provides neutral context and narration so the flow of the meeting stays legible even when multiple technical threads are moving at once.",
+            focus: "Typical lens: synthesis, pacing, and narrative clarity.",
+        },
     ];
+
+    const AGENT_SUMMARY_FALLBACKS = {
+        "Diana Osei": {
+            summary: "Frames the discussion through earnings quality, balance-sheet optics, and how strategic choices convert into reported performance and investor messaging.",
+            focus: "Typical lens: profitability, cost discipline, and financial transparency.",
+        },
+        "Dr. Fatima Al-Rashid": {
+            summary: "Pushes the room to treat data lineage, governance, and analytical consistency as strategic assets rather than implementation detail.",
+            focus: "Typical lens: data quality, controls, and decision-useful analytics.",
+        },
+        "Jordan Pierce": {
+            summary: "Examines whether the institution can evidence control effectiveness, trace decisions, and survive scrutiny from internal and external reviewers.",
+            focus: "Typical lens: auditability, control design, and remediation risk.",
+        },
+        "Margaret Okonkwo": {
+            summary: "Interprets the legal perimeter around the board's choices so commercial ambition stays consistent with contractual, governance, and fiduciary constraints.",
+            focus: "Typical lens: legal enforceability, governance, and downside containment.",
+        },
+        "Dr. Samuel Achebe": {
+            summary: "Challenges model assumptions and approval readiness so quantitative systems are credible before they are trusted in production decisions.",
+            focus: "Typical lens: validation evidence, model risk, and approval standards.",
+        },
+    };
+
+    let agentRoster = [...AGENT_META];
+
+    function findAgentMeta(name) {
+        return agentRoster.find(a => a.name === name)
+            || AGENT_META.find(a => a.name === name)
+            || null;
+    }
+
+    function buildAgentMeta(agent) {
+        const existing = findAgentMeta(agent.name);
+        const fallback = AGENT_SUMMARY_FALLBACKS[agent.name] || {};
+        return {
+            name: agent.name,
+            title: existing?.title || agent.title || "Board Participant",
+            color: existing?.color || agent.color || "#c9d1d9",
+            summary: existing?.summary || fallback.summary || `${agent.title || "Board participant"} contributing domain expertise to the board discussion.`,
+            focus: existing?.focus || fallback.focus || "Typical lens: domain expertise, operating tradeoffs, and decision impact.",
+        };
+    }
+
+    function syncAgentRoster(agents) {
+        if (!Array.isArray(agents) || !agents.length) return;
+        agentRoster = agents.map(buildAgentMeta);
+
+        if (!selectedAgentName || !findAgentMeta(selectedAgentName)) {
+            selectedAgentName = agentRoster[0]?.name || null;
+        }
+
+        renderAgentList();
+    }
 
     // ── Voice profiles — swap provider here when upgrading to ElevenLabs / OpenAI TTS ──
     //
@@ -956,8 +1138,15 @@
 
     function renderAgentList() {
         const el = document.getElementById("agents-list");
-        el.innerHTML = AGENT_META.map(a => `
-            <div class="agent-card" id="agent-${slugify(a.name)}" data-name="${a.name}">
+        el.innerHTML = agentRoster.map(a => `
+            <div
+                class="agent-card${a.name === selectedAgentName ? ' selected' : ''}"
+                id="agent-${slugify(a.name)}"
+                data-name="${a.name}"
+                tabindex="0"
+                role="button"
+                aria-label="Show summary for ${a.name}"
+            >
                 <span class="agent-indicator" style="background:${a.color}" id="dot-${slugify(a.name)}"></span>
                 <div class="agent-info">
                     <div class="agent-card-name">${a.name}</div>
@@ -965,6 +1154,8 @@
                 </div>
             </div>
         `).join("");
+        bindAgentInteractions();
+        updateAgentSummary(selectedAgentName, true);
     }
 
     function slugify(name) {
@@ -976,10 +1167,50 @@
         if (!card) return;
         card.classList.toggle("speaking", speaking);
         const dot = document.getElementById("dot-" + slugify(name));
-        const meta = AGENT_META.find(a => a.name === name);
+        const meta = findAgentMeta(name);
         if (dot && meta) {
             dot.style.background = speaking ? meta.color : "var(--text-dim)";
         }
+    }
+
+    function updateAgentSummary(name, pinned = false) {
+        const meta = findAgentMeta(name) || agentRoster[0] || AGENT_META[0];
+        if (!meta) return;
+
+        document.getElementById("agent-summary-name").textContent = meta.name;
+        document.getElementById("agent-summary-role").textContent = meta.title;
+        document.getElementById("agent-summary-text").textContent = meta.summary || "";
+        document.getElementById("agent-summary-focus").textContent = meta.focus || "";
+
+        const badge = document.getElementById("agent-summary-badge");
+        badge.textContent = pinned ? "Selected" : "Preview";
+        badge.style.color = meta.color;
+        badge.style.borderColor = meta.color;
+    }
+
+    function selectAgentCard(name) {
+        selectedAgentName = name;
+        document.querySelectorAll(".agent-card").forEach(card => {
+            card.classList.toggle("selected", card.dataset.name === name);
+        });
+        updateAgentSummary(name, true);
+    }
+
+    function bindAgentInteractions() {
+        document.querySelectorAll(".agent-card").forEach(card => {
+            const { name } = card.dataset;
+            card.addEventListener("mouseenter", () => updateAgentSummary(name, false));
+            card.addEventListener("focus", () => updateAgentSummary(name, false));
+            card.addEventListener("mouseleave", () => updateAgentSummary(selectedAgentName, true));
+            card.addEventListener("blur", () => updateAgentSummary(selectedAgentName, true));
+            card.addEventListener("click", () => selectAgentCard(name));
+            card.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectAgentCard(name);
+                }
+            });
+        });
     }
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -987,29 +1218,32 @@
     let selectedAgents  = new Set(["Alexandra Chen","Dr. Priya Nair","Marcus Rivera","Dr. Yuki Tanaka","James Okafor","The Observer"]);
     let viewingMeetingId = null;  // null = live session
     let activeMeetingId  = null;  // most recently started/active meeting
+    let selectedAgentName = agentRoster[0]?.name || null;
+
+    async function ensureAvailableAgents() {
+        if (availableAgents.length) return availableAgents;
+
+        try {
+            const res = await fetch("/api/boardroom/agents");
+            if (!res.ok) throw new Error(`Roster request failed: ${res.status}`);
+            availableAgents = await res.json();
+        } catch (_) {
+            availableAgents = agentRoster.map(a => ({
+                name: a.name,
+                title: a.title,
+                color: a.color,
+            }));
+        }
+
+        syncAgentRoster(availableAgents);
+        return availableAgents;
+    }
 
     // ── Modal ─────────────────────────────────────────────────────────────────
 
     async function openModal() {
         // Load agent roster if not yet loaded
-        if (!availableAgents.length) {
-            try {
-                const res = await fetch("/api/boardroom/agents");
-                availableAgents = await res.json();
-            } catch (_) {
-                availableAgents = [
-                    { name: "Alexandra Chen",  title: "CEO",        color: "#e3b341" },
-                    { name: "Dr. Priya Nair",  title: "CRO",        color: "#f85149" },
-                    { name: "Marcus Rivera",   title: "CTO",        color: "#79c0ff" },
-                    { name: "Dr. Yuki Tanaka", title: "Quant",      color: "#58a6ff" },
-                    { name: "James Okafor",    title: "Trader",     color: "#3fb950" },
-                    { name: "Sarah Mitchell",  title: "Compliance", color: "#bc8cff" },
-                    { name: "Amara Diallo",    title: "Treasury",   color: "#ffa657" },
-                    { name: "Diana Osei",      title: "CFO",        color: "#e3b341" },
-                    { name: "The Observer",    title: "Narrator",   color: "#8b949e" },
-                ];
-            }
-        }
+        await ensureAvailableAgents();
 
         const picker = document.getElementById("agent-picker");
         picker.innerHTML = availableAgents.map(a => `
@@ -1323,7 +1557,7 @@
     function showTypingIndicator(agentName, color) {
         const block = document.getElementById("typing-block");
         const badge = document.getElementById("typing-badge");
-        const meta  = AGENT_META.find(a => a.name === agentName);
+        const meta  = findAgentMeta(agentName);
         const c     = color || (meta ? meta.color : "#c9d1d9");
 
         badge.textContent = agentName;
@@ -1455,6 +1689,7 @@
     // ── Boot ──────────────────────────────────────────────────────────────────
 
     renderAgentList();
+    ensureAvailableAgents();
     loadMeetings();
     connect();
     // Hide mute button on browsers without Speech Synthesis support

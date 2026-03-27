@@ -34,40 +34,49 @@
       min-height: 100vh;
     }
 
-    /* ── Top nav bar ───────────────────────────────────────────────────────── */
-    .topbar {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
-      height: 44px;
+    .page-header {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      position: sticky;
-      top: 44px;   /* sits just below the 44px global nav */
-      z-index: 100;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
-    .topbar-left { display: flex; align-items: center; gap: 16px; }
-
-    .topbar-divider { width: 1px; height: 20px; background: var(--border); }
-    .topbar-title { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
-    .topbar-right { display: flex; align-items: center; gap: 12px; }
-    .topbar-badge {
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.7;
+    }
+    .page-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .page-chip {
       font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 3px;
+      padding: 4px 10px;
+      border-radius: 999px;
       border: 1px solid var(--border);
+      background: var(--card);
       color: var(--muted);
       letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
-    .topbar-badge.framework { border-color: var(--accent); color: var(--accent); }
-    .topbar-badge.restricted { border-color: var(--negative); color: var(--negative); }
+    .page-chip.framework { border-color: var(--accent); color: var(--accent); }
+    .page-chip.restricted { border-color: var(--negative); color: var(--negative); }
     #api-status {
       font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 3px;
+      padding: 4px 10px;
+      border-radius: 999px;
       border: 1px solid var(--border);
       color: var(--muted);
+      background: var(--card);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     #api-status.ok { border-color: var(--positive); color: var(--positive); }
     #api-status.err { border-color: var(--negative); color: var(--negative); }
@@ -541,20 +550,23 @@
 </head>
 <body>
 
-<!-- ── Page sub-header (page-specific controls only; brand/tabs in global nav) -->
-<div class="topbar">
-  <div class="topbar-left">
-    <span class="topbar-title">Model Governance Portal</span>
-  </div>
-  <div class="topbar-right">
-    <span class="topbar-badge framework">SR 11-7</span>
-    <span class="topbar-badge restricted">RESTRICTED — MODEL RISK SENSITIVE</span>
-    <span id="api-status">● API</span>
-  </div>
-</div>
-
 <!-- ── Page body ──────────────────────────────────────────────────────────── -->
 <div class="page">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Model Governance Portal</div>
+      <div class="page-subtitle">
+        Inventory, findings, and model lifecycle controls in one place.
+        This page should answer what is in production, what is under pressure, and where governance attention is required now.
+      </div>
+    </div>
+    <div class="page-actions">
+      <span class="page-chip framework">SR 11-7</span>
+      <span class="page-chip restricted">Model Risk Sensitive</span>
+      <span id="api-status">● API</span>
+    </div>
+  </div>
 
   <!-- ── KPI bar ──────────────────────────────────────────────────────────── -->
   <div class="section-heading">Portfolio Overview</div>
@@ -616,6 +628,7 @@
       <div class="detail-close-row">
         <span class="detail-model-id" id="detail-model-id"></span>
         <span class="detail-model-name" id="detail-model-name"></span>
+        <a id="detail-pdf-btn" class="btn btn-docs" href="#" target="_blank" rel="noopener" style="display:none;margin-left:auto;margin-right:8px;font-size:11px;padding:4px 10px;">&#x21E9; Download MDD PDF</a>
         <button class="detail-close" onclick="closeDetail()">Close</button>
       </div>
       <div class="detail-grid">
@@ -800,7 +813,7 @@ function renderTable(models) {
       <td style="color:var(--muted)">${m.last_review_date}</td>
       <td>
         <button class="btn btn-docs" onclick="openDocs(event, '${m.id}')">
-          &#x1F4C4; Docs (${m.doc_files ? m.doc_files.length : 0})
+          &#x1F4C4; Docs (${normalizeDocEntries(m).length})
         </button>
       </td>
     </tr>`;
@@ -951,6 +964,11 @@ function selectModel(id) {
 
   document.getElementById('detail-panel').classList.add('visible');
   document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Wire up PDF download button
+  const pdfBtn = document.getElementById('detail-pdf-btn');
+  pdfBtn.href = modelPdfUrl(model.id);
+  pdfBtn.style.display = 'inline-block';
 }
 
 function closeDetail() {
@@ -977,6 +995,46 @@ function statusIcon(s) {
   return map[s] || `<span class="status-icon">${s}</span>`;
 }
 
+function modelPdfUrl(modelId) {
+  return `${API_BASE}/api/models/${modelId}/pdf`;
+}
+
+function normalizeDocEntries(model) {
+  const docs = model.doc_files || [];
+  const entries = [];
+  const seenMddStems = new Set();
+
+  for (const fname of docs) {
+    const isMddSource = /^mdd_/i.test(fname) && /\.(md|tex)$/i.test(fname);
+    if (isMddSource) {
+      const stem = fname.replace(/\.(md|tex)$/i, '');
+      if (seenMddStems.has(stem)) continue;
+      seenMddStems.add(stem);
+      entries.push({
+        label: `${stem}.pdf`,
+        type: 'PDF',
+        previewUrl: `${API_BASE}/api/models/${model.id}/doc/${fname}`,
+        downloadUrl: modelPdfUrl(model.id),
+        downloadName: null,
+        downloadLabel: 'Download PDF',
+      });
+      continue;
+    }
+
+    const apiUrl = `${API_BASE}/api/models/${model.id}/doc/${fname}`;
+    entries.push({
+      label: fname,
+      type: fname.split('.').pop().toUpperCase(),
+      previewUrl: apiUrl,
+      downloadUrl: apiUrl,
+      downloadName: fname,
+      downloadLabel: 'Download',
+    });
+  }
+
+  return entries;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Document modal
 // ──────────────────────────────────────────────────────────────────────────────
@@ -984,26 +1042,25 @@ function openDocs(event, modelId) {
   event.stopPropagation();
   const model = allModels.find(m => m.id === modelId);
   if (!model) return;
+  const docs = normalizeDocEntries(model);
 
   document.getElementById('modal-title').textContent   = `${model.id} — ${model.name}`;
-  document.getElementById('modal-subtitle').textContent = `v${model.version} | ${model.doc_files?.length || 0} document(s) available`;
+  document.getElementById('modal-subtitle').textContent = `v${model.version} | ${docs.length || 0} document(s) available`;
 
-  const docs = model.doc_files || [];
   if (!docs.length) {
     document.getElementById('doc-list').innerHTML = `<li style="color:var(--muted);font-size:11px;text-align:center;padding:12px">No documents registered</li>`;
   } else {
-    document.getElementById('doc-list').innerHTML = docs.map(fname => {
-      const ext   = fname.split('.').pop().toUpperCase();
-      const apiUrl = `${API_BASE}/api/models/${modelId}/doc/${fname}`;
+    document.getElementById('doc-list').innerHTML = docs.map(doc => {
+      const downloadAttr = doc.downloadName ? `download="${doc.downloadName}"` : '';
       return `
       <li class="doc-item">
         <div>
-          <div class="doc-filename">${fname}</div>
-          <div class="doc-type">${ext} document</div>
+          <div class="doc-filename">${doc.label}</div>
+          <div class="doc-type">${doc.type} document</div>
         </div>
         <div class="doc-actions">
-          <a class="btn" href="${apiUrl}" target="_blank" rel="noopener">Preview</a>
-          <a class="btn btn-docs" href="${apiUrl}" download="${fname}">Download</a>
+          <a class="btn" href="${doc.previewUrl}" target="_blank" rel="noopener">Preview</a>
+          <a class="btn btn-docs" href="${doc.downloadUrl}" ${downloadAttr}>${doc.downloadLabel}</a>
         </div>
       </li>`;
     }).join('');
@@ -1102,7 +1159,7 @@ const EMBEDDED_REGISTRY = {
       "last_review_date": "2026-03-15", "next_review_date": "2027-03-15",
       "open_findings": 3,
       "description": "Bilateral credit valuation adjustment for OTC derivatives. Prices counterparty credit risk using Monte Carlo simulation of exposure profiles combined with market-implied default probabilities.",
-      "doc_files": ["mdd_cva_v1.0.tex", "mdd_cva_v1.0.md"],
+      "doc_files": ["mdd_cva_v1.0.tex"],
       "findings": [
         {"id": "CVA-F1", "severity": "major", "description": "Stressed CVA not computed; only unstressed CVA reported", "status": "open"},
         {"id": "CVA-F2", "severity": "minor", "description": "Wrong reversal rate model claim (30 steps, should be 200)", "status": "open"},
@@ -1118,7 +1175,7 @@ const EMBEDDED_REGISTRY = {
       "last_review_date": "2026-03-10", "next_review_date": "2027-03-10",
       "open_findings": 0,
       "description": "Funding cost of uncollateralised derivatives positions.",
-      "doc_files": ["mdd_fva_v1.0.tex", "mdd_fva_v1.0.md"], "findings": []
+      "doc_files": ["mdd_fva_v1.0.tex"], "findings": []
     },
     {
       "id": "APEX-MDL-0012", "name": "Margin Valuation Adjustment", "short_name": "MVA",
@@ -1129,7 +1186,7 @@ const EMBEDDED_REGISTRY = {
       "last_review_date": "2026-03-10", "next_review_date": "2027-03-10",
       "open_findings": 0,
       "description": "Cost of initial margin under Uncleared Margin Rules using ISDA SIMM.",
-      "doc_files": ["mdd_mva_v1.0.tex", "mdd_mva_v1.0.md"], "findings": []
+      "doc_files": ["mdd_mva_v1.0.tex"], "findings": []
     },
     {
       "id": "APEX-MDL-0013", "name": "Collateral Valuation Adjustment", "short_name": "ColVA",
@@ -1140,7 +1197,7 @@ const EMBEDDED_REGISTRY = {
       "last_review_date": "2026-03-10", "next_review_date": "2027-03-10",
       "open_findings": 0,
       "description": "Value of optionality in multi-currency CSA collateral posting.",
-      "doc_files": ["mdd_colva_v1.0.tex", "mdd_colva_v1.0.md"], "findings": []
+      "doc_files": ["mdd_colva_v1.0.tex"], "findings": []
     },
     {
       "id": "APEX-MDL-0014", "name": "PFE/CCR Exposure Engine", "short_name": "PFE",

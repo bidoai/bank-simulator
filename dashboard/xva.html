@@ -33,35 +33,39 @@
       padding: 0;
     }
 
-    /* ── Header ─────────────────────────────────────────────────────── */
-    .header {
+    .page-header {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      padding: 12px 20px;
+      gap: 16px;
+      padding: 18px 20px 14px;
       border-bottom: 1px solid var(--border);
       background: var(--card);
+      flex-wrap: wrap;
     }
 
-    .header-left { display: flex; align-items: center; gap: 16px; }
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
 
-    .header-logo {
-      font-size: 11px;
+    .page-subtitle {
+      font-size: 12px;
       color: var(--muted);
-      letter-spacing: 3px;
-      text-transform: uppercase;
+      max-width: 760px;
+      line-height: 1.7;
     }
 
-    .header-title {
-      font-size: 14px;
-      color: var(--accent);
-      font-weight: bold;
-      letter-spacing: 1px;
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
-
-    .header-pipe { color: var(--border); }
-
-    .header-right { display: flex; align-items: center; gap: 10px; }
 
     .badge {
       display: inline-flex;
@@ -149,6 +153,26 @@
     .kpi-value.warn { color: var(--warning); }
 
     .kpi-sub { font-size: 10px; color: var(--muted); }
+
+    .provenance-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(22, 27, 34, 0.94), rgba(22, 27, 34, 0.82));
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .provenance-banner strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .provenance-banner.mock strong { color: var(--warning); }
+    .provenance-banner.pyxva strong { color: var(--positive); }
 
     /* ── Main grid ────────────────────────────────────────────────── */
     .main-grid {
@@ -446,6 +470,21 @@
 </script>
 
 <!-- Stress bar -->
+<div class="page-header">
+  <div>
+    <div class="page-title">XVA Analytics</div>
+    <div class="page-subtitle">
+      Counterparty risk, funding adjustments, and future exposure across the derivatives portfolio.
+      The core question here is provenance: what is live from `pyxva`, what is fallback, and where exposure is concentrating.
+    </div>
+  </div>
+  <div class="page-actions">
+    <span class="badge">Counterparty Risk</span>
+    <span class="badge">CVA / FVA / PFE</span>
+  </div>
+</div>
+
+<!-- Stress bar -->
 <div class="stress-bar">
   <span class="stress-label">Stress:</span>
   <button class="stress-btn" data-scenario="gfc" onclick="runStress(this)">GFC</button>
@@ -477,6 +516,11 @@
     <span class="kpi-value accent" id="kpi-eepe">—</span>
     <span class="kpi-sub">Eff. Exp. Pos. Exposure</span>
   </div>
+</div>
+
+<div class="provenance-banner mock" id="provenance-banner">
+  <div><strong>Fallback data active.</strong> The XVA view is currently showing mock analytics until a live `pyxva` run succeeds.</div>
+  <div id="provenance-detail">Source: mock</div>
 </div>
 
 <!-- Main grid -->
@@ -822,11 +866,39 @@ function updateSourceTag(source) {
     tag.textContent = "PYXVA ENGINE";
     tag.className   = "source-tag pyxva";
   } else if (source === "mock_fallback") {
-    tag.textContent = "MOCK (fallback)";
+    tag.textContent = "MOCK FALLBACK";
+    tag.className   = "source-tag mock";
+  } else if (source === "mock_stress") {
+    tag.textContent = "MOCK STRESS";
     tag.className   = "source-tag mock";
   } else {
     tag.textContent = "MOCK DATA";
     tag.className   = "source-tag mock";
+  }
+  updateProvenanceBanner(source);
+}
+
+function updateProvenanceBanner(source) {
+  const banner = document.getElementById("provenance-banner");
+  const detail = document.getElementById("provenance-detail");
+  if (!banner || !detail) return;
+
+  if (source === "pyxva") {
+    banner.className = "provenance-banner pyxva";
+    banner.firstElementChild.innerHTML = "<strong>Live pyxva analytics.</strong> CVA, PFE, and EEPE are being rendered from the pyxva engine output.";
+    detail.textContent = "Source: pyxva";
+  } else if (source === "mock_fallback") {
+    banner.className = "provenance-banner mock";
+    banner.firstElementChild.innerHTML = "<strong>Fallback data active.</strong> A live pyxva run failed, so the page fell back to mock analytics to keep the UI responsive.";
+    detail.textContent = "Source: mock fallback";
+  } else if (source === "mock_stress") {
+    banner.className = "provenance-banner mock";
+    banner.firstElementChild.innerHTML = "<strong>Mock stress view.</strong> Stress impacts are being applied to the mock XVA baseline rather than a fresh pyxva scenario run.";
+    detail.textContent = "Source: mock stress";
+  } else {
+    banner.className = "provenance-banner mock";
+    banner.firstElementChild.innerHTML = "<strong>Fallback data active.</strong> The XVA view is currently showing mock analytics until a live pyxva run succeeds.";
+    detail.textContent = "Source: mock";
   }
 }
 

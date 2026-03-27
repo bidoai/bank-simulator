@@ -12,6 +12,8 @@
     { path: '/boardroom', label: 'Boardroom'       },
     { path: '/trading',   label: 'Trading'         },
     { path: '/risk',      label: 'Risk'            },
+    { path: '/securities-finance', label: 'Sec Finance' },
+    { path: '/securitized', label: 'Securitized'   },
     { path: '/xva',       label: 'XVA Analytics'   },
     { path: '/models',    label: 'Model Governance' },
     { path: '/scenarios', label: 'Scenarios'       },
