@@ -247,6 +247,20 @@ try:
 except ImportError:
     log.warning("api.stress_routes not found — DFAST stress API endpoints unavailable")
 
+try:
+    from api import securities_finance_routes
+    app.include_router(securities_finance_routes.router, prefix="/api")
+    log.info("securities_finance_routes loaded")
+except ImportError:
+    log.warning("api.securities_finance_routes not found — securities finance API endpoints unavailable")
+
+try:
+    from api import securitized_routes
+    app.include_router(securitized_routes.router, prefix="/api")
+    log.info("securitized_routes loaded")
+except ImportError:
+    log.warning("api.securitized_routes not found — securitized products API endpoints unavailable")
+
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
@@ -299,6 +313,16 @@ async def scenarios() -> FileResponse:
 @app.get("/risk")
 async def risk() -> FileResponse:
     return _html("risk.html")
+
+
+@app.get("/securities-finance")
+async def securities_finance() -> FileResponse:
+    return _html("securities_finance.html")
+
+
+@app.get("/securitized")
+async def securitized() -> FileResponse:
+    return _html("securitized.html")
 
 # ---------------------------------------------------------------------------
 # WebSocket: Boardroom live stream
