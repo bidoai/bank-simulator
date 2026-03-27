@@ -11,10 +11,12 @@ A full-stack bank simulator with:
 - **Live trading infrastructure** — OMS with FIFO position accounting, pre-trade VaR checks, Greeks, and real-time limit monitoring
 - **Risk engine** — Monte Carlo VaR (regime-aware), Basel III capital ratios, concentration risk, counterparty credit
 - **Treasury** — Fund Transfer Pricing with tenor-matched swap curve, ALM/NII/EVE sensitivity
+- **Securities finance** — Repo, stock borrow-loan, and prime financing operating view
 - **Collateral** — CSA/VM lifecycle, SIMM approximation, margin call management
 - **Credit & compliance** — IFRS 9 ECL, AML transaction monitoring (6 rule types)
+- **Securitized products** — Agency MBS / ABS / CMBS / CLO inventory, OAS, convexity, and stress views
 - **XVA** — CVA/DVA/FVA via pyxva integration (partially live)
-- **7 dashboard pages** with live WebSocket feeds
+- **9 dashboard pages** with live WebSocket feeds
 
 ---
 
@@ -43,6 +45,8 @@ python main.py
 | Trading | `/trading` | OMS blotter, P&L, Greeks, live positions |
 | XVA | `/xva` | CVA/DVA/FVA, PFE profile |
 | Risk | `/risk` | VaR by desk, limit heatmap, Greeks heatmap |
+| Securities Finance | `/securities-finance` | Repo, stock loan, prime financing, balance-sheet usage |
+| Securitized | `/securitized` | MBS / ABS / CMBS / CLO desk analytics and build pipeline |
 | Models | `/models` | SR 11-7 model governance registry |
 | Scenarios | `/scenarios` | Market stress scenario launcher |
 
@@ -90,7 +94,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full writeup includin
 ```
 agents/           AI agent implementations (BankAgent base + 14 personas)
 api/              FastAPI backend — routes, WebSocket hubs, meeting orchestrator
-infrastructure/   Core banking systems (trading, risk, treasury, collateral, credit, compliance)
+infrastructure/   Core banking systems (trading, risk, treasury, collateral, credit, compliance, sec-fin, securitized)
 models/           Pydantic data models
 orchestrator/     Boardroom session conductor
 scenarios/        Predefined simulation scenarios

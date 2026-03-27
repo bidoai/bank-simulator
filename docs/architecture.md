@@ -43,6 +43,7 @@
 │  boardroom_routes  oms_routes     risk_routes    treasury_routes            │
 │  observer_routes   trading_routes capital_routes credit_routes              │
 │  xva_routes        collateral_routes scenarios_routes compliance_routes     │
+│  securities_finance_routes  securitized_routes                              │
 │  models_routes     metrics_routes                                           │
 │                                                                             │
 │  WS /ws/boardroom (BoardroomBroadcaster, 200-msg history cap)               │
@@ -67,6 +68,11 @@
 │  FTPEngine            IFRS9ECLEngine          CSA / CollateralAccount      │
 │  ALMEngine            AMLTransactionMonitor   VMEngine / SIMM              │
 │                                               StressScenarios              │
+│                                                                             │
+│  SECURITIES FINANCE   SECURITIZED PRODUCTS                                  │
+│  ──────────────────   ─────────────────────                                 │
+│  Repo / stock-loan    Agency MBS / ABS / CMBS / CLO desk view              │
+│  Prime financing      OAS / duration / convexity / stress analytics        │
 │                                                                             │
 │  REFERENCE / PERSISTENCE / EVENTS                                           │
 │  ────────────────────────────────                                           │
@@ -188,6 +194,26 @@ Every stateful service is a module-level singleton. There is no DI container —
 | `GET`  | `/api/treasury/alm/nii-sensitivity` | NII by rate scenario |
 | `GET`  | `/api/treasury/alm/eve-sensitivity` | EVE by rate scenario |
 | `GET`  | `/api/treasury/alm/repricing-gap` | 7-bucket repricing schedule |
+
+### Securities Finance
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/api/securities-finance/overview` | Top-line funding and margin view |
+| `GET`  | `/api/securities-finance/books` | Repo / prime / stock-loan books |
+| `GET`  | `/api/securities-finance/inventory` | Lendable inventory and specials |
+| `GET`  | `/api/securities-finance/client-financing` | Client financing book |
+| `GET`  | `/api/securities-finance/stress` | Balance-sheet stress view |
+
+### Securitized Products
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/api/securitized/overview` | Desk OAS / duration / sector mix |
+| `GET`  | `/api/securitized/inventory` | Inventory across agency and spread sleeves |
+| `GET`  | `/api/securitized/relative-value` | Net carry / OAS screen |
+| `GET`  | `/api/securitized/stress` | Rates + vol + spread shock |
+| `GET`  | `/api/securitized/pipeline` | Build roadmap for the desk |
 
 ### Credit
 

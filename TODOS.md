@@ -151,6 +151,16 @@
 - LICENSE / CONTRIBUTING.md / GitHub Actions CI (5 min each with CC when ready)
 - Real-world market data feed integration (Bloomberg/Refinitiv)
 
+## Phase 3 — Product Expansion
+
+### TODO-029: Securities Finance Lifecycle
+**What:** Extend the seeded securities-finance desk into a live lifecycle: repo ladders, margin events, stock-borrow availability, and client term repricing.
+**Context:** `infrastructure/securities_finance/service.py` and `dashboard/securities_finance.html` establish the first operating surface. Next step is event-driven financing state rather than static seeded metrics.
+
+### TODO-030: Agency MBS Analytics Engine
+**What:** Add a true agency MBS pricing engine: rate paths, prepayment model, pathwise cash flows, OAS, effective duration, and convexity.
+**Context:** `infrastructure/securitized_products/service.py` and `dashboard/securitized.html` currently provide the desk shell and analytics surface. Next step is replacing seeded metrics with model-driven MBS outputs.
+
 ---
 *Updated by /plan-eng-review on 2026-03-23*
 
