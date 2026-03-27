@@ -23,6 +23,15 @@ htmlcov/
 *.db
 *.sqlite
 
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
 # Claude Code internal
 .claude/
 *.DS_Store

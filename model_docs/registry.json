@@ -232,7 +232,7 @@
       "next_review_date": "2027-03-15",
       "open_findings": 3,
       "description": "Bilateral credit valuation adjustment for OTC derivatives. Prices counterparty credit risk using Monte Carlo simulation of exposure profiles combined with market-implied default probabilities.",
-      "doc_files": ["mdd_cva_v1.0.tex", "mdd_cva_v1.0.md"],
+      "doc_files": ["mdd_cva_v1.0.tex"],
       "findings": [
         {"id": "CVA-F1", "severity": "major", "description": "Stressed CVA not computed; only unstressed CVA reported", "status": "open"},
         {"id": "CVA-F2", "severity": "minor", "description": "Wrong reversal rate model claim (30 steps, should be 200)", "status": "open"},
@@ -256,7 +256,7 @@
       "next_review_date": "2027-03-10",
       "open_findings": 0,
       "description": "Funding cost of uncollateralised derivatives positions.",
-      "doc_files": ["mdd_fva_v1.0.tex", "mdd_fva_v1.0.md"],
+      "doc_files": ["mdd_fva_v1.0.tex"],
       "findings": []
     },
     {
@@ -276,7 +276,7 @@
       "next_review_date": "2027-03-10",
       "open_findings": 0,
       "description": "Cost of initial margin under Uncleared Margin Rules using ISDA SIMM.",
-      "doc_files": ["mdd_mva_v1.0.tex", "mdd_mva_v1.0.md"],
+      "doc_files": ["mdd_mva_v1.0.tex"],
       "findings": []
     },
     {
@@ -296,7 +296,7 @@
       "next_review_date": "2027-03-10",
       "open_findings": 0,
       "description": "Value of optionality in multi-currency CSA collateral posting.",
-      "doc_files": ["mdd_colva_v1.0.tex", "mdd_colva_v1.0.md"],
+      "doc_files": ["mdd_colva_v1.0.tex"],
       "findings": []
     },
     {

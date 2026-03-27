@@ -1,0 +1,132 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0007}
+\mddversion{1.0}
+\mddowner{Dr.\ Priya Nair (CRO)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{Validated}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{IFRS 9.5.5, EBA/GL/2020/06, SR 11-7}
+
+\title{IFRS 9 Expected Credit Loss Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The IFRS 9 ECL model computes Expected Credit Loss provisions for the loan portfolio under the three-stage impairment framework. Provisions are recognised on a 12-month basis (Stage 1) or lifetime basis (Stage 2/3) depending on significant increases in credit risk (SICR).
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Financial reporting:} ECL provision recorded on income statement; affects CET1 ratio via retained earnings.
+  \item \textbf{Credit risk management:} Stage classification drives credit officer workout strategy.
+  \item \textbf{Capital planning:} Stressed ECL feeds DFAST adverse scenario P\&L projections.
+  \item \textbf{Pricing:} Risk-adjusted return on equity uses ECL as expected loss charge.
+\end{itemize}
+
+\section{Theoretical Basis}
+
+\subsection{ECL Formula}
+\begin{formulabox}
+\[
+  \mathrm{ECL} = PD \times LGD \times EAD \times \mathrm{DF}
+\]
+For each obligor $i$ across periods $t$:
+\[
+  \mathrm{ECL}_i = \sum_{t=1}^{T_i} PD_i(t\mid t-1) \times LGD_i \times EAD_i(t) \times \mathrm{DF}(t)
+\]
+\end{formulabox}
+
+\subsection{Stage Definitions}
+\begin{formulabox}
+\textbf{Stage 1} (no SICR): $\quad\mathrm{ECL}_{S1} = PD_{12m} \times LGD \times EAD$\\[4pt]
+\textbf{Stage 2} (SICR): $\quad\mathrm{ECL}_{S2} = \sum_{t=1}^{T_{\mathrm{life}}} PD_{\mathrm{marg}}(t) \times LGD \times EAD(t) \times \mathrm{DF}(t)$\\[4pt]
+\textbf{Stage 3} (default, $>$90 DPD): $\quad\mathrm{ECL}_{S3} = LGD \times EAD_{\mathrm{default}}$
+\end{formulabox}
+
+\subsection{SICR Definition}
+An obligor is reclassified Stage 1$\to$2 if \textit{any} of:
+\begin{itemize}
+  \item Credit rating downgrade $\geq 2$ notches since origination.
+  \item Days past due $> 30$.
+  \item Watch-list or watch-list-equivalent designation.
+  \item Qualitative override (credit officer judgement).
+\end{itemize}
+
+\subsection{PD Estimation}
+Through-the-cycle (TTC) PD from Moody's idealized cumulative default rates, adjusted via macro satellite model:
+\begin{formulabox}
+\[
+  PD_{\mathrm{PIT}}(t) = PD_{\mathrm{TTC}} \times \exp\!\bigl(\beta_{\mathrm{GDP}}\,\Delta\mathrm{GDP}(t) + \beta_{\mathrm{UR}}\,\Delta\mathrm{UR}(t)\bigr)
+\]
+$\beta_{\mathrm{GDP}} = -0.8$ (GDP growth $+1\% \Rightarrow PD -8\%$),\quad $\beta_{\mathrm{UR}} = +0.6$ (unemployment $+1\mathrm{pp} \Rightarrow PD +6\%$).
+\end{formulabox}
+
+\subsection{LGD and EAD}
+\textbf{LGD:}
+\[
+  LGD = 1 - \text{Recovery},\qquad \text{Recovery} = \min\!\left(\frac{\text{Collateral}}{EAD},\;0.90\right)\times\text{haircut}
+\]
+Unsecured: $LGD = 0.45$ (corporate), $0.25$ (secured mortgages). Haircuts: CRE 30\%, residential 10\%.
+
+\textbf{EAD:} $EAD = \text{drawn} + CCF \times \text{undrawn}$, where $CCF = 0.75$ (revolving), $0.50$ (term).
+
+\section{Mathematical Specification}
+
+\textbf{Sample portfolio:} 50 obligors.
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Rating distribution & 60\% IG (BBB+/BBB/BBB$-$), 30\% BB, 10\% B/CCC \\
+Average PD (Stage 1) & 1.2\% \\
+Average LGD & 42\% \\
+ECL coverage (normal) & $\sim$1.8\% \\
+ECL coverage (stressed) & $\sim$3.5\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/credit/ifrs9\_ecl.py}\\
+\textbf{Class:} \texttt{IFRS9ECLEngine}\\[4pt]
+\textbf{Key methods:}
+\begin{itemize}
+  \item \texttt{calculate\_portfolio\_ecl()} --- full portfolio ECL.
+  \item \texttt{classify\_stages()} --- SICR assessment.
+  \item \texttt{run\_scenario(macro\_params)} --- stressed ECL for DFAST.
+\end{itemize}
+\textbf{Runtime:} $\sim$5\,ms for 50 obligors.
+
+\section{Validation}
+
+\textbf{Stage classification:} Validated against sample obligors with known PD migration history; accuracy 94\%.
+
+\textbf{Macro sensitivity:} $\beta_{\mathrm{GDP}}$ validated against EBA stress test results for comparable European banks; within $\pm 15\%$.
+
+\textbf{Coverage ratio:} 1.8\% (normal) vs EBA peer average 1.6\%; slightly conservative, acceptable.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{TTC PD basis:} TTC PD underestimates current default risk in downturns; PIT adjustment partially corrects this.
+  \item \textbf{50-obligor sample:} Production portfolio has 850 obligors; demo portfolio is illustrative only.
+  \item \textbf{Flat LGD:} Collateral values not mark-to-market; static LGD may understate loss in collateral price declines.
+  \item \textbf{Macro satellite not post-COVID calibrated:} GDP/unemployment coefficients estimated pre-2020.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{ECL-F1}{Major}{Macro satellite model GDP coefficient ($\beta_{\mathrm{GDP}} = -0.8$) not recalibrated post-COVID; EBA/GL/2020/06 requires calibration to reflect current economic uncertainty.}{Open}
+\end{findings}
+
+\end{document}

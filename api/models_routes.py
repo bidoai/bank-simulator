@@ -17,9 +17,15 @@ router = APIRouter(prefix="/models", tags=["models"])
 # ---------------------------------------------------------------------------
 
 _REGISTRY_PATH = Path(__file__).parent.parent / "model_docs" / "registry.json"
-_DOCS_DIR = Path(__file__).parent.parent / "model_docs" / "xva"
 _MDD_DIR = Path(__file__).parent.parent / "model_docs"
+_PDF_DIR = Path(__file__).parent.parent / "model_docs" / "pdfs"
 _ALLOWED_SUFFIXES = {".tex", ".md", ".pdf"}
+_DOC_SEARCH_DIRS = (
+    _MDD_DIR,
+    _MDD_DIR / "latex",
+    _MDD_DIR / "pdfs",
+    _MDD_DIR / "xva",
+)
 
 # Models owned by front-office quant (Tanaka answers as owner/builder)
 _TANAKA_MODELS = {"APEX-MDL-0004", "APEX-MDL-0005", "APEX-MDL-0006"}
@@ -46,6 +52,45 @@ def _get_model(model_id: str) -> dict[str, Any]:
         if model["id"] == model_id:
             return model
     raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found")
+
+
+def _resolve_doc_path(filename: str) -> Path:
+    for base_dir in _DOC_SEARCH_DIRS:
+        candidate = (base_dir / filename).resolve()
+        if str(candidate).startswith(str(base_dir.resolve())) and candidate.exists():
+            return candidate
+    raise HTTPException(status_code=404, detail=f"Document file '{filename}' not found on disk")
+
+
+def _resolve_pdf_path(model: dict[str, Any]) -> Path:
+    short = model.get("short", "")
+    version = model.get("version", "")
+    if not short:
+        raise HTTPException(status_code=404, detail=f"No PDF available for model '{model['id']}'")
+
+    candidate_names: list[str] = []
+    if version:
+        candidate_names.append(f"mdd_{short}_v{version}.pdf")
+    candidate_names.append(f"mdd_{short}_v1.0.pdf")
+
+    for doc_name in model.get("doc_files", []):
+        stem, suffix = os.path.splitext(doc_name)
+        if suffix.lower() in {".md", ".tex"}:
+            candidate_names.append(f"{stem}.pdf")
+        elif suffix.lower() == ".pdf":
+            candidate_names.append(doc_name)
+
+    seen: set[str] = set()
+    for name in candidate_names:
+        if name in seen:
+            continue
+        seen.add(name)
+        try:
+            return _resolve_doc_path(name)
+        except HTTPException:
+            continue
+
+    raise HTTPException(status_code=404, detail=f"PDF not yet compiled for model '{model['id']}'")
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +143,19 @@ def get_model(model_id: str) -> dict[str, Any]:
     return _get_model(model_id)
 
 
+@router.get("/{model_id}/pdf")
+def get_model_pdf(model_id: str) -> FileResponse:
+    """Download the SR 11-7 Model Development Document PDF for a model."""
+    model = _get_model(model_id)
+    pdf_path = _resolve_pdf_path(model)
+    pdf_filename = pdf_path.name
+    return FileResponse(
+        path=str(pdf_path),
+        media_type="application/pdf",
+        filename=pdf_filename,
+    )
+
+
 @router.get("/{model_id}/findings")
 def get_findings(model_id: str) -> list[dict[str, Any]]:
     """Return the findings list for a specific model."""
@@ -124,11 +182,7 @@ def get_doc(model_id: str, filename: str) -> FileResponse:
             detail=f"File '{filename}' is not registered for model '{model_id}'",
         )
 
-    file_path = (_DOCS_DIR / filename).resolve()
-    if not str(file_path).startswith(str(_DOCS_DIR.resolve())):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail=f"Document file '{filename}' not found on disk")
+    file_path = _resolve_doc_path(filename)
 
     media_type_map = {
         ".tex": "text/plain",

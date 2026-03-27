@@ -5,7 +5,7 @@ Uses Dr. Yuki Tanaka (Head of Quantitative Research) as the primary author,
 with a focused prompt that asks for the complete SR 11-7 model development
 document covering netting, collateral, MPoR, PFE, EPE/ENE, and SA-CCR.
 
-Output: model_docs/xva/mdd_pfe_ccr_v1.0.tex
+Output: model_docs/latex/mdd_pfe_ccr_v1.0.tex
 """
 
 import os
@@ -27,7 +27,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 console = Console(width=120)
 
 # ── output path ───────────────────────────────────────────────────────────────
-OUTPUT_DIR = ROOT / "model_docs" / "xva"
+OUTPUT_DIR = ROOT / "model_docs" / "latex"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_FILE = OUTPUT_DIR / "mdd_pfe_ccr_v1.0.tex"
 

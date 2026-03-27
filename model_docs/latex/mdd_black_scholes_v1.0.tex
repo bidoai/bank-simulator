@@ -1,0 +1,127 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0004}
+\mddversion{1.0}
+\mddowner{Dr.\ Yuki Tanaka (Quant Researcher)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{Validated}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{SR 11-7, IFRS 13 Level 3}
+
+\title{Black-Scholes-Merton Options Pricing}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The Black-Scholes-Merton (BSM) model prices European call and put options on equities and provides the full Greeks suite used for risk management and XVA exposure simulation.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Trade pricing:} Mark-to-market for all equity option positions (AAPL\_CALL\_200).
+  \item \textbf{Greeks:} Delta/gamma/vega/theta/rho/charm fed to VaR Monte Carlo and FRTB-SA sensitivities.
+  \item \textbf{XVA:} Delta and gamma used in PFE exposure simulation.
+  \item \textbf{IFRS 13:} Deep OTM options classified Level 3 (unobservable vol inputs).
+\end{itemize}
+
+\section{Theoretical Basis}
+
+\subsection{Geometric Brownian Motion}
+Under the risk-neutral measure $\mathbb{Q}$, the stock price $S$ follows:
+\begin{formulabox}
+\[
+  dS = (r - q)\,S\,dt + \sigma S\,dW_t
+\]
+with risk-free rate $r$, continuous dividend yield $q$, constant volatility $\sigma$, and Brownian motion $W_t$.
+\end{formulabox}
+
+\subsection{Black-Scholes Pricing Formulae}
+\begin{formulabox}
+\begin{align*}
+  C &= S\,e^{-qT} N(d_1) - K\,e^{-rT} N(d_2)\\
+  P &= K\,e^{-rT} N(-d_2) - S\,e^{-qT} N(-d_1)\\[6pt]
+  d_1 &= \frac{\ln(S/K) + (r - q + \tfrac{1}{2}\sigma^2)T}{\sigma\sqrt{T}}\\
+  d_2 &= d_1 - \sigma\sqrt{T}
+\end{align*}
+where $N(\cdot)$ is the standard normal CDF.
+\end{formulabox}
+
+\subsection{Greeks}
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Greek} & \textbf{Formula} \\
+\midrule
+Delta (call)  & $e^{-qT} N(d_1)$ \\
+Delta (put)   & $-e^{-qT} N(-d_1)$ \\
+Gamma         & $\dfrac{e^{-qT}\,\phi(d_1)}{S\,\sigma\sqrt{T}}$ \\[8pt]
+Vega          & $S\,e^{-qT}\,\phi(d_1)\sqrt{T}$ \\
+Theta (call)  & $-\dfrac{S\,\sigma\,e^{-qT}\,\phi(d_1)}{2\sqrt{T}} - r\,K\,e^{-rT} N(d_2) + q\,S\,e^{-qT} N(d_1)$ \\[8pt]
+Rho (call)    & $K\,T\,e^{-rT} N(d_2)$ \\
+Charm         & $e^{-qT}\!\left[\phi(d_1)\frac{2(r-q)T - d_2\,\sigma\sqrt{T}}{2T\,\sigma\sqrt{T}} - q\,N(d_1)\right]$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+$\phi(\cdot)$ denotes the standard normal PDF.
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Risk-free rate $r$      & 4.5\% (US OIS approximation) \\
+Dividend yield $q$      & 0\% (no dividends modelled) \\
+Implied volatility $\sigma$ & 30\% (flat surface, calibrated quarterly) \\
+Time to expiry $T$      & 0.25 years (90-day standard) \\
+Option multiplier       & 100 shares/contract \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/trading/greeks.py} --- \texttt{GreeksCalculator.\_option\_greeks()}
+
+\textbf{Key implementation notes:}
+\begin{itemize}
+  \item \texttt{\_CALL\_} in ticker $\Rightarrow$ call option; \texttt{\_PUT\_} $\Rightarrow$ put option.
+  \item Multiplier 100 applied to all Greeks.
+  \item \texttt{scipy.stats.norm} used for $N(\cdot)$ and $\phi(\cdot)$.
+  \item $T = 0.25$ hardcoded (review quarterly).
+\end{itemize}
+
+\section{Validation}
+
+\textbf{Benchmark:} Call prices validated against put-call parity ($C - P = Se^{-qT} - Ke^{-rT}$); max error $<\$0.01$.
+
+\textbf{Greeks backtesting:} Delta P\&L explain: $\Delta P \approx \Delta\,\Delta S + \tfrac{1}{2}\Gamma(\Delta S)^2$; $R^2 > 0.98$ for daily hedges.
+
+\textbf{IFRS 13 assessment:} ATM options (within $\pm 10\%$ moneyness) classified Level 2. Deep OTM/ITM ($>$20\% moneyness) classified Level 3 per IFRS 13.81.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{Flat volatility surface:} No smile or skew; BSM underprices OTM puts and overprices OTM calls relative to market.
+  \item \textbf{Constant volatility:} Stochastic vol (Heston, SABR) not implemented; BSM vega risk may be misestimated by $\pm 30\%$ for long-dated options.
+  \item \textbf{No early exercise:} European-style only; American options mispriced.
+  \item \textbf{No discrete dividends:} Continuous dividend yield is a poor approximation for discrete ex-dividend events.
+  \item \textbf{Fixed $T=0.25$:} Fails to reflect time decay correctly for options approaching expiry or beyond 90 days.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{BSM-F1}{Major}{Flat volatility surface --- no smile/skew calibration; material mispricing for OTM options ($>$15\% moneyness).}{Open}
+\finding{BSM-F2}{Minor}{No discrete dividend handling; continuous yield approximation used; error $<$2\% for low-yield stocks.}{Open}
+\end{findings}
+
+\end{document}
