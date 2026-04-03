@@ -151,6 +151,7 @@
             display: grid;
             grid-template-columns: var(--panel-left) 1fr;
             overflow: hidden;
+            min-height: 0;
         }
 
         /* ── Left sidebar ──────────────────────────────────────────────────── */
@@ -159,7 +160,8 @@
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            min-height: 0;
+            overflow-y: auto;
         }
 
         .sidebar-section {
@@ -169,8 +171,6 @@
 
         .sidebar-section:last-child {
             border-bottom: none;
-            flex: 1;
-            overflow-y: auto;
         }
 
         .section-label {
@@ -313,6 +313,22 @@
             border: 1px solid transparent;
             margin-bottom: 4px;
             transition: all 0.15s;
+        }
+
+        .session-source-tag {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 5px;
+            vertical-align: middle;
+            line-height: 14px;
+            background: rgba(88, 166, 255, 0.12);
+            color: #58a6ff;
+            border: 1px solid rgba(88, 166, 255, 0.25);
         }
 
         .session-item:hover {
@@ -1331,13 +1347,16 @@
                 return;
             }
             el.innerHTML = meetings.map(m => {
-                const isActive = m.id === viewingMeetingId;
-                const statusCls = m.status || "completed";
+                const isActive   = m.id === viewingMeetingId;
+                const statusCls  = m.status || "completed";
+                const sourceTag  = m.source === "inline"
+                    ? `<span class="session-source-tag">archived</span>`
+                    : "";
                 return `
                 <div class="session-item ${isActive ? 'active' : ''}"
                      onclick="loadPastMeeting('${esc(m.id)}', '${esc(m.title)}')">
                     <div class="session-title">
-                        <span class="session-status ${statusCls}"></span>${esc(m.title)}
+                        <span class="session-status ${statusCls}"></span>${esc(m.title)}${sourceTag}
                     </div>
                     <div class="session-meta">
                         <span>${fmtDate(m.started_at || m.date)}</span>

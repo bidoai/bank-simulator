@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS meetings (
     title       TEXT NOT NULL,
     topic       TEXT NOT NULL,
     status      TEXT NOT NULL DEFAULT 'running',   -- running | completed | error
+    source      TEXT NOT NULL DEFAULT 'live',      -- live | inline
     started_at  TEXT NOT NULL,
     ended_at    TEXT,
     agent_names TEXT NOT NULL DEFAULT '[]',        -- JSON array
@@ -70,26 +71,85 @@ class MeetingStore:
         conn = self._connect()
         try:
             conn.executescript(_DDL)
-            conn.commit()
+            # Migrate existing DBs that predate the source column.
+            try:
+                conn.execute("ALTER TABLE meetings ADD COLUMN source TEXT NOT NULL DEFAULT 'live'")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass  # column already exists
         finally:
             conn.close()
         log.info("meeting_store.initialized", path=str(self.db_path))
 
     # ── Write — each method opens and closes its own connection ───────────────
 
-    def create_meeting(self, title: str, topic: str, agent_names: list[str]) -> str:
+    def create_meeting(
+        self,
+        title: str,
+        topic: str,
+        agent_names: list[str],
+        source: str = "live",
+    ) -> str:
         meeting_id = str(uuid.uuid4())
         conn = self._connect()
         try:
             conn.execute(
-                "INSERT INTO meetings (id, title, topic, status, started_at, agent_names) "
-                "VALUES (?, ?, ?, 'running', ?, ?)",
-                (meeting_id, title, topic, _now(), json.dumps(agent_names)),
+                "INSERT INTO meetings (id, title, topic, status, source, started_at, agent_names) "
+                "VALUES (?, ?, ?, 'running', ?, ?, ?)",
+                (meeting_id, title, topic, source, _now(), json.dumps(agent_names)),
             )
             conn.commit()
         finally:
             conn.close()
-        log.info("meeting_store.created", meeting_id=meeting_id, title=title)
+        log.info("meeting_store.created", meeting_id=meeting_id, title=title, source=source)
+        return meeting_id
+
+    def archive_meeting(
+        self,
+        title: str,
+        topic: str,
+        turns: list[dict],
+    ) -> str:
+        """
+        Persist a pre-composed in-conversation discussion in a single transaction.
+
+        Each turn dict must contain:
+            agent (str), title (str), text (str)
+        Optional per-turn keys:
+            color (str, default '#c9d1d9'), timestamp (str ISO-8601)
+
+        Returns the new meeting_id.
+        """
+        agent_names = list(dict.fromkeys(t["agent"] for t in turns))
+        meeting_id = str(uuid.uuid4())
+        now = _now()
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT INTO meetings "
+                "(id, title, topic, status, source, started_at, ended_at, agent_names, turn_count) "
+                "VALUES (?, ?, ?, 'completed', 'inline', ?, ?, ?, ?)",
+                (meeting_id, title, topic, now, now, json.dumps(agent_names), len(turns)),
+            )
+            for seq, turn in enumerate(turns, start=1):
+                conn.execute(
+                    "INSERT INTO meeting_turns "
+                    "(meeting_id, seq, agent_name, agent_title, text, color, timestamp) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        meeting_id,
+                        seq,
+                        turn["agent"],
+                        turn.get("title", ""),
+                        turn["text"],
+                        turn.get("color", "#c9d1d9"),
+                        turn.get("timestamp", now),
+                    ),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+        log.info("meeting_store.archived", meeting_id=meeting_id, title=title, turns=len(turns))
         return meeting_id
 
     def add_turn(
@@ -138,7 +198,7 @@ class MeetingStore:
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT id, title, topic, status, started_at, ended_at, agent_names, turn_count "
+                "SELECT id, title, topic, status, source, started_at, ended_at, agent_names, turn_count "
                 "FROM meetings ORDER BY started_at DESC LIMIT ?",
                 (limit,),
             ).fetchall()
@@ -150,7 +210,7 @@ class MeetingStore:
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT id, title, topic, status, started_at, ended_at, agent_names, turn_count "
+                "SELECT id, title, topic, status, source, started_at, ended_at, agent_names, turn_count "
                 "FROM meetings WHERE id = ?",
                 (meeting_id,),
             ).fetchone()
@@ -205,6 +265,7 @@ def _row_to_meeting(row: sqlite3.Row) -> dict:
         "title":       row["title"],
         "topic":       row["topic"],
         "status":      row["status"],
+        "source":      row["source"] if "source" in row.keys() else "live",
         "started_at":  row["started_at"],
         "ended_at":    row["ended_at"],
         "agent_names": json.loads(row["agent_names"] or "[]"),
