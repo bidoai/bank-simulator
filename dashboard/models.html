@@ -569,6 +569,10 @@
 
   <!-- ── Model inventory ──────────────────────────────────────────────────── -->
   <div class="section-heading">Model Inventory</div>
+  <div style="margin-bottom: 12px;">
+    <input type="text" id="mddSearch" placeholder="Search models (name, ID, owner, regulatory)..."
+           style="width: 100%; padding: 8px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 13px;">
+  </div>
   <div class="card">
     <div class="table-toolbar">
       <input type="text" class="search-input" id="search-input" placeholder="Search by ID, name, owner..." oninput="filterTable()">
@@ -637,6 +641,20 @@
     </div>
   </div>
 
+</div>
+
+<!-- ── Model chat sidebar ─────────────────────────────────────────────────── -->
+<div id="modelChatPanel" style="display:none; position:fixed; right:0; top:0; width:380px; height:100vh; background:#161b22; border-left:1px solid #30363d; padding:16px; overflow-y:auto; z-index:1000;">
+  <button onclick="closeModelChat()" style="float:right; background:none; border:none; color:#8b949e; cursor:pointer; font-size:18px;">&#x2715;</button>
+  <h3 id="chatModelTitle" style="color:#e6edf3; margin:0 0 4px 0; font-size:14px;"></h3>
+  <p id="chatPersonaName" style="color:#8b949e; font-size:11px; margin:0 0 12px 0;"></p>
+  <div id="chatMessages" style="min-height:200px; max-height:60vh; overflow-y:auto; margin-bottom:12px; font-size:13px; color:#e6edf3;"></div>
+  <div style="display:flex; gap:8px;">
+    <input type="text" id="chatInput" placeholder="Ask about this model..."
+           style="flex:1; padding:8px; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-size:13px;"
+           onkeydown="if(event.key==='Enter') sendModelQuestion()">
+    <button onclick="sendModelQuestion()" style="padding:8px 12px; background:#238636; border:none; border-radius:6px; color:#fff; cursor:pointer; font-size:13px;">Ask</button>
+  </div>
 </div>
 
 <!-- ── Document modal ─────────────────────────────────────────────────────── -->
@@ -784,8 +802,9 @@ function renderTable(models) {
     const validator = m.validator === 'Pending'
       ? `<span style="color:var(--muted)">Pending</span>`
       : m.validator;
+    const escapedName = m.name.replace(/'/g, "\\'");
     return `
-    <tr data-id="${m.id}" onclick="selectModel('${m.id}')" class="${selectedModelId === m.id ? 'selected' : ''}">
+    <tr data-id="${m.id}" onclick="selectModel('${m.id}')" class="model-row ${selectedModelId === m.id ? 'selected' : ''}">
       <td style="font-weight:600;color:var(--accent);font-size:11px;">${m.id}</td>
       <td>
         <span style="font-weight:600">${m.name}</span>
@@ -801,6 +820,9 @@ function renderTable(models) {
       <td>
         <button class="btn btn-docs" onclick="openDocs(event, '${m.id}')">
           &#x1F4C4; Docs (${m.doc_files ? m.doc_files.length : 0})
+        </button>
+        <button class="btn btn-docs" style="margin-left:4px;background:rgba(35,134,54,0.15);border-color:rgba(35,134,54,0.4);color:#3fb950;" onclick="event.stopPropagation(); openModelChat('${m.id}', '${escapedName}')">
+          &#x1F4AC; Ask
         </button>
       </td>
     </tr>`;
@@ -1171,6 +1193,90 @@ const EMBEDDED_REGISTRY = {
     "total_models": 847, "tier1_models": 5, "last_updated": "2026-03-22"
   }
 };
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MDD search (debounced, client-side)
+// ──────────────────────────────────────────────────────────────────────────────
+let _mddSearchTimer = null;
+document.addEventListener('DOMContentLoaded', function() {
+  const el = document.getElementById('mddSearch');
+  if (el) {
+    el.addEventListener('input', function() {
+      clearTimeout(_mddSearchTimer);
+      _mddSearchTimer = setTimeout(() => {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.model-row').forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(q) ? '' : 'none';
+        });
+      }, 150);
+    });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Model chat sidebar
+// ──────────────────────────────────────────────────────────────────────────────
+let _currentModelId = null;
+const PERSONA_MAP = {
+  'APEX-MDL-0004': 'Dr. Yuki Tanaka',
+  'APEX-MDL-0005': 'Dr. Yuki Tanaka',
+  'APEX-MDL-0006': 'Dr. Yuki Tanaka',
+};
+
+function openModelChat(modelId, modelName) {
+  _currentModelId = modelId;
+  const persona = PERSONA_MAP[modelId] || 'Dr. Samuel Achebe';
+  document.getElementById('chatModelTitle').textContent = modelName;
+  document.getElementById('chatPersonaName').textContent = 'Answered by ' + persona;
+  document.getElementById('chatMessages').innerHTML = '';
+  document.getElementById('modelChatPanel').style.display = 'block';
+  document.getElementById('chatInput').focus();
+}
+
+function closeModelChat() {
+  document.getElementById('modelChatPanel').style.display = 'none';
+  _currentModelId = null;
+}
+
+async function sendModelQuestion() {
+  const input = document.getElementById('chatInput');
+  const question = input.value.trim();
+  if (!question || !_currentModelId) return;
+  input.value = '';
+
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML += `<div style="margin-bottom:8px;"><strong style="color:#79c0ff;">You:</strong> ${question}</div>`;
+  const answerDiv = document.createElement('div');
+  answerDiv.style.marginBottom = '8px';
+  answerDiv.innerHTML = '<strong style="color:#3fb950;">Answer:</strong> ';
+  const textSpan = document.createElement('span');
+  answerDiv.appendChild(textSpan);
+  msgs.appendChild(answerDiv);
+
+  const resp = await fetch('/api/models/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({model_id: _currentModelId, question, stream: true})
+  });
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value);
+    for (const line of chunk.split('\n')) {
+      if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.text) textSpan.textContent += data.text;
+          msgs.scrollTop = msgs.scrollHeight;
+        } catch {}
+      }
+    }
+  }
+}
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 init();
