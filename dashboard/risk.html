@@ -459,6 +459,58 @@
     </div>
   </div>
 
+  <div class="split-grid" style="margin-top:16px">
+    <section class="card" id="card-backtesting">
+      <div class="card-title">
+        <h2>VaR Backtesting</h2>
+        <span class="meta">Basel 250-day traffic light</span>
+      </div>
+      <div style="display:flex;gap:24px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Traffic Light Zone</div>
+          <div style="font-size:22px;font-weight:700" id="bt-zone">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Exceptions / 250d</div>
+          <div style="font-size:22px;font-weight:700;color:var(--text)" id="bt-exceptions">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Capital Multiplier k</div>
+          <div style="font-size:22px;font-weight:700;color:var(--text)" id="bt-multiplier">—</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Date</th><th class="right">VaR $M</th><th class="right">P&amp;L $M</th><th>Exception</th></tr></thead>
+        <tbody id="bt-history-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card" id="card-frtb">
+      <div class="card-title">
+        <h2>FRTB Boundary</h2>
+        <span class="meta">MAR12 classification</span>
+      </div>
+      <div style="display:flex;gap:24px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Trading Book Notional</div>
+          <div style="font-size:22px;font-weight:700;color:var(--positive)" id="frtb-tb-notional">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Banking Book Notional</div>
+          <div style="font-size:22px;font-weight:700;color:var(--accent)" id="frtb-bb-notional">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Flagged Transfers</div>
+          <div style="font-size:22px;font-weight:700;color:var(--text)" id="frtb-flagged">—</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Instrument</th><th>Desk</th><th class="right">Notional</th><th>Book</th><th>Reason</th></tr></thead>
+        <tbody id="frtb-positions-body"></tbody>
+      </table>
+    </section>
+  </div>
+
   <script>
     function fmtUsd(value) {
       const n = Number(value || 0);
@@ -736,8 +788,71 @@
       }
     }
 
-    document.getElementById("refresh-btn").addEventListener("click", loadRiskDashboard);
-    loadRiskDashboard();
+    async function loadBacktesting() {
+      try {
+        const [summary, history] = await Promise.all([
+          fetch('/api/risk/backtesting').then(r => r.json()),
+          fetch('/api/risk/backtesting/history?days=10').then(r => r.json()),
+        ]);
+        const zoneColors = { GREEN: '#3fb950', YELLOW: '#e3b341', RED: '#f85149' };
+        const firmData = summary.FIRM || summary;
+        const zone = firmData.traffic_light_zone || firmData.zone || 'GREEN';
+        const el = document.getElementById('bt-zone');
+        if (el) { el.textContent = zone; el.style.color = zoneColors[zone] || '#e6edf3'; }
+        const excEl = document.getElementById('bt-exceptions');
+        if (excEl) excEl.textContent = firmData.exception_count_250d ?? firmData.exception_count ?? '—';
+        const multEl = document.getElementById('bt-multiplier');
+        if (multEl) multEl.textContent = firmData.capital_multiplier_k ?? firmData.capital_multiplier ?? '—';
+        const tbody = document.getElementById('bt-history-body');
+        if (tbody && history.history) {
+          tbody.innerHTML = history.history.slice(-10).reverse().map(r => `
+            <tr>
+              <td>${r.trade_date}</td>
+              <td class="right">${r.var_99 != null ? r.var_99.toFixed(1) : '—'}</td>
+              <td class="right" style="color:${r.realized_pnl >= 0 ? '#3fb950' : '#f85149'}">${r.realized_pnl != null ? r.realized_pnl.toFixed(1) : '—'}</td>
+              <td style="color:${r.exception_99 ? '#f85149' : '#3fb950'}">${r.exception_99 ? 'YES' : '—'}</td>
+            </tr>`).join('');
+        }
+      } catch(e) { console.error('backtesting load failed', e); }
+    }
+
+    async function loadFRTBBoundary() {
+      try {
+        const data = await fetch('/api/risk/frtb-boundary').then(r => r.json());
+        const summary = data.summary || data;
+        const fmt = v => v == null ? '—' : v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v.toFixed(0);
+        const tbEl = document.getElementById('frtb-tb-notional');
+        if (tbEl) tbEl.textContent = fmt(summary.trading_book_notional);
+        const bbEl = document.getElementById('frtb-bb-notional');
+        if (bbEl) bbEl.textContent = fmt(summary.banking_book_notional);
+        const flEl = document.getElementById('frtb-flagged');
+        if (flEl) {
+          const fc = summary.flagged_boundary_issues ?? 0;
+          flEl.textContent = fc;
+          if (fc > 0) flEl.style.color = '#f85149';
+        }
+        const tbody = document.getElementById('frtb-positions-body');
+        if (tbody && data.positions) {
+          tbody.innerHTML = data.positions.slice(0, 15).map(p => `
+            <tr>
+              <td>${esc(p.instrument_id ?? p.ticker ?? p.instrument ?? '—')}</td>
+              <td>${esc(p.desk ?? '—')}</td>
+              <td class="right">${fmt(p.notional)}</td>
+              <td style="color:${p.frtb_book === 'TRADING' ? '#3fb950' : '#58a6ff'}">${esc(p.frtb_book ?? '—')}</td>
+              <td style="font-size:10px;color:var(--muted)">${esc((p.frtb_rationale ?? '').substring(0, 60))}</td>
+            </tr>`).join('');
+        }
+      } catch(e) { console.error('frtb boundary load failed', e); }
+    }
+
+    function loadAllPanels() {
+      loadRiskDashboard();
+      loadBacktesting();
+      loadFRTBBoundary();
+    }
+
+    document.getElementById("refresh-btn").addEventListener("click", loadAllPanels);
+    loadAllPanels();
   </script>
 </body>
 </html>

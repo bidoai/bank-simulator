@@ -122,3 +122,54 @@ def independence_check() -> dict:
         "divergence_pct": round(divergence_pct, 4),
         "status": status,
     }
+
+
+@router.get("/frtb-boundary")
+async def frtb_boundary_report():
+    """FRTB trading/banking book boundary classification for all positions."""
+    from infrastructure.risk.frtb_boundary import FRTBBoundaryClassifier
+    classifier = FRTBBoundaryClassifier()
+    positions = risk_service.position_manager.get_all_positions() or None
+    classified = classifier.classify_all_positions(positions)
+    return classifier.get_boundary_report(classified)
+
+
+@router.get("/backtesting")
+async def var_backtesting_summary():
+    """VaR backtest summary — traffic light zone, exceptions, capital multiplier."""
+    from infrastructure.risk.var_backtest_store import backtest_store
+    return backtest_store.get_backtest_summary()
+
+
+@router.get("/backtesting/history")
+async def var_backtesting_history(desk: str = "FIRM", days: int = 250):
+    """Last N days of VaR forecast vs realized P&L for a desk."""
+    from infrastructure.risk.var_backtest_store import backtest_store
+    return {
+        "desk": desk,
+        "days": days,
+        "history": backtest_store.get_history(desk=desk, days=days),
+        "exception_count": backtest_store.get_exception_count(desk=desk, days=days),
+        "zone": backtest_store.get_traffic_light_zone(desk=desk),
+        "capital_multiplier": backtest_store.get_capital_multiplier(desk=desk),
+    }
+
+
+@router.get("/stressed-var")
+async def stressed_var_report():
+    """Stressed VaR report — Basel 2.5 sVaR calibrated to 2008-09 crisis."""
+    from infrastructure.risk.stressed_var import stressed_var_engine
+    from infrastructure.risk.var_backtest_store import backtest_store
+    positions = risk_service.position_manager.get_all_positions()
+    # StressedVaREngine expects dict[ticker->notional]; build from position list
+    pos_dict = {p.get("instrument", p.get("ticker", p.get("instrument_id", ""))): float(p.get("notional", 0) or 0)
+                for p in positions if p.get("instrument") or p.get("ticker")} or None
+    k = backtest_store.get_capital_multiplier()
+    report = stressed_var_engine.get_full_report(pos_dict)
+    # Add capital charge
+    report["capital_requirement"] = stressed_var_engine.calculate_capital_requirement(
+        var_history_60d_avg=95.0,
+        svar_history_60d_avg=report.get("stressed_var_$M", 304.0),
+        k=k,
+    )
+    return report

@@ -237,6 +237,51 @@ def _load_mdd_content(model_card: dict) -> str:
     return ""
 
 
+@router.get("/governance/registry")
+async def model_registry_list():
+    """Full SR 11-7 model governance registry (SQLite-backed lifecycle store)."""
+    from infrastructure.governance.model_registry import model_registry
+    return {
+        "models": model_registry.get_all_models(),
+        "summary": model_registry.get_risk_rating_summary(),
+    }
+
+
+@router.get("/governance/registry/capital-approved")
+async def capital_approved_models():
+    """Models approved for regulatory capital use (production + sign-off)."""
+    from infrastructure.governance.model_registry import model_registry
+    return {"models": model_registry.get_capital_approved_models()}
+
+
+@router.get("/governance/registry/{model_id}")
+async def get_model_record(model_id: str):
+    """Single model record with full SR 11-7 fields."""
+    from infrastructure.governance.model_registry import model_registry
+    m = model_registry.get_model(model_id)
+    if not m:
+        raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
+    return m
+
+
+@router.post("/governance/registry/{model_id}/validate")
+async def validate_model(model_id: str, body: dict):
+    """
+    Advance model through validation gate.
+    Body: {"validator": "Dr. Rebecca Chen", "findings": "...", "approved": true}
+    """
+    from infrastructure.governance.model_registry import model_registry
+    result = model_registry.validate_model(
+        model_id=model_id,
+        validator=body.get("validator", ""),
+        findings=body.get("findings", ""),
+        approved=bool(body.get("approved", False)),
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
+    return result
+
+
 @router.post("/chat")
 async def model_chat(req: ModelChatRequest):
     """
