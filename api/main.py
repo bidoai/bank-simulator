@@ -104,6 +104,22 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
         log.error("market_data.startup_failed", error=str(exc))
         _feed = None
 
+    # Initialise VaR backtest store (seeds 252 days of demo history)
+    try:
+        from infrastructure.risk.var_backtest_store import backtest_store
+        backtest_store.initialize()
+        log.info("var_backtest_store.ready")
+    except Exception as exc:
+        log.error("var_backtest_store.startup_failed", error=str(exc))
+
+    # Initialise model governance registry
+    try:
+        from infrastructure.governance.model_registry import model_registry
+        model_registry.initialize()
+        log.info("model_registry.ready")
+    except Exception as exc:
+        log.error("model_registry.startup_failed", error=str(exc))
+
     yield
 
     if _feed is not None:
