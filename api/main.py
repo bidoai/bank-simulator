@@ -324,6 +324,11 @@ async def securities_finance() -> FileResponse:
 async def securitized() -> FileResponse:
     return _html("securitized.html")
 
+
+@app.get("/capital")
+async def capital() -> FileResponse:
+    return _html("capital.html")
+
 # ---------------------------------------------------------------------------
 # WebSocket: Boardroom live stream
 # ---------------------------------------------------------------------------
