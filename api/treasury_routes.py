@@ -77,3 +77,67 @@ async def alm_repricing_gap():
         "schedule": [p.to_dict() for p in alm_engine.get_repricing_gap_schedule()],
         "as_of": __import__("datetime").datetime.utcnow().isoformat(),
     }
+
+
+# ── NMD routes ──────────────────────────────────────────────────────────────
+
+@router.get("/nmd")
+async def nmd_analysis():
+    from infrastructure.treasury.nmd_model import nmd_model
+    return nmd_model.get_full_report()
+
+
+# ── ALM Hedging routes ──────────────────────────────────────────────────────
+
+@router.get("/alm/hedge-recommendations")
+async def alm_hedge_recommendations():
+    from infrastructure.treasury.alm_hedging import alm_hedging_engine
+    return {
+        "recommendations": alm_hedging_engine.get_hedge_recommendations(),
+        "duration_gap": alm_hedging_engine.get_duration_gap(),
+        "nii_at_risk": alm_hedging_engine.get_nii_at_risk(100),
+        "as_of": __import__("datetime").datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/alm/krd")
+async def alm_krd():
+    from infrastructure.treasury.alm_hedging import alm_hedging_engine
+    return {
+        "key_rate_durations": alm_hedging_engine.get_key_rate_durations(),
+        "duration_gap": alm_hedging_engine.get_duration_gap(),
+        "as_of": __import__("datetime").datetime.utcnow().isoformat(),
+    }
+
+
+# ── Dynamic FTP routes ──────────────────────────────────────────────────────
+
+@router.get("/ftp/curve-dynamic")
+async def ftp_curve_dynamic():
+    from infrastructure.treasury.ftp_dynamic import dynamic_ftp_engine
+    return {
+        "base_curve": dynamic_ftp_engine.get_funding_curve(),
+        "idiosyncratic_stress": dynamic_ftp_engine.get_funding_curve("idiosyncratic"),
+        "market_wide_stress": dynamic_ftp_engine.get_funding_curve("market_wide"),
+        "liquidity_premiums_bps": {
+            k: v for k, v in __import__(
+                "infrastructure.treasury.ftp_dynamic",
+                fromlist=["LIQUIDITY_PREMIUM_BPS"]
+            ).LIQUIDITY_PREMIUM_BPS.items()
+        },
+        "as_of": __import__("datetime").datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/ftp/raroc")
+async def ftp_raroc():
+    from infrastructure.treasury.raroc import raroc_engine
+    return raroc_engine.calculate_portfolio_raroc()
+
+
+# ── Balance Sheet Optimization routes ──────────────────────────────────────
+
+@router.get("/balance-sheet/optimization")
+async def balance_sheet_optimization():
+    from infrastructure.treasury.balance_sheet_optimizer import balance_sheet_optimizer
+    return balance_sheet_optimizer.get_full_optimization_report()
