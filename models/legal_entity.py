@@ -63,7 +63,7 @@ DESK_ENTITY: dict[str, str] = {
 
 def get_entity_for_desk(desk: str) -> LegalEntity:
     """Return the booking entity for a given trading desk."""
-    entity_id = DESK_ENTITY.get(desk, "APEX_NA")
+    entity_id = DESK_ENTITY.get(desk.upper(), "APEX_NA")
     return LEGAL_ENTITIES[entity_id]
 
 

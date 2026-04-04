@@ -143,6 +143,9 @@ async def submit_order(order: OrderRequest) -> dict:
     asyncio.create_task(_persist_trade(conf_dict))
     asyncio.create_task(trading_broadcaster.broadcast_fill(conf_dict))
 
+    from infrastructure.xva.service import xva_service
+    asyncio.create_task(xva_service.refresh())
+
     return conf_dict
 
 

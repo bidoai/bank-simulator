@@ -6,9 +6,12 @@ from pathlib import Path
 from typing import Any
 
 import anthropic
+import structlog
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+
+log = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/models", tags=["models"])
 

@@ -46,6 +46,39 @@ async def get_meeting_transcript(meeting_id: str) -> dict:
     return {"meeting": meeting, "turns": turns}
 
 
+@router.get("/meetings/{meeting_id}/export")
+async def export_meeting_transcript(meeting_id: str):
+    """Return a plain-text transcript for download."""
+    from fastapi import HTTPException
+    from fastapi.responses import Response
+    import datetime
+
+    meeting = meeting_store.get_meeting(meeting_id)
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    turns = meeting_store.get_turns(meeting_id)
+
+    lines = []
+    for turn in turns:
+        ts = turn.get("timestamp") or ""
+        try:
+            dt = datetime.datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            time_str = dt.strftime("%H:%M")
+        except Exception:
+            time_str = ts[:5] if ts else "00:00"
+        agent = turn.get("agent") or "Unknown"
+        text  = turn.get("text") or ""
+        lines.append(f"[{time_str}] {agent}: {text}")
+
+    body = "\n".join(lines)
+    filename = f"meeting_{meeting_id}.txt"
+    return Response(
+        content=body,
+        media_type="text/plain",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # ── Live session state ─────────────────────────────────────────────────────────
 
 @router.get("/history")
