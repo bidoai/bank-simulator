@@ -184,12 +184,13 @@
       "downstream_systems": ["SAR Filing", "Compliance Dashboard"],
       "last_review_date": "2026-03-01",
       "next_review_date": "2027-03-01",
-      "open_findings": 2,
+      "open_findings": 3,
       "description": "Rule-based AML transaction monitoring: 6 rule typologies (sanctions, large-tx, structuring, velocity, round-number, unusual pattern). Threshold-based, target alert rate <2%, SAR conversion >15%.",
       "doc_files": ["mdd_aml_rbm_v1.0.md"],
       "findings": [
         {"id": "AML-F1", "severity": "major", "description": "No transaction network analysis; network-based typologies not covered", "status": "open"},
-        {"id": "AML-F2", "severity": "minor", "description": "Velocity limits static; not dynamically adjusted by customer segment", "status": "open"}
+        {"id": "AML-F2", "severity": "major", "description": "Velocity limits (Typology 2) use segment averages, not individual customer baselines; elevated false positive rate for legitimate high-frequency traders", "status": "open"},
+        {"id": "AML-F3", "severity": "minor", "description": "FATF grey-list refresh is quarterly; FinCEN expects near-real-time country risk updates", "status": "open"}
       ]
     },
     {
@@ -208,11 +209,13 @@
       "downstream_systems": ["VaR Calculator", "Stress Testing"],
       "last_review_date": "2026-03-01",
       "next_review_date": "2027-03-01",
-      "open_findings": 1,
+      "open_findings": 3,
       "description": "2-state HMM-proxy regime model. Regime indicator: 20-day realized equity-credit correlation. NORMAL 6×6 matrix (ρ_eq-eq=0.60) and STRESS matrix (ρ_eq-eq=0.90, ρ_eq-cr=-0.80). Used in VaR Monte Carlo.",
       "doc_files": ["mdd_correlation_regime_v1.0.md"],
       "findings": [
-        {"id": "CRM-F1", "severity": "major", "description": "Single regime boundary; no partial-stress intermediate state modelled", "status": "open"}
+        {"id": "CRM-F1", "severity": "major", "description": "Single regime boundary; no partial-stress intermediate state modelled", "status": "open"},
+        {"id": "CRM-F2", "severity": "major", "description": "20-day lookback lag: regime switches 3-8 days after stress onset; VaR underestimation during regime transition window not quantified", "status": "open"},
+        {"id": "CRM-F3", "severity": "minor", "description": "US-centric proxies (SPY, CDX IG); European/EM stress onset not captured until contagion reaches US markets", "status": "open"}
       ]
     },
     {
@@ -329,13 +332,88 @@
         {"id": "IMM-2", "severity": "major", "description": "1-year parallel run (SA-CCR vs IMM) not completed", "status": "open"}
       ]
     }
+    ,{
+      "id": "APEX-MDL-0015",
+      "name": "DFAST / Stress Testing Engine",
+      "short_name": "DFAST",
+      "short": "dfast",
+      "tier": 1,
+      "version": "1.0",
+      "owner": "Dr. Priya Nair",
+      "validator": "Dr. Samuel Achebe",
+      "status": "in_validation",
+      "risk_type": "capital",
+      "regulatory_framework": ["12 CFR 252", "Dodd-Frank §165(i)", "SR 12-7", "SR 11-7"],
+      "upstream_models": ["APEX-MDL-0007", "APEX-MDL-0001", "APEX-MDL-0017"],
+      "downstream_systems": ["Capital Calculator", "Board Reporting", "Fed DFAST Submission"],
+      "last_review_date": "2026-04-01",
+      "next_review_date": "2027-04-01",
+      "open_findings": 3,
+      "description": "9-quarter CET1 capital projection under 3 Fed-prescribed macroeconomic scenarios (baseline/adverse/severely adverse). Aggregates credit loss (IFRS 9 satellite), market loss (SVaR), PPNR (ALM/NII), and operational risk over 9 quarters.",
+      "doc_files": ["mdd_dfast_v1.0.md"],
+      "findings": [
+        {"id": "DFAST-F1", "severity": "major", "description": "Macro satellite β_GDP/β_UR inherited from APEX-MDL-0007, not independently calibrated for DFAST; COVID non-linearity may understate severely adverse credit losses", "status": "open"},
+        {"id": "DFAST-F2", "severity": "major", "description": "PPNR model uses static fee income and expense projections; no dynamic balance sheet run-off model for deposit attrition under stress", "status": "open"},
+        {"id": "DFAST-F3", "severity": "minor", "description": "Operational risk loss modelled as flat charge; no scenario-specific OpRisk drivers incorporated", "status": "open"}
+      ]
+    }
+    ,{
+      "id": "APEX-MDL-0016",
+      "name": "Collateral / SIMM Engine",
+      "short_name": "SIMM",
+      "short": "collateral_simm",
+      "tier": 1,
+      "version": "1.0",
+      "owner": "Dr. Priya Nair",
+      "validator": "Dr. Samuel Achebe",
+      "status": "in_validation",
+      "risk_type": "collateral",
+      "regulatory_framework": ["BCBS-IOSCO UMR", "ISDA 2016 VM CSA", "12 CFR 237", "SR 11-7"],
+      "upstream_models": [],
+      "downstream_systems": ["CVA Engine", "FVA Engine", "MVA Engine", "Liquidity Dashboard"],
+      "last_review_date": "2026-04-01",
+      "next_review_date": "2027-04-01",
+      "open_findings": 3,
+      "description": "End-to-end collateral lifecycle: daily VM calls across 5 CSAs, SIMM 2.6 IM calculation (IR/CRQ/EQ/FX/CMT), and three named stress scenarios (COVID Week, Lehman Event, Gilt Crisis). Sits between PositionManager and XVAAdapter in the CVA exposure chain.",
+      "doc_files": ["mdd_collateral_simm_v1.0.md"],
+      "findings": [
+        {"id": "COLL-F1", "severity": "major", "description": "SIMM pre-netting of same-tenor DV01 may overstate IM for offsetting IR positions; ISDA CRIF netting rules require position-level netting", "status": "open"},
+        {"id": "COLL-F2", "severity": "major", "description": "Collateral balances not yet wired into CVA exposure calculation; CVA currently computed on gross MtM", "status": "open"},
+        {"id": "COLL-F3", "severity": "minor", "description": "FX collateral haircuts are static; dynamic haircut widening under stress not modelled", "status": "open"}
+      ]
+    }
+    ,{
+      "id": "APEX-MDL-0017",
+      "name": "ALM / Fund Transfer Pricing Engine",
+      "short_name": "ALM/FTP",
+      "short": "alm_ftp",
+      "tier": 1,
+      "version": "1.0",
+      "owner": "Dr. Priya Nair",
+      "validator": "Dr. Samuel Achebe",
+      "status": "in_validation",
+      "risk_type": "interest_rate",
+      "regulatory_framework": ["SR 12-17", "SR 10-6", "12 CFR 249 (LCR)", "12 CFR 249 (NSFR)", "SR 11-7"],
+      "upstream_models": [],
+      "downstream_systems": ["DFAST Engine", "Treasury Dashboard", "Desk P&L", "Loan Pricing"],
+      "last_review_date": "2026-04-01",
+      "next_review_date": "2027-04-01",
+      "open_findings": 3,
+      "description": "ALM: NII/EVE sensitivity to parallel rate shocks (±100/200bps), 7-bucket repricing gap schedule, behavioural deposit model (70% core demand deposits, 5yr tenor). FTP: matched-maturity OIS + liquidity premium charges to desks. Duration gap 0.41yr; +200bps → ΔNII +$6.8B, ΔEVE -$26B.",
+      "doc_files": ["mdd_alm_ftp_v1.0.md"],
+      "findings": [
+        {"id": "ALM-F1", "severity": "major", "description": "Behavioural deposit model uses fixed core deposit tenors; dynamic repricing behaviour not modelled; SVB 2023 failure mode not incorporated", "status": "open"},
+        {"id": "ALM-F2", "severity": "major", "description": "Non-parallel rate shocks (bear steepener, bull flattener) not modelled; Fed SIIR guidance expects at least 6 shock scenarios", "status": "open"},
+        {"id": "ALM-F3", "severity": "minor", "description": "FTP liquidity premiums recalibrated annually; intra-year funding market dislocations not reflected in desk charges", "status": "open"}
+      ]
+    }
   ],
   "metadata": {
     "bank": "Apex Global Bank",
     "framework": "SR 11-7",
     "total_models": 847,
-    "tier1_models": 13,
+    "tier1_models": 16,
     "tier2_models": 1,
-    "last_updated": "2026-03-26"
+    "last_updated": "2026-04-04"
   }
 }

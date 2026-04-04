@@ -101,6 +101,42 @@ This is a flat DV01 approximation; HW1F gives the full term-structure sensitivit
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **IRS valuation:** Fixed-float interest rate swap mark-to-market using HW1F zero-coupon bond prices.
+2. **PFE exposure simulation:** Monte Carlo IR path generation for XVA expected exposure profiles (APEX-MDL-0014).
+3. **FRTB-SA IR delta sensitivities:** Yield curve sensitivity bumps along HW1F term structure for GIRR capital.
+4. **Vanilla cap/floor and swaption pricing:** European-style rates options for standard hedging products.
+
+### Prohibited Uses
+- **CMS spread products:** Constant maturity swap spreads require at minimum a 2-factor model (HW2F); CMS products must not be priced using this model without MVO exception approval.
+- **Callable bond or Bermuda swaption pricing:** Multi-exercise optionality requires a lattice or multi-factor model; HW1F single-factor European swaption formula is not applicable.
+- **DV01 flat approximation as HW1F output:** The `DV01 = quantity × 0.0004` hardcode in `greeks.py` is a known simplification and must not be represented as a full HW1F sensitivity computation.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| Rates Desk | Trading | IRS pricing; cap/floor hedging |
+| XVA Team | Quant / Trading | PFE simulation |
+| Risk Management | Risk | FRTB IR delta; VaR |
+| Model Validation Officer | Model Risk | Validation; QuantLib benchmark |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Yuki Tanaka | Head of Quant Research / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| Dr. Priya Nair | CRO | 2026-03-01 |
+
+### Use Conditions
+- HW1F-F1 (single-factor) is an open Major finding. For butterfly swaps and other yield-curve-shape products, Risk must apply a model uncertainty reserve of ≥5bps DV01-equivalent.
+- Calibration must run daily against live OIS curve. Calibration failure requires fall-back to prior-day parameters and immediate notification to Quant.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

@@ -145,6 +145,43 @@ The regime matrix Σ is selected at each Monte Carlo run based on current regime
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **VaR Monte Carlo regime selection:** CRM regime indicator (NORMAL/STRESS) selects the Cholesky correlation matrix used in each MC VaR batch (APEX-MDL-0001).
+2. **Stressed VaR correlation (SVaR):** Stress-regime matrix applied unconditionally in APEX-MDL-0002 for GFC-window SVaR.
+3. **Risk appetite calibration:** Risk limits set with reference to stressed-regime VaR, ensuring limits do not implicitly rely on normal-market correlations.
+4. **FRTB-SA high-correlation scenario:** CRM stress matrix feeds the "high correlation" scenario in the FRTB three-scenario capital computation (APEX-MDL-0003).
+
+### Prohibited Uses
+- **Trading signal or position trigger:** CRM regime indicator must not be used as a trading signal or to trigger position reduction autonomously. Regime detection is a risk measurement input only.
+- **Real-time intraday switching:** Regime is fixed for the duration of each MC batch; intraday regime switching is not supported and would invalidate VaR consistency.
+- **Substitution for macroeconomic regime analysis:** CRM is a narrow cross-asset correlation proxy; it must not be used as a general macroeconomic recession or stress indicator for strategic planning.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| VaR Engine (automated) | Risk (system) | Regime-driven matrix selection |
+| CRO | Risk Management | Regime status monitoring; limit governance |
+| Market Risk Managers | Risk Management | Stress-period VaR interpretation |
+| Model Validation Officer | Model Risk | Backtesting; threshold calibration review |
+| Quant Research | Quant | Correlation matrix maintenance |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Yuki Tanaka | Head of Quant Research / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| Dr. Priya Nair | CRO | 2026-03-01 |
+
+### Use Conditions
+- CRM-F2 (regime lag) is an open Major finding. During market dislocation, Risk must manually review CRM regime status daily and may override to STRESS regime with CRO approval if market conditions warrant before the 20-day signal triggers.
+- Correlation matrices must be re-estimated at minimum annually, incorporating any new stress periods identified since the last calibration. Next scheduled re-estimation: 2027-03-01.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

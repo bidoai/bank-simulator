@@ -91,6 +91,41 @@ where k_1 and k_2 are the respective backtesting multipliers (minimum 3.0 each).
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **Basel 2.5 IMA capital (SVaR add-on):** Mandatory SVaR component of IMA capital; regulatory capital = VaR capital + SVaR capital under Basel 2.5 MRA.
+2. **DFAST adverse and severely adverse P&L:** SVaR provides the stressed loss distribution for DFAST quarterly projections.
+3. **Independent VaR challenge:** CRO uses SVaR/VaR ratio as a diagnostic; ratio < 1.5× triggers standard VaR recalibration review.
+4. **ICAAP buffer sizing:** Finance uses SVaR-implied stressed losses in internal capital adequacy assessment (ICAAP) Pillar 2 buffers.
+
+### Prohibited Uses
+- **Capital reporting with stale stressed period:** SVaR must not be used for regulatory capital if the stressed period has not been re-identified within 12 months. SVAR-F1 (open) requires CRO written certification as compensating control until remediated.
+- **Backtesting exceptions:** Basel traffic-light add-ons apply only to standard VaR; SVaR multiplier is independent of exception counts.
+- **Substitution for standard VaR:** SVaR does not replace APEX-MDL-0001.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| CRO | Risk Management | Capital calculation; DFAST |
+| Regulatory Reporting Team | Finance | 10-K, Pillar 3 capital disclosures |
+| Model Validation Officer | Model Risk | Annual stressed period re-identification |
+| Internal Audit | Audit | Capital adequacy audit |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Priya Nair | CRO / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+
+### Use Conditions
+- Stressed period must be re-identified annually. While SVAR-F1 remains open, CRO must certify in writing (quarterly) that the GFC 2007-2009 window remains the most severe period for current portfolio composition.
+- SVaR/VaR ratio ≥ 2.0× required in normal conditions; automatic escalation to MVO if ratio falls below 1.5×.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

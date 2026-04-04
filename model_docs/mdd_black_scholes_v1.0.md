@@ -101,6 +101,44 @@ where N(·) is the standard normal CDF.
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **European vanilla option pricing:** Mark-to-market for all Apex equity option positions (AAPL_CALL_200 and equivalents).
+2. **Greeks for VaR and FRTB-SA:** Delta, gamma, vega, and rho output fed to VaR Monte Carlo (APEX-MDL-0001) and FRTB-SA sensitivity-based method (APEX-MDL-0003).
+3. **XVA exposure simulation:** Delta and gamma used in PFE exposure profile generation (APEX-MDL-0014).
+4. **IFRS 13 fair value classification:** BSM output used to classify options as Level 2 (ATM) or Level 3 (deep OTM/ITM) per IFRS 13.81.
+
+### Prohibited Uses
+- **American-style options:** BSM is European-only; American exercise feature not modelled. American options must not be priced using this model without Quant approval of an early-exercise adjustment.
+- **Exotic or barrier options:** Path-dependent payoffs, digital options, and barrier products require separate models with MVO approval.
+- **Standalone Level 3 fair value without override disclosure:** Deep OTM options classified Level 3 must include disclosure of model uncertainty in financial statements.
+- **Vol surface extrapolation:** BSM uses a flat surface; extrapolating to strikes >25% OTM or tenors >1 year requires explicit MVO approval.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| Equity Options Desk | Trading | Trade pricing; MTM |
+| Risk Management | Risk | Greeks for VaR and FRTB |
+| XVA Team | Quant / Trading | Exposure simulation inputs |
+| Finance / Accounting | Finance | IFRS 13 fair value reporting |
+| Model Validation Officer | Model Risk | Validation and benchmarking |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Yuki Tanaka | Head of Quant Research / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| Dr. Priya Nair | CRO | 2026-03-01 |
+
+### Use Conditions
+- BSM-F1 (flat vol surface) is an open Major finding. For OTM options >15% moneyness, traders must apply a manual volatility override approved by Quant and documented in the trade blotter.
+- T = 0.25 is a hardcoded approximation; this is a known production defect. Trades with expiry significantly different from 90 days require Quant review of the T parameter.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

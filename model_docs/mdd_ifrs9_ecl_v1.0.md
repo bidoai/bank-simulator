@@ -122,6 +122,44 @@ CCF = 0.75 (revolving credit), 0.50 (term loans).
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **IFRS 9 provision calculation:** Stage 1/2/3 ECL recognition on the Apex loan portfolio for financial reporting purposes. ECL charge recorded on the income statement; provision balance on the balance sheet.
+2. **Credit risk staging:** Stage classification (1→2 SICR trigger; 2→3 default) drives credit officer workout strategy and covenant monitoring.
+3. **DFAST adverse scenario P&L:** Stressed ECL (run_scenario) used in 9-quarter CET1 projections under DFAST adverse and severely adverse scenarios.
+4. **Risk-adjusted pricing:** ECL used as expected loss charge in RAROC pricing framework for new loan origination.
+5. **Capital planning:** ECL provisioning impacts CET1 via retained earnings; Finance uses ECL projections in capital buffer planning.
+
+### Prohibited Uses
+- **Production portfolio assertion (850 obligors) without recalibration:** Current implementation covers a 50-obligor demo portfolio. Output must not be presented as representing the full 850-obligor production book without explicit MVO approval of the full portfolio extension.
+- **SPPI test substitute:** BSM does not assess Solely Payments of Principal and Interest classification; SPPI test for IFRS 9 asset classification must be conducted separately by Finance.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| CRO / Credit Risk | Risk Management | ECL calculation; credit staging |
+| CFO / Finance | Finance | IFRS 9 provision booking; capital planning |
+| Loan Officers | Commercial Banking | Stage classification for workout |
+| Regulatory Reporting Team | Finance | DFAST submission; EBA stress test |
+| Model Validation Officer | Model Risk | Validation; macro sensitivity review |
+| External Auditors | Audit (external) | IFRS 9 provision audit (read-only) |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Priya Nair | CRO / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| CFO | Chief Financial Officer | 2026-03-01 |
+
+### Use Conditions
+- ECL-F1 (macro satellite not post-COVID calibrated) is an open Major finding. Until β_GDP is recalibrated, a conservative management overlay of +15% on total ECL provision must be applied in downside scenario planning, approved quarterly by the CRO and CFO.
+- Stage 2 qualitative override (credit officer judgment) must be documented with a written credit memo before overriding the quantitative SICR trigger.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

@@ -121,6 +121,47 @@ k = 3.0 + add-on (0–1 based on backtesting exceptions)
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **Regulatory capital calculation:** Daily IMA market risk capital under 12 CFR 3.132 and Basel III Annex 10. Output feeds the Regulatory Capital Engine as the IMA numerator.
+2. **Desk-level risk limit monitoring:** Daily VaR utilisation reported against board-approved per-desk and portfolio limits in LimitManager.
+3. **Pre-trade limit approval:** Parametric VaR delta used by OMS for real-time pre-trade checks; limit breach blocks order submission.
+4. **DFAST adverse scenario inputs:** MC VaR outputs used as the starting-point loss distribution in DFAST severely adverse projections.
+5. **Management reporting:** Daily VaR summary included in CRO risk dashboard and Board Risk Committee pack.
+
+### Prohibited Uses
+- **Sole basis for limit increases:** VaR output alone must not be used to approve an increase in trading limits; independent CRO sign-off required.
+- **External disclosure without MVO certification:** VaR figures in Pillar 3 or 10-K require Model Validation Officer review and CRO certification prior to filing.
+- **Standalone capital adequacy assertion:** APEX-MDL-0001 alone is not a complete capital assessment; SVaR (APEX-MDL-0002) and FRTB-SA floor (APEX-MDL-0003) are required components.
+- **Unvalidated methodology changes:** Changes to lookback window, path count, or regime model dependency require MVO approval before production deployment.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| CRO | Risk Management | Full output; capital reporting; limit governance |
+| Market Risk Managers | Risk Management | Desk VaR utilisation monitoring |
+| OMS System (automated) | Trading | Pre-trade parametric VaR check |
+| Model Validation Officer | Model Risk | Validation, backtesting oversight |
+| Internal Audit | Audit | Annual model audit, exception review |
+| Regulatory Reporting Team | Finance | Pillar 3 / 10-K market risk disclosures |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Priya Nair | CRO / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| Board Risk Committee | Board | 2026-03-01 |
+
+### Use Conditions
+- Model must produce VaR by T+1 09:00; failure triggers CRO escalation.
+- Exception log must be maintained. ≥5 backtesting exceptions in 250 days triggers MVO review and possible transition to FRTB-SA.
+- Regime selection from APEX-MDL-0009 must be operational; if CRM is unavailable, STRESS matrix must be used as default.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

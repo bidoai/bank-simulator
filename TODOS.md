@@ -151,6 +151,40 @@
 - LICENSE / CONTRIBUTING.md / GitHub Actions CI (5 min each with CC when ready)
 - Real-world market data feed integration (Bloomberg/Refinitiv)
 
+---
+
+## v0.3.x MDD Suite Completions (feature/v03-xva-live-mdd-suite)
+
+### TODO-031: MDD Registry Reconciliation ✅ DONE
+**What:** Fix registry.json discrepancies flagged by the audit scenario.
+**Context:**
+- AML-F2 severity corrected from "minor" → "major" (MDD said Major, registry said Minor)
+- AML-F3 (FATF grey-list refresh lag, Minor) added; `open_findings` 2→3
+- CRM-F2 (20-day lookback lag, Major) and CRM-F3 (US-centric proxies, Minor) added; `open_findings` 1→3
+- Registry `tier1_models` updated 13→16 to reflect 3 new MDDs
+**Completed:** 2026-04-04
+
+### TODO-032: Section 7 (Use Authorization) — All MDDs ✅ DONE
+**What:** Added SR 11-7-compliant Section 7 to all 9 existing MDD markdown files.
+**Context:** Each Section 7 includes Authorized Uses, Prohibited Uses, Authorized Users table, Approval Chain table, and Use Conditions. Content is model-specific and references open findings as use constraints. Files updated: mdd_var_irc, mdd_svar, mdd_frtb_sa, mdd_black_scholes, mdd_hull_white, mdd_sofr_lmm, mdd_ifrs9_ecl, mdd_aml_rbm, mdd_correlation_regime.
+**Completed:** 2026-04-04
+
+### TODO-033: Three New MDDs ✅ DONE
+**What:** Created missing MDDs called out in the audit scenario as critical gaps.
+**Context:**
+- `mdd_dfast_v1.0.md` — APEX-MDL-0015. 9-quarter CET1 projection model; macro satellite, PPNR model, market loss channel. 3 open findings.
+- `mdd_collateral_simm_v1.0.md` — APEX-MDL-0016. VM lifecycle + SIMM 2.6 IM (6 risk classes) + 3 stress scenarios. Covers COLL-F2 (CVA integration gap). 3 open findings.
+- `mdd_alm_ftp_v1.0.md` — APEX-MDL-0017. NII/EVE sensitivity, 7-bucket repricing gap, behavioural deposit model, matched-maturity FTP with OIS+liquidity premium. 3 open findings.
+All three added to registry.json.
+**Completed:** 2026-04-04
+
+### TODO-034: Balance Sheet Optimization PDF ✅ DONE
+**What:** 22-page quantitative reference document on bank balance sheet optimization.
+**Context:** Covers the full constrained optimization problem (multi-period NLP), capital optimization (RWA minimization, RAROC, EC allocation), liquidity optimization (LCR/NSFR, HQLA), ALM (NII/EVE, duration gap, convexity), FTP (matched-maturity, liquidity premium), stress testing (DFAST integration, reverse stress), technology requirements (calculator stack, compute, dashboards), and revenue generation mechanisms. LaTeX source: `model_docs/latex/balance_sheet_optimization_v1.0.tex`. Compiled PDF: `model_docs/pdfs/balance_sheet_optimization_v1.0.pdf`.
+**Completed:** 2026-04-04
+
+---
+
 ## Phase 3 — Product Expansion
 
 ### TODO-029: Securities Finance Lifecycle

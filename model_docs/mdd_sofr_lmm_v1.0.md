@@ -108,6 +108,42 @@ d₂ = d₁ - σ_j √T_j
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **SOFR floating-rate instrument pricing:** All new-issue floating-rate loans and swaps referencing compounded SOFR in arrears.
+2. **LIBOR fallback conversion:** Legacy LIBOR contracts converted per ISDA 2020 fallback waterfall with prescribed spread adjustments.
+3. **Vanilla SOFR cap/floor pricing:** Standard interdealer hedging products referencing SOFR caplets using LMM Black formula.
+4. **FRTB delta-IR SOFR curve sensitivities:** SOFR curve bumps replace LIBOR curve under FRTB sensitivity-based method.
+
+### Prohibited Uses
+- **Term SOFR in non-loan financial contracts:** ARRC guidelines restrict Term SOFR to loan products and interdealer derivatives hedging loans. Use of Term SOFR in any other financial contract requires written ARRC pre-approval and documented Legal sign-off from General Counsel. LMM-F2 (open Major) identifies three existing contracts not yet documented; new contracts must not be executed until LMM-F2 is remediated.
+- **Complex SOFR-linked structured products:** Structured notes with embedded optionality referencing SOFR require a separate model review and MVO approval.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| Rates Desk | Trading | SOFR swap and cap/floor pricing |
+| Loan Origination | Commercial Banking | Floating-rate loan pricing |
+| Legal / Compliance | Legal | ARRC compliance review (Term SOFR contracts) |
+| Model Validation Officer | Model Risk | Validation; ARRC compliance |
+| General Counsel | Legal | Contract approval for Term SOFR usage |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Yuki Tanaka | Head of Quant Research / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| Margaret Okonkwo | General Counsel (Term SOFR contracts) | 2026-03-01 |
+
+### Use Conditions
+- **Critical:** LMM-F2 is an open Major finding. No new Term SOFR client contracts may be executed until all three identified contracts are re-papered or Legal obtains documented ARRC authorization. Any exception requires written approval from General Counsel and the CRO.
+- LMM vol recalibration to SOFR-native history (LMM-F3) must be completed by 2026-09-30 per remediation plan.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

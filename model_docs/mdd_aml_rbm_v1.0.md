@@ -161,6 +161,45 @@ Weights (w) calibrated annually against confirmed fraud/SAR outcomes.
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **Primary SAR workflow:** Alert generation → L1 analyst review → L2 adjudication → SAR filing with FinCEN or dismissal.
+2. **Regulatory examination support:** FFIEC examiners review alert rates, SAR conversion rates, and rule thresholds; model output is the primary evidence base.
+3. **Customer risk tier assignment:** Alert history and risk score feed the customer risk tier (Low/Medium/High/Prohibited) used in CDD/EDD processes.
+4. **Law enforcement referrals:** Structuring and sanctions alerts feed direct escalation to Legal for law enforcement referrals where applicable.
+
+### Prohibited Uses
+- **Automated account closure without analyst review:** No alert output from this model may directly trigger account closure or restriction without L2 analyst adjudication. Automated enforcement is prohibited.
+- **Credit decision input:** AML risk score must not be used as an input to credit underwriting or loan pricing decisions.
+- **Public disclosure of alert rates:** Internal alert rates and SAR conversion statistics are BSA-protected under 31 USC 5318(g) and must not be disclosed externally without Legal approval.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| BSA/AML Compliance Officers (L1/L2) | Compliance | Alert review; SAR adjudication |
+| BSA Officer (Sarah Mitchell) | Compliance | Model governance; threshold calibration |
+| Legal | Legal | Law enforcement referrals; SAR review |
+| Internal Audit | Audit | Annual BSA/AML program audit |
+| Model Validation Officer | Model Risk | Annual typology effectiveness review |
+| FFIEC Examiners | Regulatory (external) | Examination (read-only) |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Sarah Mitchell | BSA/AML Officer / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 |
+| General Counsel | Margaret Okonkwo | 2026-03-01 |
+
+### Use Conditions
+- Alert thresholds must be reviewed annually or following any material change (>20%) in transaction volumes. Any threshold change requires BSA Officer approval and MVO sign-off before deployment.
+- False-negative rate must be tracked annually via penetration testing (synthetic structuring/layering scenarios). Results must be reported to the Audit Committee.
+- AML-F2 (velocity segment averages) is an open Major finding; high-frequency trading accounts must be flagged for manual exclusion from Typology 2 velocity alerts until remediated.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |

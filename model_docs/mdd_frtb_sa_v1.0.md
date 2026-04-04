@@ -100,6 +100,40 @@ Tenor-dependent: 1.7% (3m) to 1.5% (10Y), prescribed by BCBS d352 §21.52.
 
 ---
 
+## 7. Use Authorization
+
+### Authorized Uses
+1. **Regulatory capital (binding floor):** FRTB-SA capital is the binding capital floor until IMA approval is obtained. Output is the primary market risk capital constraint under CRR3 2024.
+2. **Internal limit calibration:** SA sensitivities inform risk appetite for delta, vega, and curvature across desks.
+3. **Parallel run vs. IMA:** SA output compared against IMA (VaR/SVaR) output to monitor model divergence; divergence >20% triggers governance review.
+4. **FRTB three-scenario capital:** High/medium/low correlation scenarios feed the conservative capital floor per BCBS d352.
+
+### Prohibited Uses
+- **Representing as validated to regulators:** FRTB-SA is in Draft status (FRTB-F1 and FRTB-F2 open Major). Must not be described as a "fully validated" model to examiners without noting open findings.
+- **Exotic product capital:** RRAO classification is manual (FRTB-F2 open); exotic product capital charges must be reviewed by Quant before relying on SA output.
+
+### Authorized Users
+
+| Role | Department | Permitted Use |
+|------|-----------|---------------|
+| CRO | Risk Management | Capital reporting; limit governance |
+| Regulatory Reporting Team | Finance | Basel IV capital filings |
+| Market Risk Managers | Risk Management | Sensitivity-based limit monitoring |
+| Model Validation Officer | Model Risk | Benchmark validation, curvature review |
+
+### Approval Chain
+
+| Approver | Role | Date |
+|----------|------|------|
+| Dr. Priya Nair | CRO / Model Owner | 2026-03-01 |
+| Dr. Samuel Achebe | Model Validation Officer | 2026-03-01 (provisional — Draft status) |
+
+### Use Conditions
+- Until FRTB-F1 (curvature not vendor-benchmarked) is remediated, curvature capital must be floored at 110% of the RRAO output as a conservative buffer.
+- Transition to "Validated" status requires independent vendor benchmark reconciliation for curvature and closure of FRTB-F2.
+
+---
+
 ## 8. Open Findings
 
 | ID | Severity | Description | Status |
