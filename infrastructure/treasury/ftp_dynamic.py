@@ -19,7 +19,9 @@ from typing import Optional
 import numpy as np
 
 
-# ── SOFR OIS base curve (current market levels, %) ────────────────────────
+# ── SOFR OIS base curve ───────────────────────────────────────────────────
+# Static fallbacks — overwritten at module load by _load_live_curve() where
+# FRED data is available.  Keys are tenor in years; values are yields in %.
 
 SOFR_OIS: dict[float, float] = {
     0.003: 5.33,   # O/N
@@ -35,6 +37,28 @@ SOFR_OIS: dict[float, float] = {
     20.00: 4.30,   # 20Y
     30.00: 4.35,   # 30Y
 }
+
+
+def _load_live_curve() -> None:
+    """Overwrite SOFR_OIS with live FRED yields.  Called once at import time."""
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        from infrastructure.market_data.fred_curve import fetch_live_curve
+        live = fetch_live_curve()
+        for tenor, rate in live.items():
+            if tenor in SOFR_OIS:
+                old = SOFR_OIS[tenor]
+                SOFR_OIS[tenor] = rate
+                log.info(
+                    "ftp_dynamic: SOFR_OIS[%.3fY] %.4f%% → %.4f%%",
+                    tenor, old, rate,
+                )
+    except Exception as exc:
+        log.warning("ftp_dynamic: live curve load failed — %s", exc)
+
+
+_load_live_curve()
 
 # Bank credit spread above SOFR OIS (bps) for AA-rated Apex Global Bank
 # Keys are approximate tenors in years
