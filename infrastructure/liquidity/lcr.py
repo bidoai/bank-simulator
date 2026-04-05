@@ -227,3 +227,6 @@ class LCREngine:
             "compliance_status": compliance_status,
             "surplus_deficit_bn": round(total_hqla - ncof, 2),
         }
+
+
+lcr_engine = LCREngine()

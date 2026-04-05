@@ -1,5 +1,6 @@
 """
-Liquidity API routes — LCR, NSFR, stress scenarios, intraday, ladder.
+FastAPI routes for Liquidity Risk dashboard.
+Prefix: /liquidity (mounted at /api by main.py)
 """
 from __future__ import annotations
 
@@ -15,64 +16,40 @@ class StressRequest(BaseModel):
     scenario: str  # "idiosyncratic" | "market_wide" | "combined"
 
 
-def _lcr_engine():
-    from infrastructure.liquidity.lcr import LCREngine
-    return LCREngine()
-
-
-def _nsfr_engine():
-    from infrastructure.liquidity.nsfr import NSFREngine
-    return NSFREngine()
-
-
-def _stress_engine():
-    from infrastructure.liquidity.stress_scenarios import LiquidityStressEngine
-    return LiquidityStressEngine()
-
-
-def _intraday_monitor():
-    from infrastructure.liquidity.intraday import IntradayLiquidityMonitor
-    return IntradayLiquidityMonitor()
-
-
-def _ladder_engine():
-    from infrastructure.liquidity.ladder import LiquidityLadder
-    return LiquidityLadder()
-
-
 @router.get("/lcr")
 async def get_lcr() -> dict[str, Any]:
-    return _lcr_engine().calculate()
+    from infrastructure.liquidity.lcr import lcr_engine
+    return lcr_engine.calculate()
 
 
 @router.get("/nsfr")
 async def get_nsfr() -> dict[str, Any]:
-    return _nsfr_engine().calculate()
+    from infrastructure.liquidity.nsfr import nsfr_engine
+    return nsfr_engine.calculate()
 
 
 @router.get("/stress")
-async def get_stress_all() -> dict[str, Any]:
-    scenarios = _stress_engine().run_all_scenarios()
-    return {"scenarios": scenarios}
+async def get_liquidity_stress() -> dict[str, Any]:
+    from infrastructure.liquidity.stress_scenarios import liquidity_stress_engine
+    return {"scenarios": liquidity_stress_engine.run_all_scenarios()}
 
 
 @router.post("/stress")
-async def post_stress(body: StressRequest) -> dict[str, Any]:
+async def run_liquidity_stress(body: StressRequest) -> dict[str, Any]:
+    from infrastructure.liquidity.stress_scenarios import liquidity_stress_engine
     valid = {"idiosyncratic", "market_wide", "combined"}
     if body.scenario not in valid:
         raise HTTPException(status_code=422, detail=f"scenario must be one of {sorted(valid)}")
-    return _stress_engine().run_scenario(body.scenario)
+    return liquidity_stress_engine.run_scenario(body.scenario)
 
 
 @router.get("/intraday")
 async def get_intraday() -> dict[str, Any]:
-    return _intraday_monitor().get_daily_summary()
+    from infrastructure.liquidity.intraday import intraday_monitor
+    return intraday_monitor.get_daily_summary()
 
 
 @router.get("/ladder")
-async def get_ladder() -> dict[str, Any]:
-    engine = _ladder_engine()
-    return {
-        "ladder": engine.get_ladder(),
-        "survival_horizon": engine.get_survival_horizon(),
-    }
+async def get_liquidity_ladder() -> dict[str, Any]:
+    from infrastructure.liquidity.ladder import liquidity_ladder
+    return {"ladder": liquidity_ladder.get_ladder(), "summary": liquidity_ladder.get_summary()}
