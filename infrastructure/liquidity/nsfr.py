@@ -162,3 +162,6 @@ class NSFREngine:
                 {"item": k, "requirement_bn": round(v, 2)} for k, v in top_rsf
             ],
         }
+
+
+nsfr_engine = NSFREngine()

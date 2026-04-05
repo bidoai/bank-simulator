@@ -90,3 +90,6 @@ class LiquidityStressEngine:
 
     def run_all_scenarios(self) -> list[dict[str, Any]]:
         return [self.run_scenario(name) for name in _SCENARIOS]
+
+
+liquidity_stress_engine = LiquidityStressEngine()

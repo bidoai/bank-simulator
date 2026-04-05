@@ -90,3 +90,6 @@ class IntradayLiquidityMonitor:
             "cashflow_profile": profile,
             "credit_line_breached": utilization["peak_draw_bn"] > self._credit_line,
         }
+
+
+intraday_monitor = IntradayLiquidityMonitor()

@@ -87,6 +87,29 @@ class LiquidityLadder:
         valid = [r["bucket"] for r in ladder]
         raise ValueError(f"Unknown bucket '{bucket}'. Valid: {valid}")
 
+    def get_survival_horizon_days(self) -> int:
+        """Return days until cumulative gap first goes positive (structural surplus onset)."""
+        horizon = self.get_survival_horizon()
+        days = horizon.get("survival_horizon_days")
+        return days if days is not None else 9999
+
+    def get_summary(self) -> dict[str, Any]:
+        ladder = self.get_ladder()
+        total_assets = sum(r["assets_bn"] for r in ladder)
+        total_liabilities = sum(r["liabilities_bn"] for r in ladder)
+        # Short-term gap = sum of nets for buckets up to and including 1M
+        short_term_buckets = {"Overnight", "1W", "2W", "1M"}
+        short_term_gap = sum(
+            r["net_bn"] for r in ladder if r["bucket"] in short_term_buckets
+        )
+        return {
+            "total_assets_bn": round(total_assets, 2),
+            "total_liabilities_bn": round(total_liabilities, 2),
+            "net_structural_bn": round(total_assets + total_liabilities, 2),
+            "survival_horizon_days": self.get_survival_horizon_days(),
+            "short_term_gap_bn": round(short_term_gap, 2),
+        }
+
     @staticmethod
     def _bucket_days(bucket: str) -> int:
         mapping = {
@@ -101,3 +124,6 @@ class LiquidityLadder:
             "3Y+": 9999,
         }
         return mapping.get(bucket, 0)
+
+
+liquidity_ladder = LiquidityLadder()
