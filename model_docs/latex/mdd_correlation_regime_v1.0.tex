@@ -1,0 +1,144 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0009}
+\mddversion{1.0}
+\mddowner{Dr.\ Yuki Tanaka (Quant Researcher)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{In Validation}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{Basel III Annex 4, SR 11-7}
+
+\title{Correlation Regime Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The Correlation Regime Model (CRM) detects the prevailing cross-asset correlation regime (NORMAL vs STRESS) using a rolling equity-credit correlation indicator and applies the appropriate $6 \times 6$ correlation matrix to the VaR Monte Carlo Cholesky path generator (APEX-MDL-0001).
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{VaR capital:} Regime-dependent correlation matrix is the primary input to Monte Carlo Cholesky factorisation in VaR (APEX-MDL-0001).
+  \item \textbf{SVaR:} Stress regime matrix applied unconditionally for stressed capital (APEX-MDL-0002).
+  \item \textbf{XVA:} Regime drives counterparty exposure profiles in PFE simulation.
+  \item \textbf{Risk limit calibration:} Regime indicator triggers intra-day risk limit review when transitioning NORMAL $\to$ STRESS.
+\end{itemize}
+
+\section{Theoretical Basis}
+
+\subsection{Regime Indicator}
+The regime indicator is the 20-day rolling Pearson correlation between SPY daily log-returns ($R_{\mathrm{eq}}$) and CDX IG 5Y daily log-returns ($R_{\mathrm{cr}}$):
+\begin{formulabox}
+\[
+  \rho_{\mathrm{obs}}(t) = \mathrm{Corr}\bigl(R_{\mathrm{eq}}(t-19:t),\;R_{\mathrm{cr}}(t-19:t)\bigr)
+\]
+\end{formulabox}
+Under normal market conditions, equity returns and investment-grade credit spreads are negatively correlated ($\rho \approx -0.20$). Under stress, they co-move strongly in the negative direction ($\rho \approx -0.80$), reflecting the flight-to-quality and credit-equity dislocation phenomenon.
+
+\subsection{Hysteresis State Machine}
+To avoid regime flickering, a hysteresis band $[0.40, 0.65]$ is applied:
+\begin{formulabox}
+\[
+  \text{Regime}(t) = \begin{cases}
+    \text{STRESS} & \text{if } \rho_{\mathrm{obs}}(t) > 0.65 \\
+    \text{NORMAL} & \text{if } \rho_{\mathrm{obs}}(t) < 0.40 \\
+    \text{Regime}(t-1) & \text{otherwise (hysteresis band)}
+  \end{cases}
+\]
+Note: the indicator uses $|\rho_{\mathrm{obs}}|$ for symmetric detection; the sign convention above corresponds to the absolute value of the equity-credit correlation.
+\end{formulabox}
+
+\subsection{Normal Regime Correlation Matrix ($\Sigma_{\mathrm{NORMAL}}$)}
+$6 \times 6$ matrix across asset classes [EQ, FX, IR, CR, CMDTY, VOL]:
+\begin{formulabox}
+\[
+\Sigma_{\mathrm{NORMAL}} = \begin{pmatrix}
+  1.00 &  0.30 & -0.20 & -0.20 &  0.20 & -0.60 \\
+  0.30 &  1.00 & -0.10 & -0.10 &  0.15 & -0.30 \\
+ -0.20 & -0.10 &  1.00 &  0.50 & -0.10 &  0.10 \\
+ -0.20 & -0.10 &  0.50 &  1.00 & -0.15 &  0.15 \\
+  0.20 &  0.15 & -0.10 & -0.15 &  1.00 & -0.20 \\
+ -0.60 & -0.30 &  0.10 &  0.15 & -0.20 &  1.00 \\
+\end{pmatrix}
+\]
+\end{formulabox}
+
+\subsection{Stress Regime Correlation Matrix ($\Sigma_{\mathrm{STRESS}}$)}
+Calibrated to 2008 GFC peak stress (Oct--Dec 2008):
+\begin{formulabox}
+\[
+\Sigma_{\mathrm{STRESS}} = \begin{pmatrix}
+  1.00 &  0.60 & -0.40 & -0.80 &  0.50 & -0.90 \\
+  0.60 &  1.00 & -0.20 & -0.50 &  0.35 & -0.60 \\
+ -0.40 & -0.20 &  1.00 &  0.70 & -0.30 &  0.30 \\
+ -0.80 & -0.50 &  0.70 &  1.00 & -0.40 &  0.60 \\
+  0.50 &  0.35 & -0.30 & -0.40 &  1.00 & -0.50 \\
+ -0.90 & -0.60 &  0.30 &  0.60 & -0.50 &  1.00 \\
+\end{pmatrix}
+\]
+Key stressed pairs: $\rho_{\mathrm{EQ,CR}} = -0.80$, $\rho_{\mathrm{EQ,VOL}} = -0.90$, $\rho_{\mathrm{FX,CR}} = -0.50$.
+\end{formulabox}
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+Rolling window & 20 business days & $\approx 1$ calendar month \\
+STRESS trigger & $|\rho_{\mathrm{obs}}| > 0.65$ & Hysteresis upper bound \\
+NORMAL trigger & $|\rho_{\mathrm{obs}}| < 0.40$ & Hysteresis lower bound \\
+Hysteresis band & $[0.40, 0.65]$ & Prevents flickering \\
+Equity proxy & SPY daily log-returns & Observed from market feed \\
+Credit proxy & CDX IG 5Y daily spread changes & Computed from counterparty registry \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/risk/correlation\_regime.py}\\
+\textbf{Class:} \texttt{CorrelationRegimeModel}
+
+\textbf{Key methods:}
+\begin{itemize}
+  \item \texttt{detect\_regime(eq\_returns, cr\_returns)} --- returns \texttt{RegimeType.NORMAL} or \texttt{RegimeType.STRESS}.
+  \item \texttt{get\_correlation\_matrix(regime)} --- returns $6\times 6$ numpy array.
+  \item \texttt{cholesky(regime)} --- pre-computed Cholesky factor $L$ such that $LL^\top = \Sigma_{\mathrm{regime}}$.
+\end{itemize}
+
+\textbf{Integration:} \texttt{VaRCalculator.calculate()} calls \texttt{detect\_regime()} daily. \texttt{VaRCalculator.calculate\_stressed()} uses \texttt{STRESS} matrix unconditionally.
+
+\section{Validation}
+
+\textbf{Correlation matrix validation:} Both $\Sigma_{\mathrm{NORMAL}}$ and $\Sigma_{\mathrm{STRESS}}$ confirmed positive semi-definite by Cholesky decomposition (no numerical failures).
+
+\textbf{Backtesting:} Regime detection applied retrospectively to 2008 GFC data; model enters STRESS regime within 3 days of Lehman Brothers default (2008-09-15). Exits STRESS regime by 2009-07 (aligns with S\&P 500 recovery).
+
+\textbf{VaR uplift:} STRESS regime VaR 2.1$\times$ higher than NORMAL regime for current portfolio; consistent with empirical GFC loss data.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{Single regime boundary:} Binary NORMAL/STRESS does not capture partial-stress states (e.g., single-sector stress); a 3-state model (NORMAL/ELEVATED/STRESS) would improve granularity.
+  \item \textbf{20-day rolling lag:} Regime detection has $\sim$10-day lag relative to instantaneous correlation shift; rapid stress onset (e.g., flash crash) may not trigger in time.
+  \item \textbf{US-centric proxies:} SPY and CDX IG are US instruments; European stress (Gilt Crisis 2022) may not trigger the indicator until contagion reaches US markets.
+  \item \textbf{Proxy quality:} CDX IG 5Y spread change is computed from counterparty registry CDS spreads, not a traded index; basis risk between proxy and market CDX not quantified.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{CRM-F1}{Major}{Single regime boundary: binary NORMAL/STRESS misclassifies idiosyncratic sector stress; 3-state regime model recommended.}{Open}
+\finding{CRM-F2}{Major}{20-day rolling window introduces $\sim$10-day lag; rapid stress onset may not trigger regime change within risk management response window.}{Open}
+\finding{CRM-F3}{Minor}{US-centric proxies (SPY, CDX IG) may not detect European or EM-originated systemic stress events.}{Open}
+\end{findings}
+
+\end{document}

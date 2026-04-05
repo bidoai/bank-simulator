@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Risk Dashboard — Apex Global Bank</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <style>
+    body { max-width: 1480px; margin: 0 auto; padding: 20px 24px; }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.7;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--positive);
+      box-shadow: 0 0 8px rgba(63, 185, 80, 0.55);
+    }
+
+    .refresh-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .kpi-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value.pos { color: var(--positive); }
+    .kpi-value.neg { color: var(--negative); }
+    .kpi-value.warn { color: var(--warning); }
+    .kpi-value.accent { color: var(--accent); }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card-title h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .card-title .meta {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .watchlist {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .watch-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .watch-item.red {
+      border-color: rgba(248, 81, 73, 0.45);
+      background: rgba(248, 81, 73, 0.06);
+    }
+
+    .watch-item.warn {
+      border-color: rgba(227, 179, 65, 0.45);
+      background: rgba(227, 179, 65, 0.06);
+    }
+
+    .watch-item.good {
+      border-color: rgba(63, 185, 80, 0.35);
+      background: rgba(63, 185, 80, 0.05);
+    }
+
+    .watch-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .watch-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .watch-text {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      vertical-align: top;
+    }
+
+    td.right, th.right { text-align: right; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .status-pill.GREEN {
+      color: var(--positive);
+      background: rgba(63, 185, 80, 0.12);
+    }
+
+    .status-pill.YELLOW, .status-pill.ORANGE {
+      color: var(--warning);
+      background: rgba(227, 179, 65, 0.14);
+    }
+
+    .status-pill.RED, .status-pill.BREACH {
+      color: var(--negative);
+      background: rgba(248, 81, 73, 0.14);
+    }
+
+    .bar-wrap {
+      min-width: 140px;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: rgba(99, 110, 123, 0.25);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .bar-fill.GREEN { background: var(--positive); }
+    .bar-fill.YELLOW, .bar-fill.ORANGE { background: var(--warning); }
+    .bar-fill.RED, .bar-fill.BREACH { background: var(--negative); }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .insight-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .insight {
+      border-left: 3px solid var(--accent);
+      padding-left: 10px;
+    }
+
+    .insight h3 {
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .insight p {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 8px 0;
+    }
+
+    .error-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(248, 81, 73, 0.45);
+      background: rgba(248, 81, 73, 0.08);
+      color: #ffb3ad;
+      font-size: 12px;
+    }
+
+    .error-banner.visible {
+      display: block;
+    }
+
+    @media (max-width: 1180px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .main-grid, .split-grid, .watchlist { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script src="/static/shared_nav.js" defer></script>
+</head>
+<body>
+  <div class="page-header">
+    <div>
+      <div class="page-title">Risk Dashboard</div>
+      <div class="page-subtitle">
+        Limit pressure, counterparty concentration, and portfolio exposure in one place.
+        The highest-value edge for risk managers is not more raw data, but faster escalation:
+        which limit is closest to breaking, which counterparty is tightening, and which desk is driving it.
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span id="live-text">Live snapshot</span>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
+    </div>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Firm VaR</div>
+      <div class="kpi-value accent" id="kpi-firm-var">—</div>
+      <div class="kpi-sub" id="kpi-firm-var-sub">99% / 1-day</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Warnings</div>
+      <div class="kpi-value warn" id="kpi-warnings">—</div>
+      <div class="kpi-sub" id="kpi-warnings-sub">limit framework</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Breaches</div>
+      <div class="kpi-value neg" id="kpi-breaches">—</div>
+      <div class="kpi-sub" id="kpi-breaches-sub">requires escalation</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Counterparty Alerts</div>
+      <div class="kpi-value" id="kpi-counterparty-alerts">—</div>
+      <div class="kpi-sub" id="kpi-counterparty-alerts-sub">PFE utilization watch</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Largest Desk</div>
+      <div class="kpi-value" id="kpi-largest-desk">—</div>
+      <div class="kpi-sub" id="kpi-largest-desk-sub">gross notional</div>
+    </div>
+  </section>
+
+  <div class="main-grid">
+    <div class="stack">
+      <section class="card">
+        <div class="card-title">
+          <h2>Risk Watchlist</h2>
+          <span class="meta" id="watchlist-meta">most actionable items first</span>
+        </div>
+        <div class="watchlist" id="watchlist"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2>Limit Monitor</h2>
+          <span class="meta" id="limits-meta">sorted by utilization</span>
+        </div>
+        <div id="limits-table-wrap"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2>Desk Exposure</h2>
+          <span class="meta" id="positions-meta">firm view by desk</span>
+        </div>
+        <div id="positions-table-wrap"></div>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="card">
+        <div class="card-title">
+          <h2>Counterparty Pressure</h2>
+          <span class="meta" id="counterparty-meta">PFE utilization and headroom</span>
+        </div>
+        <div id="counterparties-table-wrap"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <h2>What Gives Risk Managers Edge</h2>
+          <span class="meta">beyond static reporting</span>
+        </div>
+        <div class="insight-list">
+          <div class="insight">
+            <h3>Trend breaks beat static snapshots</h3>
+            <p>
+              The real edge is catching regime change early: VaR acceleration, utilization velocity,
+              and a desk that is moving from green to orange faster than peers.
+            </p>
+          </div>
+          <div class="insight">
+            <h3>Concentration matters more than average risk</h3>
+            <p>
+              Winning teams watch single-name, sector, and counterparty crowding. Aggregate risk can
+              look acceptable while one pocket of the portfolio becomes unrecoverable under stress.
+            </p>
+          </div>
+          <div class="insight">
+            <h3>Escalation quality is a product feature</h3>
+            <p>
+              Risk dashboards should answer three questions quickly: what changed, who owns it, and
+              what should happen next. The watchlist and sorted tables here are built around that workflow.
+            </p>
+          </div>
+          <div class="insight">
+            <h3>Natural next iteration</h3>
+            <p>
+              The next high-value additions would be trend history, concentration heatmaps, and stress deltas
+              by desk and counterparty. Those would move this page from informative to decision-support.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="split-grid" style="margin-top:16px">
+    <section class="card" id="card-backtesting">
+      <div class="card-title">
+        <h2>VaR Backtesting</h2>
+        <span class="meta">Basel 250-day traffic light</span>
+      </div>
+      <div style="display:flex;gap:24px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Traffic Light Zone</div>
+          <div style="font-size:22px;font-weight:700" id="bt-zone">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Exceptions / 250d</div>
+          <div style="font-size:22px;font-weight:700;color:var(--text)" id="bt-exceptions">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Capital Multiplier k</div>
+          <div style="font-size:22px;font-weight:700;color:var(--text)" id="bt-multiplier">—</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Date</th><th class="right">VaR $M</th><th class="right">P&amp;L $M</th><th>Exception</th></tr></thead>
+        <tbody id="bt-history-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card" id="card-frtb">
+      <div class="card-title">
+        <h2>FRTB Boundary</h2>
+        <span class="meta">MAR12 classification</span>
+      </div>
+      <div style="display:flex;gap:24px;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Trading Book Notional</div>
+          <div style="font-size:22px;font-weight:700;color:var(--positive)" id="frtb-tb-notional">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Banking Book Notional</div>
+          <div style="font-size:22px;font-weight:700;color:var(--accent)" id="frtb-bb-notional">—</div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Flagged Transfers</div>
+          <div style="font-size:22px;font-weight:700;color:var(--text)" id="frtb-flagged">—</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Instrument</th><th>Desk</th><th class="right">Notional</th><th>Book</th><th>Reason</th></tr></thead>
+        <tbody id="frtb-positions-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    function fmtUsd(value) {
+      const n = Number(value || 0);
+      const abs = Math.abs(n);
+      if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+      if (abs >= 1e6) return `$${(n / 1e6).toFixed(2)}M`;
+      if (abs >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+      return `$${n.toFixed(0)}`;
+    }
+
+    function fmtPct(value) {
+      return `${Number(value || 0).toFixed(1)}%`;
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
+
+    function statusClass(status) {
+      const s = String(status || "GREEN").toUpperCase();
+      if (s === "BREACH") return "BREACH";
+      if (s === "RED") return "RED";
+      if (s === "ORANGE") return "ORANGE";
+      if (s === "YELLOW") return "YELLOW";
+      return "GREEN";
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function showError(message) {
+      const banner = document.getElementById("error-banner");
+      banner.textContent = message;
+      banner.classList.add("visible");
+    }
+
+    function clearError() {
+      const banner = document.getElementById("error-banner");
+      banner.textContent = "";
+      banner.classList.remove("visible");
+    }
+
+    function renderEmpty(targetId, message) {
+      document.getElementById(targetId).innerHTML = `<div class="empty-state">${esc(message)}</div>`;
+    }
+
+    function renderWatchlist(snapshot, limits, counterparties, positions) {
+      const warnings = (snapshot.risk && snapshot.risk.warnings) || [];
+      const breaches = (snapshot.risk && snapshot.risk.breaches) || [];
+      const cpWarnings = snapshot.counterparty_warnings || [];
+      const largestDesk = Object.entries((positions.by_desk || {}))
+        .filter(([, desk]) => !desk.error)
+        .sort((a, b) => Number(b[1].gross_notional || 0) - Number(a[1].gross_notional || 0))[0];
+
+      const items = [
+        breaches.length
+          ? { tone: "red", label: "Hard Breaches", value: String(breaches.length), text: `${breaches[0].limit} is above its hard threshold and needs immediate escalation.` }
+          : { tone: "good", label: "Hard Breaches", value: "0", text: "No active hard breaches in the limit framework." },
+        warnings.length
+          ? { tone: "warn", label: "Limits Near Edge", value: String(warnings.length), text: `${warnings[0].limit} is the most urgent warning in the current snapshot.` }
+          : { tone: "good", label: "Limits Near Edge", value: "0", text: "No yellow or orange limit warnings right now." },
+        cpWarnings.length
+          ? { tone: "warn", label: "Counterparty Stress", value: String(cpWarnings.length), text: `${cpWarnings[0].name || cpWarnings[0].counterparty_id || "Counterparty"} is off green on PFE utilization.` }
+          : { tone: "good", label: "Counterparty Stress", value: "0", text: "Counterparty utilization is currently in the green band." },
+        largestDesk
+          ? { tone: "warn", label: "Largest Risk Pocket", value: largestDesk[0], text: `${fmtUsd(largestDesk[1].gross_notional)} gross notional makes this the desk to explain first in committee.` }
+          : { tone: "good", label: "Largest Risk Pocket", value: "None", text: "No live desk positions were returned by the risk service." }
+      ];
+
+      document.getElementById("watchlist").innerHTML = items.map(function (item) {
+        return `
+          <div class="watch-item ${item.tone}">
+            <div class="watch-label">${esc(item.label)}</div>
+            <div class="watch-value">${esc(item.value)}</div>
+            <div class="watch-text">${esc(item.text)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderLimits(limits) {
+      if (!limits.length) {
+        renderEmpty("limits-table-wrap", "No limit data returned.");
+        return;
+      }
+
+      document.getElementById("limits-table-wrap").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Limit</th>
+              <th>Desk</th>
+              <th class="right">Current</th>
+              <th class="right">Limit</th>
+              <th>Status</th>
+              <th class="right">Headroom</th>
+              <th class="right">Utilization</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${limits.map(function (item) {
+              const status = statusClass(item.status);
+              const util = Math.min(Number(item.utilisation_pct || 0), 160);
+              return `
+                <tr>
+                  <td>${esc(item.name)}</td>
+                  <td>${esc(item.desk)}</td>
+                  <td class="right">${fmtUsd(item.current)}</td>
+                  <td class="right">${fmtUsd(item.limit)}</td>
+                  <td><span class="status-pill ${status}">${status}</span></td>
+                  <td class="right">${fmtUsd(item.headroom)}</td>
+                  <td class="right">
+                    <div class="bar-wrap">
+                      <div>${fmtPct(item.utilisation_pct)}</div>
+                      <div class="bar-track"><div class="bar-fill ${status}" style="width:${util}%"></div></div>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderCounterparties(counterparties) {
+      if (!counterparties.length) {
+        renderEmpty("counterparties-table-wrap", "No counterparty data returned.");
+        return;
+      }
+
+      document.getElementById("counterparties-table-wrap").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Counterparty</th>
+              <th>Rating</th>
+              <th class="right">Current PFE</th>
+              <th class="right">PFE Limit</th>
+              <th>Status</th>
+              <th class="right">Headroom</th>
+              <th class="right">Utilization</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${counterparties.map(function (item) {
+              const status = statusClass(item.limit_status);
+              const util = Math.min(Number(item.utilisation_pct || 0), 160);
+              return `
+                <tr>
+                  <td>${esc(item.name || item.counterparty_id || "Unknown")}</td>
+                  <td>${esc(item.rating || "—")}</td>
+                  <td class="right">${fmtUsd(item.current_pfe)}</td>
+                  <td class="right">${fmtUsd(item.pfe_limit)}</td>
+                  <td><span class="status-pill ${status}">${status}</span></td>
+                  <td class="right">${fmtUsd(item.headroom)}</td>
+                  <td class="right">
+                    <div class="bar-wrap">
+                      <div>${fmtPct(item.utilisation_pct)}</div>
+                      <div class="bar-track"><div class="bar-fill ${status}" style="width:${util}%"></div></div>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderPositions(positions) {
+      const desks = Object.entries(positions.by_desk || {})
+        .filter(function ([, desk]) { return !desk.error; })
+        .sort(function (a, b) { return Number(b[1].gross_notional || 0) - Number(a[1].gross_notional || 0); });
+
+      if (!desks.length) {
+        renderEmpty("positions-table-wrap", "No firm position data returned.");
+        return;
+      }
+
+      document.getElementById("positions-table-wrap").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Desk</th>
+              <th class="right">Books</th>
+              <th class="right">Gross Notional</th>
+              <th class="right">Net Notional</th>
+              <th class="right">Realised P&amp;L</th>
+              <th class="right">Unrealised P&amp;L</th>
+              <th class="right">Total P&amp;L</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${desks.map(function ([name, desk]) {
+              return `
+                <tr>
+                  <td>${esc(name)}</td>
+                  <td class="right">${esc(desk.book_count)}</td>
+                  <td class="right">${fmtUsd(desk.gross_notional)}</td>
+                  <td class="right">${fmtUsd(desk.net_notional)}</td>
+                  <td class="right">${fmtUsd(desk.realised_pnl)}</td>
+                  <td class="right">${fmtUsd(desk.unrealised_pnl)}</td>
+                  <td class="right">${fmtUsd(desk.total_pnl)}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadRiskDashboard() {
+      const refreshBtn = document.getElementById("refresh-btn");
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = "Refreshing...";
+      clearError();
+
+      try {
+        const [snapshotRes, limitsRes, counterpartiesRes, positionsRes] = await Promise.all([
+          fetch("/api/risk/snapshot"),
+          fetch("/api/risk/limits"),
+          fetch("/api/risk/counterparties"),
+          fetch("/api/risk/positions")
+        ]);
+
+        if (!snapshotRes.ok || !limitsRes.ok || !counterpartiesRes.ok || !positionsRes.ok) {
+          throw new Error("One or more risk API requests failed.");
+        }
+
+        const snapshot = await snapshotRes.json();
+        const limits = await limitsRes.json();
+        const counterparties = await counterpartiesRes.json();
+        const positions = await positionsRes.json();
+
+        const risk = snapshot.risk || {};
+        const varByDesk = risk.var_by_desk || {};
+        const firmVar = varByDesk.FIRM ? varByDesk.FIRM.var_amount : 0;
+        const limitWarnings = (risk.warnings || []).length;
+        const limitBreaches = (risk.breaches || []).length;
+        const cpWarnings = (snapshot.counterparty_warnings || []).length;
+        const largestDesk = Object.entries(positions.by_desk || {})
+          .filter(function ([, desk]) { return !desk.error; })
+          .sort(function (a, b) { return Number(b[1].gross_notional || 0) - Number(a[1].gross_notional || 0); })[0];
+
+        setText("kpi-firm-var", fmtUsd(firmVar));
+        setText("kpi-firm-var-sub", `Snapshot ${risk.snapshot_time ? new Date(risk.snapshot_time).toLocaleTimeString() : "available"}`);
+        setText("kpi-warnings", String(limitWarnings));
+        setText("kpi-warnings-sub", limitWarnings ? "yellow / orange items" : "all limits green");
+        setText("kpi-breaches", String(limitBreaches));
+        setText("kpi-breaches-sub", limitBreaches ? "red / breach states active" : "no breach states");
+        setText("kpi-counterparty-alerts", String(cpWarnings));
+        setText("kpi-counterparty-alerts-sub", cpWarnings ? "counterparties off green" : "counterparties in green");
+        setText("kpi-largest-desk", largestDesk ? largestDesk[0] : "—");
+        setText("kpi-largest-desk-sub", largestDesk ? `${fmtUsd(largestDesk[1].gross_notional)} gross notional` : "no desk data");
+        setText("live-text", risk.snapshot_time ? `Updated ${new Date(risk.snapshot_time).toLocaleTimeString()}` : "Live snapshot");
+
+        renderWatchlist(snapshot, limits, counterparties, positions);
+        renderLimits(limits);
+        renderCounterparties(counterparties);
+        renderPositions(positions);
+      } catch (err) {
+        showError(`Risk dashboard failed to load: ${err.message}`);
+        renderEmpty("watchlist", "Unable to build risk watchlist.");
+        renderEmpty("limits-table-wrap", "Risk limit data unavailable.");
+        renderEmpty("counterparties-table-wrap", "Counterparty data unavailable.");
+        renderEmpty("positions-table-wrap", "Position data unavailable.");
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = "Refresh";
+      }
+    }
+
+    async function loadBacktesting() {
+      try {
+        const [summary, history] = await Promise.all([
+          fetch('/api/risk/backtesting').then(r => r.json()),
+          fetch('/api/risk/backtesting/history?days=10').then(r => r.json()),
+        ]);
+        const zoneColors = { GREEN: '#3fb950', YELLOW: '#e3b341', RED: '#f85149' };
+        const firmData = summary.FIRM || summary;
+        const zone = firmData.traffic_light_zone || firmData.zone || 'GREEN';
+        const el = document.getElementById('bt-zone');
+        if (el) { el.textContent = zone; el.style.color = zoneColors[zone] || '#e6edf3'; }
+        const excEl = document.getElementById('bt-exceptions');
+        if (excEl) excEl.textContent = firmData.exception_count_250d ?? firmData.exception_count ?? '—';
+        const multEl = document.getElementById('bt-multiplier');
+        if (multEl) multEl.textContent = firmData.capital_multiplier_k ?? firmData.capital_multiplier ?? '—';
+        const tbody = document.getElementById('bt-history-body');
+        if (tbody && history.history) {
+          tbody.innerHTML = history.history.slice(-10).reverse().map(r => `
+            <tr>
+              <td>${r.trade_date}</td>
+              <td class="right">${r.var_99 != null ? r.var_99.toFixed(1) : '—'}</td>
+              <td class="right" style="color:${r.realized_pnl >= 0 ? '#3fb950' : '#f85149'}">${r.realized_pnl != null ? r.realized_pnl.toFixed(1) : '—'}</td>
+              <td style="color:${r.exception_99 ? '#f85149' : '#3fb950'}">${r.exception_99 ? 'YES' : '—'}</td>
+            </tr>`).join('');
+        }
+      } catch(e) { console.error('backtesting load failed', e); }
+    }
+
+    async function loadFRTBBoundary() {
+      try {
+        const data = await fetch('/api/risk/frtb-boundary').then(r => r.json());
+        const summary = data.summary || data;
+        const fmt = v => v == null ? '—' : v >= 1e9 ? (v/1e9).toFixed(1)+'B' : v >= 1e6 ? (v/1e6).toFixed(0)+'M' : v.toFixed(0);
+        const tbEl = document.getElementById('frtb-tb-notional');
+        if (tbEl) tbEl.textContent = fmt(summary.trading_book_notional);
+        const bbEl = document.getElementById('frtb-bb-notional');
+        if (bbEl) bbEl.textContent = fmt(summary.banking_book_notional);
+        const flEl = document.getElementById('frtb-flagged');
+        if (flEl) {
+          const fc = summary.flagged_boundary_issues ?? 0;
+          flEl.textContent = fc;
+          if (fc > 0) flEl.style.color = '#f85149';
+        }
+        const tbody = document.getElementById('frtb-positions-body');
+        if (tbody && data.positions) {
+          tbody.innerHTML = data.positions.slice(0, 15).map(p => `
+            <tr>
+              <td>${esc(p.instrument_id ?? p.ticker ?? p.instrument ?? '—')}</td>
+              <td>${esc(p.desk ?? '—')}</td>
+              <td class="right">${fmt(p.notional)}</td>
+              <td style="color:${p.frtb_book === 'TRADING' ? '#3fb950' : '#58a6ff'}">${esc(p.frtb_book ?? '—')}</td>
+              <td style="font-size:10px;color:var(--muted)">${esc((p.frtb_rationale ?? '').substring(0, 60))}</td>
+            </tr>`).join('');
+        }
+      } catch(e) { console.error('frtb boundary load failed', e); }
+    }
+
+    function loadAllPanels() {
+      loadRiskDashboard();
+      loadBacktesting();
+      loadFRTBBoundary();
+    }
+
+    document.getElementById("refresh-btn").addEventListener("click", loadAllPanels);
+    loadAllPanels();
+  </script>
+</body>
+</html>

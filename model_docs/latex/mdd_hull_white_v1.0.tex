@@ -1,0 +1,121 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0005}
+\mddversion{1.0}
+\mddowner{Dr.\ Yuki Tanaka (Quant Researcher)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{In Validation}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{SR 11-7, FRTB delta-IR sensitivity}
+
+\title{Hull-White 1-Factor Rate Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The Hull-White 1-Factor (HW1F) model is an arbitrage-free short-rate model used for pricing and risk-managing interest rate derivatives. It perfectly fits the initial yield curve by construction and provides closed-form solutions for zero-coupon bonds and European swaptions.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{IRS valuation:} Fixed-float leg decomposition using HW1F zero-coupon bond prices.
+  \item \textbf{PFE simulation:} Monte Carlo IR path generation for XVA exposure profiles.
+  \item \textbf{FRTB-SA IR delta:} Sensitivity bumps applied along HW1F term structure.
+  \item \textbf{Option pricing:} Cap/floor and swaption valuations for rates desk.
+\end{itemize}
+
+\section{Theoretical Basis}
+
+\subsection{Short-Rate Dynamics}
+Under the risk-neutral measure $\mathbb{Q}$:
+\begin{formulabox}
+\[
+  dr_t = \bigl[\theta(t) - a\,r_t\bigr]\,dt + \sigma\,dW_t
+\]
+where $a$ is the mean-reversion speed, $\sigma$ is the short-rate volatility, and $\theta(t)$ is the time-dependent drift calibrated to match the initial term structure.
+\end{formulabox}
+
+\subsection{Analytical Zero-Coupon Bond}
+\begin{formulabox}
+\begin{align*}
+  P(t,T) &= A(t,T)\,\exp\!\bigl[-B(t,T)\,r_t\bigr]\\[4pt]
+  B(t,T) &= \frac{1 - e^{-a(T-t)}}{a}\\[4pt]
+  \ln A(t,T) &= \ln\frac{P_{\mathrm{mkt}}(0,T)}{P_{\mathrm{mkt}}(0,t)} - B(t,T)\,F(0,t) - \frac{\sigma^2}{4a}\bigl(1 - e^{-2at}\bigr)B(t,T)^2
+\end{align*}
+where $F(0,t) = -\partial\ln P_{\mathrm{mkt}}(0,t)/\partial t$ is the instantaneous forward rate.
+\end{formulabox}
+
+\subsection{IRS Valuation}
+\begin{formulabox}
+\begin{align*}
+  V_{\mathrm{fixed}} &= N\,R\sum_i \tau_i\,P(0,T_i)\\
+  V_{\mathrm{float}} &= N\bigl(P(0,T_0) - P(0,T_n)\bigr)\\
+  V_{\mathrm{IRS}}   &= V_{\mathrm{float}} - V_{\mathrm{fixed}}\quad\text{(payer)}
+\end{align*}
+\end{formulabox}
+
+\subsection{European Payer Swaption}
+\begin{formulabox}
+\[
+  V_{\mathrm{swaption}} = \sum_i c_i \times \mathrm{ZBP}(t,\,S,\,T_i,\,K_i)
+\]
+where ZBP is the Hull-White zero-coupon bond put formula with effective strike adjustment.
+\end{formulabox}
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Calibrated Value} & \textbf{Calibration Target} \\
+\midrule
+Mean reversion $a$ & 0.08 & 10Y IRS rate stability \\
+Short-rate vol $\sigma$ & 0.012 & ATM swaption vol \\
+Calibration instruments & US2Y, US10Y live prices & OIS curve from market feed \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} Referenced in \texttt{infrastructure/trading/greeks.py} for IRS DV01 computation; full HW1F path generation in PFE engine (\texttt{infrastructure/xva/adapter.py}).
+
+\textbf{IRS DV01 approximation:}
+\[
+  \mathrm{DV01}_{\mathrm{IRS}} = \text{quantity} \times 0.0004\quad\text{(USD per 1bp per \$1 notional)}
+\]
+This is a flat DV01 approximation; HW1F gives the full term-structure sensitivity used for FRTB.
+
+\textbf{Calibration procedure:} Daily calibration to US2Y and US10Y prices from \texttt{FeedHandler}. $a$ calibrated to fit the ATM 2Y$\times$5Y swaption vol target; $\sigma$ fitted to replicate 10Y yield level.
+
+\section{Validation}
+
+\textbf{Benchmark:} IRS fair value compared against QuantLib HW1F; within $\pm 0.01\%$ of notional for par swaps.
+
+\textbf{Swaption validation:} ATM swaption prices within $\pm 2$\,bps implied vol of market references.
+
+\textbf{PFE profile check:} 5Y USD IRS expected exposure profile: peak at $\sim$3Y (18\% of notional), declines to zero at maturity. Consistent with industry benchmarks.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{Single factor:} HW1F captures only parallel yield curve shifts. Twist and curvature moves not captured; error for 2Y vs 10Y movements can exceed 15\% of DV01.
+  \item \textbf{Constant $a$ and $\sigma$:} Time-homogeneous parameters mis-price long-dated swaptions and fail to reproduce the volatility hump at 2--3 year expiry.
+  \item \textbf{Gaussian rates:} HW1F allows negative rates; may mis-price floors at zero strike.
+  \item \textbf{OIS calibration only:} Calibrated to USD OIS; USD LIBOR/SOFR basis not modelled.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{HW1F-F1}{Major}{Single-factor limitation: twist and curvature yield curve moves not captured; material error for butterfly swaps and CMS products.}{Open}
+\finding{HW1F-F2}{Minor}{Calibration uses only US2Y and US10Y; US5Y/US30Y excluded from calibration objective.}{Open}
+\end{findings}
+
+\end{document}

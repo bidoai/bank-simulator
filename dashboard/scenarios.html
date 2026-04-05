@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stress Test Scenario Runner — Apex Global Bank</title>
-    <link rel="stylesheet" href="shared.css">
+    <link rel="stylesheet" href="/static/shared.css">
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -333,6 +333,17 @@
             <p class="empty-state">Loading...</p>
         </div>
     </div>
+
+    <!-- DFAST Capital Stress Panel -->
+    <div class="card" style="margin-top:16px;">
+        <h2>Capital Stress (DFAST/CCAR) — 9-Quarter CET1 Projection</h2>
+        <p style="font-size:11px;color:var(--muted,#8b949e);margin-bottom:12px;">
+            3 scenarios × 9 quarters. Dashed line = Basel III 4.5% minimum CET1 floor.
+        </p>
+        <div id="dfast-container">
+            <p class="empty-state">Loading DFAST results...</p>
+        </div>
+    </div>
 </div>
 
 <!-- ================================================================ -->
@@ -618,6 +629,98 @@
                 </tbody>
             </table>`;
     }
+
+    // -----------------------------------------------------------------
+    // DFAST / CCAR Capital Stress
+    // -----------------------------------------------------------------
+    async function loadDFAST() {
+        const el = document.getElementById('dfast-container');
+        try {
+            const res = await fetch('/api/stress/dfast');
+            if (!res.ok) { el.innerHTML = '<p class="empty-state">DFAST endpoint unavailable.</p>'; return; }
+            const data = await res.json();
+            renderDFAST(data);
+        } catch (e) {
+            el.innerHTML = '<p class="empty-state">Failed to load DFAST results.</p>';
+        }
+    }
+
+    function renderDFAST(data) {
+        const el = document.getElementById('dfast-container');
+        const scenarios = ['baseline', 'adverse', 'severely_adverse'];
+        const colors = { baseline: '#58a6ff', adverse: '#ffa657', severely_adverse: '#f85149' };
+        const labels = { baseline: 'Baseline', adverse: 'Adverse', severely_adverse: 'Severely Adverse' };
+
+        const traces = scenarios.map(s => {
+            const result = data[s];
+            if (!result) return null;
+            return {
+                x: result.quarters.map(q => 'Q' + q.quarter),
+                y: result.quarters.map(q => q.cet1_ratio),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: labels[s],
+                line: { color: colors[s], width: 2 },
+                marker: { size: 5 },
+            };
+        }).filter(Boolean);
+
+        // Basel III 4.5% minimum line
+        traces.push({
+            x: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9'],
+            y: Array(9).fill(4.5),
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Min CET1 (4.5%)',
+            line: { color: '#8b949e', width: 1, dash: 'dash' },
+        });
+
+        Plotly.newPlot('dfast-chart', traces, {
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            font: { color: '#c9d1d9', size: 11, family: 'SF Mono, Menlo, Monaco, monospace' },
+            xaxis: { gridcolor: '#21262d', title: { text: 'Quarter', font: { size: 10 } } },
+            yaxis: { gridcolor: '#21262d', title: { text: 'CET1 Ratio (%)', font: { size: 10 } }, ticksuffix: '%' },
+            legend: { orientation: 'h', y: -0.2, font: { size: 10 } },
+            margin: { l: 50, r: 16, t: 16, b: 60 },
+        }, { responsive: true, displayModeBar: false });
+
+        // Summary table
+        const rows = scenarios.map(s => {
+            const result = data[s];
+            if (!result) return '';
+            const breachClass = result.breach_minimum ? 'negative' : 'positive';
+            return `<tr>
+                <td style="color:${colors[s]}">${labels[s]}</td>
+                <td class="right ${breachClass}">${result.min_cet1_ratio.toFixed(2)}%</td>
+                <td class="right ${breachClass}">${result.breach_minimum ? 'BREACH' : 'PASS'}</td>
+            </tr>`;
+        }).join('');
+
+        el.innerHTML = `
+            <div id="dfast-chart" style="width:100%;height:280px;margin-bottom:12px;"></div>
+            <table>
+                <thead><tr><th>Scenario</th><th class="right">Min CET1</th><th class="right">Status</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+        // Re-render chart into the newly-created div
+        Plotly.newPlot('dfast-chart', traces, {
+            paper_bgcolor: 'transparent',
+            plot_bgcolor: 'transparent',
+            font: { color: '#c9d1d9', size: 11, family: 'SF Mono, Menlo, Monaco, monospace' },
+            xaxis: { gridcolor: '#21262d', title: { text: 'Quarter', font: { size: 10 } } },
+            yaxis: { gridcolor: '#21262d', title: { text: 'CET1 Ratio (%)', font: { size: 10 } }, ticksuffix: '%' },
+            legend: { orientation: 'h', y: -0.2, font: { size: 10 } },
+            margin: { l: 50, r: 16, t: 16, b: 60 },
+        }, { responsive: true, displayModeBar: false });
+    }
+
+    // Extend init to also load DFAST
+    const _origInit = window.__dfastInit;
+    (async function dfastInit() {
+        await loadDFAST();
+    })();
 </script>
 </body>
 </html>

@@ -1,0 +1,127 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0003}
+\mddversion{1.0}
+\mddowner{Dr.\ Priya Nair (CRO)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{Draft}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{BCBS d352 (Jan 2016), CRR3 2024, SR 11-7}
+
+\title{FRTB Standardised Approach}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The FRTB Standardised Approach (SA) replaces the Basel 2.5 Standardised Approach with a sensitivity-based method (SBM) that better reflects risk. Under Basel IV / CRR3, all banks must report FRTB-SA capital; IMA banks use it as a floor. Apex uses FRTB-SA as the primary capital model pending IMA approval.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Regulatory capital (primary):} SA capital is the binding constraint until IMA approval.
+  \item \textbf{Internal limit calibration:} SA sensitivities inform risk appetite for delta, vega, curvature.
+  \item \textbf{Parallel run:} Compared against IMA output; material divergence triggers governance review.
+\end{itemize}
+
+\section{Theoretical Basis}
+
+\subsection{Three Capital Components}
+
+\subsubsection{1.\ Sensitivity-Based Method (SBM)}
+Capital is computed from risk factor sensitivities across 7 risk classes (GIRR, CSR non-sec, CSR sec, FX, EQ, Commodity, VEGA).
+
+\textbf{Delta capital:}
+\begin{formulabox}
+\[
+  K_{\delta} = \sqrt{\sum_b \sum_{i,j\in b} \rho_{ij}\,WS_i\,WS_j}
+\]
+where $WS_i = RW_i \times s_i$ (risk weight $\times$ net sensitivity), $\rho_{ij}$ is the intra-bucket correlation.
+\end{formulabox}
+
+\textbf{Cross-bucket aggregation:}
+\begin{formulabox}
+\[
+  K_{\mathrm{SBM}} = \sqrt{\sum_b K_b^2 + \sum_{b \neq c} \gamma_{bc}\,S_b\,S_c}
+\]
+where $\gamma_{bc}$ is the cross-bucket correlation and $S_b = \sum_i WS_i$ within bucket $b$.
+\end{formulabox}
+
+\subsubsection{2.\ Residual Risk Add-On (RRAO)}
+\begin{formulabox}
+\[
+  \mathrm{RRAO} = 1.0\% \times N_{\mathrm{exotic}} + 0.1\% \times N_{\mathrm{other}}
+\]
+Applies to instruments with path-dependent payoffs, correlation products, and non-linear exotic optionality.
+\end{formulabox}
+
+\subsubsection{3.\ Default Risk Charge (DRC)}
+\begin{formulabox}
+\[
+  \mathrm{DRC} = \max\!\Bigl(0,\;\sum_i \mathrm{JTD}_i \times \mathrm{LGD}_i \times RW_i\Bigr) \times W_{\mathrm{maturity}}
+\]
+Jump-to-default exposure for non-securitisation credit positions.
+\end{formulabox}
+
+\subsection{IR Tenor Buckets (GIRR)}
+0.25Y, 0.5Y, 1Y, 2Y, 3Y, 5Y, 10Y, 15Y, 20Y, 30Y (10 buckets per currency).
+
+\section{Mathematical Specification}
+
+\subsection{Equity Risk Weights by Bucket}
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Bucket} & \textbf{Description} & \textbf{Delta RW} \\
+\midrule
+1  & Large-cap EM & 55\% \\
+8  & Large-cap DM & 25\% \\
+11 & Small-cap    & 70\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{IR Risk Weights (GIRR)}
+Tenor-dependent: 1.7\% (3m) to 1.5\% (10Y), prescribed by BCBS d352 §21.52.
+
+\textbf{Correlation parameters:} Three scenarios (high/medium/low) for conservative capital: $\rho = 1.0\times$, $0.75\times$, $0.5\times$ of base correlations.
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/risk/regulatory\_capital.py} --- SA RWA calculator.
+
+\textbf{Sensitivities source:} \texttt{GreeksCalculator} provides delta and vega. Curvature:
+\[
+  CVR_i = -V(S_i + RW_i S_i) + V(S_i - RW_i S_i) - 2V(S_i)
+\]
+
+\textbf{Capital aggregation:} Three correlation scenarios; capital $= \max$ across scenarios.
+
+\section{Validation}
+
+\textbf{Benchmark:} FRTB-SA capital benchmarked against ISDA SIMM for non-cleared derivatives. Material divergence ($>$20\%) triggers a model review.
+
+\textbf{Sensitivity validation:} Delta sensitivities validated against analytic Greeks for vanilla equity options.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{Curvature proxy:} CVR computed analytically using bump-and-reprice; no full Monte Carlo revaluation.
+  \item \textbf{RRAO classification:} Exotic optionality identification is manual; no automated product classifier.
+  \item \textbf{DRC recovery assumptions:} Recovery rate 40\% applied uniformly; actual recovery varies by seniority.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{FRTB-F1}{Major}{Curvature risk aggregation not validated against independent vendor benchmark.}{Open}
+\finding{FRTB-F2}{Major}{RRAO treatment for path-dependent exotics not documented; manual classification in use.}{Open}
+\finding{FRTB-F3}{Minor}{DRC jump-to-default recovery rate uniformly 40\%; seniority-specific recovery not modelled.}{Open}
+\end{findings}
+
+\end{document}

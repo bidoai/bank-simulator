@@ -104,6 +104,22 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
         log.error("market_data.startup_failed", error=str(exc))
         _feed = None
 
+    # Initialise VaR backtest store (seeds 252 days of demo history)
+    try:
+        from infrastructure.risk.var_backtest_store import backtest_store
+        backtest_store.initialize()
+        log.info("var_backtest_store.ready")
+    except Exception as exc:
+        log.error("var_backtest_store.startup_failed", error=str(exc))
+
+    # Initialise model governance registry
+    try:
+        from infrastructure.governance.model_registry import model_registry
+        model_registry.initialize()
+        log.info("model_registry.ready")
+    except Exception as exc:
+        log.error("model_registry.startup_failed", error=str(exc))
+
     yield
 
     if _feed is not None:
@@ -233,6 +249,34 @@ try:
 except ImportError:
     log.warning("api.metrics_routes not found — metrics API endpoints unavailable")
 
+try:
+    from api import collateral_routes
+    app.include_router(collateral_routes.router, prefix="/api")
+    log.info("collateral_routes loaded")
+except ImportError:
+    log.warning("api.collateral_routes not found — collateral API endpoints unavailable")
+
+try:
+    from api import stress_routes
+    app.include_router(stress_routes.router, prefix="/api")
+    log.info("stress_routes loaded")
+except ImportError:
+    log.warning("api.stress_routes not found — DFAST stress API endpoints unavailable")
+
+try:
+    from api import securities_finance_routes
+    app.include_router(securities_finance_routes.router, prefix="/api")
+    log.info("securities_finance_routes loaded")
+except ImportError:
+    log.warning("api.securities_finance_routes not found — securities finance API endpoints unavailable")
+
+try:
+    from api import securitized_routes
+    app.include_router(securitized_routes.router, prefix="/api")
+    log.info("securitized_routes loaded")
+except ImportError:
+    log.warning("api.securitized_routes not found — securitized products API endpoints unavailable")
+
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
@@ -285,6 +329,21 @@ async def scenarios() -> FileResponse:
 @app.get("/risk")
 async def risk() -> FileResponse:
     return _html("risk.html")
+
+
+@app.get("/securities-finance")
+async def securities_finance() -> FileResponse:
+    return _html("securities_finance.html")
+
+
+@app.get("/securitized")
+async def securitized() -> FileResponse:
+    return _html("securitized.html")
+
+
+@app.get("/capital")
+async def capital() -> FileResponse:
+    return _html("capital.html")
 
 # ---------------------------------------------------------------------------
 # WebSocket: Boardroom live stream

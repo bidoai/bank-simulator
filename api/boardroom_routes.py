@@ -150,6 +150,64 @@ async def _run_meeting_task(topic: str, agent_names: list[str], meeting_id: str)
             pass
 
 
+# ── Archive an inline discussion ──────────────────────────────────────────────
+
+@router.post("/archive")
+async def archive_inline_discussion(body: dict) -> dict:
+    """
+    Persist an in-conversation (inline) discussion to the meetings database.
+
+    Body:
+        {
+            "title":  "Session display title",
+            "topic":  "What was discussed",
+            "turns":  [
+                {
+                    "agent":  "Dr. Priya Nair",
+                    "title":  "Chief Risk Officer",
+                    "text":   "Full response text…",
+                    "color":  "#ff9800"          // optional — looked up from registry if omitted
+                },
+                …
+            ]
+        }
+
+    The endpoint resolves missing colors from the agent registry automatically.
+    Returns { "meeting_id": "...", "status": "archived", "turn_count": N }.
+    """
+    title  = (body.get("title") or "").strip() or "Inline Discussion"
+    topic  = (body.get("topic") or "").strip() or ""
+    turns  = body.get("turns") or []
+
+    if not turns:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="turns must be a non-empty list")
+
+    # Resolve agent colors from the registry for any turn that omits color.
+    color_map = {name: meta["color"] for name, meta in _AGENT_REGISTRY.items()}
+    resolved_turns = []
+    for t in turns:
+        agent = (t.get("agent") or "").strip()
+        resolved_turns.append({
+            "agent":  agent,
+            "title":  (t.get("title") or "").strip(),
+            "text":   (t.get("text") or "").strip(),
+            "color":  t.get("color") or color_map.get(agent, "#c9d1d9"),
+        })
+
+    meeting_id = meeting_store.archive_meeting(
+        title=title,
+        topic=topic,
+        turns=resolved_turns,
+    )
+
+    return {
+        "status":     "archived",
+        "meeting_id": meeting_id,
+        "turn_count": len(resolved_turns),
+    }
+
+
 # ── Worker system-message ──────────────────────────────────────────────────────
 
 @router.post("/system")

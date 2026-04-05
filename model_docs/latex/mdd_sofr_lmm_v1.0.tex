@@ -1,0 +1,136 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0006}
+\mddversion{1.0}
+\mddowner{Dr.\ Yuki Tanaka (Quant Researcher)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{Draft}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{ARRC SOFR Transition Guidance, ISDA 2020 Fallback Protocol}
+
+\title{SOFR / LMM Term Rate Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+Following LIBOR cessation on 2023-06-30, this model governs SOFR compounding-in-arrears rate computation, Term SOFR CME reference rate usage, and LIBOR fallback mechanics per the ISDA 2020 protocol. The LMM extension provides cap/floor pricing in the SOFR framework.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Loan and swap pricing:} All floating-rate instruments now reference SOFR.
+  \item \textbf{Fallback processing:} Legacy LIBOR contracts converted per ISDA waterfall.
+  \item \textbf{Cap/floor pricing:} LMM used for client hedging products.
+  \item \textbf{FRTB delta-IR:} SOFR curve sensitivities replace LIBOR curve under FRTB.
+\end{itemize}
+
+\section{Theoretical Basis}
+
+\subsection{SOFR Compounding In Arrears}
+For a SOFR-referencing floating period $[T_s, T_e]$:
+\begin{formulabox}
+\[
+  R_{\mathrm{comp}} = \left(\prod_{i=0}^{N-1}\!\left(1 + \frac{\mathrm{SOFR}_i \cdot d_i}{360}\right) - 1\right)\times\frac{360}{T_e - T_s}
+\]
+where $\mathrm{SOFR}_i$ is the daily fixing, $d_i$ is the day count (ACT/360), and $N$ is the number of business days in the period.
+\end{formulabox}
+
+\textbf{Lookback mechanics:} 5-business-day lookback (observation date $=$ settlement date $-5$\,bd) allows rate to be known 2 days before payment date.
+
+\subsection{LIBOR Fallback Waterfall (ISDA 2020)}
+Upon LIBOR cessation:
+\begin{enumerate}
+  \item \textbf{Primary:} Term SOFR + spread adjustment (ISDA-prescribed static spread).
+  \item \textbf{Fallback 1:} Compounded SOFR in arrears + spread.
+  \item \textbf{Fallback 2:} Central bank rate + spread.
+  \item \textbf{Fallback 3:} Last published LIBOR rate (short-term disruptions only).
+\end{enumerate}
+
+ISDA-prescribed USD LIBOR spread adjustments (5-year historical median):
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Tenor} & \textbf{Spread Adjustment} \\
+\midrule
+1M LIBOR $\to$ SOFR & $+11.448$\,bps \\
+3M LIBOR $\to$ SOFR & $+26.161$\,bps \\
+6M LIBOR $\to$ SOFR & $+42.826$\,bps \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{SOFR LMM}
+The SOFR LMM models the joint evolution of SOFR forward rates $F_j(t)$ for tenor periods $[T_j, T_{j+1}]$:
+\begin{formulabox}
+\[
+  dF_j(t) = \mu_j(t)\,F_j(t)\,dt + \sigma_j\,F_j(t)\,dW_j(t)
+\]
+Under the spot measure:
+\[
+  \mu_j = \sum_{k=j+1}^{n} \frac{\rho_{jk}\,\sigma_j\,\sigma_k\,F_k(t)\,\tau_k}{1 + F_k(t)\,\tau_k}
+\]
+\end{formulabox}
+
+\textbf{Caplet pricing (Black formula under LMM):}
+\begin{formulabox}
+\begin{align*}
+  \mathrm{Caplet}(T_j,K) &= P(0,T_{j+1})\,\tau\bigl[F_j(0)\,N(d_1) - K\,N(d_2)\bigr]\\
+  d_1 &= \frac{\ln(F_j/K) + \tfrac{1}{2}\sigma_j^2 T_j}{\sigma_j\sqrt{T_j}},\qquad d_2 = d_1 - \sigma_j\sqrt{T_j}
+\end{align*}
+\end{formulabox}
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Tenors modelled          & 1M, 3M, 6M, 1Y, 2Y, 3Y, 5Y, 7Y, 10Y \\
+LMM vol calibration      & ATM SOFR caplet market quotes \\
+Lookback convention      & 5 business days (ARRC recommendation) \\
+Day count                & ACT/360 \\
+Business day convention  & Modified Following (NY) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/treasury/ftp.py} --- SOFR-based FTP curve uses compounded SOFR approximation via swap curve.
+
+\textbf{Calibration:} Vol surface calibrated quarterly to CME SOFR caps. Spread adjustments hard-coded per ISDA published values.
+
+\section{Validation}
+
+\textbf{SOFR compounding accuracy:} Replication test: compound 20 days of SOFR fixings; confirm within \$0.01 of analytic formula.
+
+\textbf{Spread adjustment:} ISDA-prescribed spreads confirmed against published ISDA supplement.
+
+\textbf{LMM caplet:} Benchmark against Black caplet at ATM; within 1\,bp implied vol.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{SOFR-Fed Funds basis:} SOFR/Fed Funds basis not explicitly modelled; can diverge by 5--20\,bps during month-end/quarter-end.
+  \item \textbf{Term SOFR restrictions:} ARRC prohibits Term SOFR in financial derivatives not hedging loans; compliance team must approve each Term SOFR usage.
+  \item \textbf{LMM vol surface:} Calibrated using pre-LIBOR vol surface as proxy during 2022--2023 transition; SOFR-specific vol history now available.
+  \item \textbf{Backward-looking risk:} SOFR in arrears creates P\&L uncertainty during the accrual period; risk systems must account for daily revaluation.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{LMM-F1}{Major}{SOFR-Fed Funds basis risk not modelled; EOM/EOM spikes can cause 15--20\,bps P\&L mis-estimation.}{Open}
+\finding{LMM-F2}{Major}{Term SOFR use-case documentation incomplete; ARRC pre-approval not recorded for 3 existing client contracts.}{Open}
+\finding{LMM-F3}{Minor}{LMM vol calibration uses pre-LIBOR proxy surface; SOFR-native vol history sufficient for full recalibration since 2024-Q1.}{Open}
+\end{findings}
+
+\end{document}

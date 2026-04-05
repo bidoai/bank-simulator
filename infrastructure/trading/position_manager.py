@@ -12,8 +12,11 @@ models the key functions.
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Optional
 import structlog
+
+from infrastructure.events.event_log import event_log
 
 log = structlog.get_logger()
 
@@ -241,6 +244,19 @@ class PositionManager:
             qty=qty,
             price=price,
             realised_pnl=realised,
+        )
+        event_log.append(
+            aggregate_type="Position",
+            aggregate_id=book_id,
+            event_type="TradeBooked",
+            payload={
+                "desk": desk,
+                "book_id": book_id,
+                "instrument": instrument,
+                "qty": qty,
+                "price": price,
+                "ts": datetime.now(tz=timezone.utc).isoformat(),
+            },
         )
         return realised
 

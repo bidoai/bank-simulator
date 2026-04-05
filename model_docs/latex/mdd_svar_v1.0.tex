@@ -1,0 +1,108 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0002}
+\mddversion{1.0}
+\mddowner{Dr.\ Priya Nair (CRO)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{In Validation}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{Basel 2.5 MRA (BCBS Jul 2009), SR 11-7}
+
+\title{Stressed Value-at-Risk}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+Stressed VaR (SVaR) supplements the standard VaR model by re-running it on a historical window calibrated to a period of significant financial stress. SVaR addresses the criticism that VaR calibrated to a calm period dramatically understates tail risk.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Regulatory capital (IMA banks):} $\mathrm{Capital} = \max(\mathrm{VaR}_t, 3\times\overline{\mathrm{VaR}}_{60}) + \max(\mathrm{SVaR}_t, 3\times\overline{\mathrm{SVaR}}_{60})$, per Basel 2.5.
+  \item \textbf{Stress testing:} SVaR provides the stressed losses component in DFAST severely adverse.
+  \item \textbf{Model governance:} SVaR independently challenges standard VaR --- divergence triggers review.
+\end{itemize}
+
+\subsection{Scope}
+Same instrument universe as APEX-MDL-0001. The stressed window uses 2007-07-01 to 2009-06-30 (GFC) as the primary calibration period.
+
+\section{Theoretical Basis}
+
+\subsection{Stressed Period Selection}
+The BCBS requires the stressed period to capture ``a period of significant financial stress relevant to the firm's portfolio.'' Apex uses the 2007--2009 GFC period:
+\begin{itemize}
+  \item Equity markets: S\&P 500 peak-to-trough $-57\%$
+  \item Credit spreads: IG CDS spread $+450$\,bps
+  \item FX volatility: EUR/USD realised vol $+18$ p.a.
+  \item Rates: US10Y 2-year range $>200$\,bps
+\end{itemize}
+
+\subsection{Methodology}
+SVaR uses the same Monte Carlo Cholesky method as APEX-MDL-0001, with shocked return series and stressed covariance matrix calibrated to 2007--2009 realised correlations and volatilities:
+\begin{formulabox}
+\[
+  \mathrm{SVaR} = -\mathrm{Percentile}\bigl(\mathrm{P\&L}\mid \Sigma_{\mathrm{stressed}},\;\mu_{\mathrm{stressed}},\;2000\text{ paths},\;99\%\bigr)
+\]
+\end{formulabox}
+
+\subsection{Basel 2.5 Capital Formula}
+\begin{formulabox}
+\begin{align*}
+  \mathrm{IMA\_capital} &= \max\!\bigl(\mathrm{VaR}_t,\;k_1\;\overline{\mathrm{VaR}}_{60}\bigr)\times\sqrt{10}\\
+                        &\quad + \max\!\bigl(\mathrm{SVaR}_t,\;k_2\;\overline{\mathrm{SVaR}}_{60}\bigr)\times\sqrt{10}
+\end{align*}
+where $k_1$ and $k_2$ are the respective backtesting multipliers (minimum 3.0 each).
+\end{formulabox}
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{GFC Stressed Value} \\
+\midrule
+Equity return shock (daily $\sigma$) & 3.2\% (vs 1.2\% normal) \\
+FX return shock                      & 0.9\% \\
+Rates return shock (bps/day)         & 8.5\,bps \\
+Equity-equity correlation            & 0.87 \\
+Equity-credit correlation            & $-0.72$ \\
+SVaR / VaR ratio (typical)          & 2.5--4.0$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/risk/var\_calculator.py} --- uses \texttt{correlation\_regime.STRESS} matrix with GFC-calibrated volatilities.
+
+\textbf{Stressed period re-identification:} Must occur at minimum annually. Re-identification tests 3 alternative 250-day windows; selects the window producing the highest portfolio SVaR. Approved by CRO and Model Validation.
+
+\textbf{Runtime:} Same as standard VaR MC ($\sim$50\,ms). Typically run daily post-close.
+
+\section{Validation}
+
+SVaR does not have a backtesting requirement under Basel 2.5 (only VaR is backfitted). Validator independently verified that GFC window reproduces reported SVaR within $\pm 5\%$.
+
+\textbf{SVaR/VaR ratio monitoring:} Internal guideline: SVaR/VaR ratio should be $\geq 2\times$ in normal conditions. Ratio below 1.5$\times$ triggers re-identification review.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{Static stressed period:} GFC 2007--2009 may not be representative for an equity-heavy book in a tech-sector stress; COVID-2020 window produces higher equity SVaR.
+  \item \textbf{Annual re-identification frequency:} Period between re-identifications may allow stale period to persist through an emerging stress.
+  \item \textbf{No account of correlation breakdown:} SVaR correlation matrix is static; in reality, correlations during stress are dynamic.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{SVAR-F1}{Major}{Stressed period identification not re-certified since 2024-01; COVID-2020 window may produce higher SVaR than GFC for current portfolio composition.}{Open}
+\end{findings}
+
+\end{document}

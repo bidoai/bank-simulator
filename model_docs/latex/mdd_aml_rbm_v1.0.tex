@@ -1,0 +1,147 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0008}
+\mddversion{1.0}
+\mddowner{Sarah Mitchell (BSA/AML Officer)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{In Validation}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{BSA 31 USC 5318, FinCEN 31 CFR 1020, SR 11-7}
+
+\title{AML Transaction Monitoring Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The AML Transaction Monitoring (AML-RBM) model provides automated rule-based detection of potential money laundering activity across the Apex client transaction base. SR 11-7 applies to this rule system because the rules make material compliance decisions (alert/no-alert) that directly drive SAR filing decisions.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Regulatory compliance:} BSA/AML programme requirement under 31 USC 5318(h).
+  \item \textbf{SAR filing:} Alert-to-SAR pipeline with 30-day investigation workflow.
+  \item \textbf{Customer risk segmentation:} Alert frequency feeds customer risk rating.
+  \item \textbf{Examination readiness:} FinCEN examination requires documented rule logic and threshold calibration.
+\end{itemize}
+
+\subsection{Scope}
+All Apex Global Bank client accounts: retail deposits, corporate current accounts, private banking relationships. Excludes interbank and nostro accounts.
+
+\section{Theoretical Basis}
+
+\subsection{Rule Typology 1: Structuring Detection}
+Cash deposits structured to avoid BSA \$10,000 CTR reporting threshold:
+\begin{formulabox}
+\[
+  \text{Alert if}\quad \sum_{d=1}^{5} \text{cash\_deposit}_d > \$9{,}000 \quad \text{AND} \quad \text{cash\_deposit}_d < \$10{,}000 \;\forall\, d
+\]
+\end{formulabox}
+
+\subsection{Rule Typology 2: Velocity Anomaly}
+Transaction count spike exceeding client behavioural baseline:
+\begin{formulabox}
+\[
+  \text{Alert if}\quad N_{30d} > \mu_{90d} + 3\sigma_{90d}
+\]
+where $\mu_{90d}$ and $\sigma_{90d}$ are the 90-day rolling mean and standard deviation of monthly transaction count.
+\end{formulabox}
+
+\subsection{Rule Typology 3: Round-Dollar Structuring}
+\begin{formulabox}
+\[
+  \text{Alert if}\quad \#\bigl\{t \in T_{30d} : \text{amount}(t) \bmod 1000 = 0\bigr\} \geq 5
+\]
+Five or more round-thousand transactions in a 30-day window.
+\end{formulabox}
+
+\subsection{Rule Typology 4: Geographic Anomaly}
+Transaction to/from FATF high-risk jurisdiction (grey/black list):
+\begin{formulabox}
+\[
+  \text{Alert if}\quad \exists\; t : \text{country}(t) \in \text{FATF\_list} \;\text{ AND }\; \text{amount}(t) > \$5{,}000
+\]
+\end{formulabox}
+FATF grey/black list updated quarterly per FATF plenary publications.
+
+\subsection{Rule Typology 5: Layering Detection}
+Rapid movement of funds through multiple accounts (placement $\to$ layering $\to$ integration):
+\begin{formulabox}
+\[
+  \text{Alert if}\quad \frac{\sum \text{outflows}_{48h}}{\sum \text{inflows}_{48h}} > 0.70
+\]
+\end{formulabox}
+More than 70\% of incoming funds transferred out within 48 hours.
+
+\subsection{Rule Typology 6: PEP Exposure}
+\begin{formulabox}
+\[
+  \text{Alert if}\quad \text{counterparty} \in \text{PEP\_list} \;\text{ AND }\; \text{amount} > \$25{,}000
+\]
+\end{formulabox}
+Politically Exposed Person threshold set at \$25,000 per transaction.
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Metric} & \textbf{Target} & \textbf{Current} \\
+\midrule
+Alert rate (alerts / txns)            & $<2\%$   & 1.4\% \\
+SAR conversion rate (SAR / alerts)    & $>15\%$  & 19\%  \\
+Structuring threshold                 & \$9,000  & ---   \\
+Velocity lookback                     & 90 days  & ---   \\
+Round-dollar minimum                  & 5 events & ---   \\
+Geographic threshold                  & \$5,000  & ---   \\
+Layering ratio                        & 70\%     & ---   \\
+PEP threshold                         & \$25,000 & ---   \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/compliance/aml\_monitor.py}\\
+\textbf{Class:} \texttt{AMLMonitor}
+
+\textbf{Key methods:}
+\begin{itemize}
+  \item \texttt{screen(transaction)} --- runs all 6 rules, returns alert if any fires.
+  \item \texttt{get\_alerts()} --- all active alerts.
+  \item \texttt{get\_stats()} --- alert rate, SAR conversion, rule distribution.
+\end{itemize}
+
+\textbf{PEP/Sanctions list:} In-memory list with 50 sample entries. Production requires integration with commercial watchlist provider (Refinitiv World-Check, Dow Jones).
+
+\section{Validation}
+
+\textbf{Alert rate calibration:} Rule thresholds calibrated to target $<2\%$ alert rate on 90-day transaction history. Current: 1.4\%.
+
+\textbf{SAR conversion:} Historical SAR filing rate 19\% (target $>15\%$); within acceptable range.
+
+\textbf{Rule coverage:} 6 typologies cover 85\% of SAR categories filed by US bank peers (FinCEN SAR filing statistics 2023).
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{No network/graph analysis:} Typology 5 (layering) uses simple ratio; multi-hop transaction networks (shell company chains) not detected.
+  \item \textbf{Static velocity thresholds:} $\mu_{90d}$ computed at model deployment, not rolling in real-time; misses seasonal transaction pattern shifts.
+  \item \textbf{Binary alert decision:} Model produces binary alert/no-alert; no risk scoring (0--100) for alert prioritisation.
+  \item \textbf{Sanctions false-positive rate:} Name-matching on PEP/sanctions list produces $\sim$15\% false positives from name collisions; fuzzy matching not implemented.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{AML-F1}{Major}{No transaction network analysis; multi-hop layering through intermediate accounts not detectable by Rule 5 ratio test alone.}{Open}
+\finding{AML-F2}{Major}{Velocity thresholds ($\mu$, $\sigma$) not dynamically updated; static 90-day baseline may miss seasonal anomalies.}{Open}
+\finding{AML-F3}{Minor}{FATF grey/black list hardcoded; quarterly refresh process not automated; compliance team must manually update.}{Open}
+\end{findings}
+
+\end{document}

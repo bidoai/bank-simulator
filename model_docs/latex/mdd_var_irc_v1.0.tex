@@ -1,0 +1,156 @@
+\documentclass{apex_mdd}
+\modelid{APEX-MDL-0001}
+\mddversion{1.0}
+\mddowner{Dr.\ Priya Nair (CRO)}
+\mddvalidator{Dr.\ Samuel Achebe (Model Validation Officer)}
+\mddstatus{Validated}
+\reviewdate{2026-03-01}
+\nextreview{2027-03-01}
+\regulatory{12 CFR 3.132, Basel III Annex 10, SR 11-7}
+
+\title{Market Risk Value-at-Risk Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Model Overview}
+
+\subsection{Purpose}
+The Market Risk VaR Model quantifies the potential loss in the trading book over a 1-day horizon at 99\% confidence. It is the primary input to regulatory market risk capital under 12 CFR 3.132 (Basel III IMA) and drives desk-level risk limits in LimitManager.
+
+\subsection{Business Use}
+\begin{itemize}
+  \item \textbf{Regulatory capital:} Basel multiplier $3\times$ on the higher of current VaR and 60-day average VaR.
+  \item \textbf{Risk limits:} Daily delta and vega utilisation reported against board-approved limits.
+  \item \textbf{Pre-trade checks:} Parametric VaR delta used for pre-trade limit approval in OMS.
+  \item \textbf{Stress testing:} Inputs to DFAST adverse scenario projections.
+\end{itemize}
+
+\subsection{Scope}
+All instruments in the Apex trading book: AAPL, MSFT, SPY, NVDA (equities), EURUSD, GBPUSD (FX), US10Y, US2Y (rates), AAPL\_CALL\_200 (equity option), USD\_IRS\_5Y (interest rate swap).
+
+\section{Theoretical Basis}
+
+\subsection{GBM Assumption}
+Asset returns are modelled as log-normal under geometric Brownian motion:
+\begin{formulabox}
+\[
+  dS_t = \mu S_t\,dt + \sigma S_t\,dW_t
+\]
+For a 1-day horizon, the log-return is approximately normal: $r_{1d} \sim \mathcal{N}(0,\sigma^2)$.
+\end{formulabox}
+
+\subsection{Three VaR Methodologies}
+
+\subsubsection{Method 1 — Historical Simulation (Primary)}
+\begin{formulabox}
+\[
+  \mathrm{VaR}_{\mathrm{HS}} = -\mathrm{Percentile}(P\&L_t,\;1\%),\quad t \in \{t-1,\ldots,t-250\}
+\]
+\end{formulabox}
+Full revaluation of current portfolio under 250 historical 1-day scenarios. No distributional assumption.
+
+\subsubsection{Method 2 — Parametric Delta-Normal}
+\begin{formulabox}
+\[
+  \mathrm{VaR}_{\mathrm{param}} = 1.645\;\sigma_{\mathrm{portfolio}}\;\sqrt{W}
+\]
+where $\sigma_{\mathrm{portfolio}} = \sqrt{\Delta^\top \Sigma\, \Delta}$, $\Delta$ is the vector of delta sensitivities, $\Sigma$ is the return covariance matrix, and $W$ is the notional weight.
+\end{formulabox}
+
+\subsubsection{Method 3 — Monte Carlo Cholesky (Regime-Aware)}
+\begin{formulabox}
+\begin{align*}
+  L &= \mathrm{Chol}(\Sigma_{\mathrm{regime}})\\
+  Z_t &\sim \mathcal{N}(0,I)\\
+  r_t &= \mu + L Z_t\\
+  \mathrm{P\&L} &= \sum_i \Delta_i \cdot r_{t,i} \cdot S_i\\
+  \mathrm{VaR}_{\mathrm{MC}} &= -\mathrm{Percentile}(\mathrm{P\&L},\;1\%)\quad \text{over 2\,000 paths}
+\end{align*}
+\end{formulabox}
+The correlation matrix $\Sigma_{\mathrm{regime}}$ is selected by the Correlation Regime Model (APEX-MDL-0009): NORMAL or STRESS depending on realized equity-credit correlation.
+
+\subsection{Basel Multiplier}
+\begin{formulabox}
+\[
+  \mathrm{Capital} = \max\!\bigl(\mathrm{VaR}_t,\;k\;\overline{\mathrm{VaR}}_{60}\bigr) \times \sqrt{10},
+  \qquad k = 3.0 + \text{add-on}
+\]
+The add-on ranges from 0 to 1.0 based on backtesting exceptions (BCBS traffic-light).
+\end{formulabox}
+
+\section{Mathematical Specification}
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Value} & \textbf{Source} \\
+\midrule
+Confidence level   & 99\%           & 12 CFR 3.132 \\
+Horizon            & 1-day (scaled to 10-day for capital) & Basel III \\
+Historical window  & 250 business days & SR 11-7 \\
+MC paths           & 2\,000         & Internal calibration \\
+Basel multiplier $k$ & 3.0 (base)   & 12 CFR 3.132(d) \\
+10-day scaling     & $\times\sqrt{10}$ & Basel III \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Backtesting Traffic-Light (BCBS)}
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Exceptions in 250 days} & \textbf{Zone} & \textbf{Add-on} \\
+\midrule
+0--4   & Green & 0.00 \\
+5--9   & Amber & 0.40--0.85 \\
+$\geq 10$ & Red & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Implementation}
+
+\textbf{Code location:} \texttt{infrastructure/risk/var\_calculator.py}\\
+\textbf{Class:} \texttt{VaRCalculator}
+
+\textbf{Key methods:}
+\begin{itemize}
+  \item \texttt{calculate(positions, prices)} — Monte Carlo VaR, regime-aware.
+  \item \texttt{calculate\_parametric(positions, prices)} — delta-normal for pre-trade.
+\end{itemize}
+
+\textbf{Calibration:} Covariance matrix estimated from 60-day exponentially-weighted returns ($\lambda = 0.94$). Regime selection from \texttt{CorrelationRegimeModel.detect\_regime()}.
+
+\textbf{Runtime:} $\sim$50\,ms for 2\,000-path MC on 11 instruments.
+
+\section{Validation}
+
+\textbf{Backtesting methodology:} Compare daily P\&L realisation against prior-day VaR. Exceptions recorded in exception log. Traffic-light assessment quarterly.
+
+\textbf{Independent replication:} Validator replicated MC VaR using NumPy; confirmed within $\pm 2\%$ for equity-only portfolio. IRS DV01 sensitivity confirmed against Bloomberg SWPM.
+
+\textbf{Benchmarking:} Parametric VaR benchmarked against RiskMetrics delta-normal; within $\pm 5\%$ for equity portfolio.
+
+\section{Model Limitations}
+
+\begin{enumerate}
+  \item \textbf{Normality assumption (parametric):} Fat tails not captured; parametric VaR underestimates tail risk in stressed markets by 20--40\% (empirical observation, GFC window).
+  \item \textbf{250-day window sensitivity:} In low-volatility regimes, VaR may understate risk if the window excludes stress events. Compensating control: SVaR (APEX-MDL-0002) adds stressed capital buffer.
+  \item \textbf{Square-root-of-time scaling:} Assumes IID returns; serial correlation violates this assumption for fixed income instruments.
+  \item \textbf{2\,000-path MC estimation error:} Sampling noise at the 99th percentile $\approx\pm 8\%$ at 2\,000 paths. Partially mitigated by antithetic variates.
+\end{enumerate}
+
+\section{Open Findings}
+
+\begin{findings}
+\finding{VAR-F1}{Major}{Look-back window sensitivity not stress-tested across multiple window lengths (125d, 250d, 500d).}{Open}
+\finding{VAR-F2}{Minor}{Parametric method uses flat normal assumption; Cornish-Fisher expansion not applied.}{Open}
+\end{findings}
+
+\end{document}
