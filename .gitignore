@@ -36,3 +36,6 @@ htmlcov/
 .claude/
 *.DS_Store
 .DS_Store
+model_docs/latex/*.pdf
+=0.2.54
+.worktrees/
