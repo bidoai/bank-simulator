@@ -72,6 +72,33 @@ _HAIRCUTS = {
 }
 
 
+def _get_bbb_oas_bps() -> float:
+    """
+    Return live BBB OAS in bps, or 100 (historical typical) on any failure.
+    Result is cached at module level so LCR calculations don't repeat HTTP calls.
+    """
+    return _BBB_OAS_BPS
+
+
+def _load_bbb_oas() -> float:
+    """Fetch BBB OAS once at module load; applied to stress scenario haircuts."""
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        from infrastructure.market_data.fred_curve import fetch_credit_spreads
+        spreads = fetch_credit_spreads()
+        oas = spreads.get("BBB")
+        if oas and oas > 0:
+            log.info("lcr: live BBB OAS = %.0f bps", oas)
+            return float(oas)
+    except Exception as exc:
+        log.warning("lcr: BBB OAS fetch failed — %s", exc)
+    return 100.0
+
+
+_BBB_OAS_BPS: float = _load_bbb_oas()
+
+
 class LCREngine:
     def __init__(self) -> None:
         self._bs = dict(_BS)
@@ -91,8 +118,15 @@ class LCREngine:
             outflow_multiplier = 1.5
             haircut_addition = 0.10
 
+        # When BBB OAS > 200bps the market is in genuine stress — widen
+        # L2B haircuts an additional 5% in market-sensitive scenarios.
+        # Regulatory floor is always 50%; this is an internal conservatism.
+        if _BBB_OAS_BPS > 200.0 and scenario in ("market_wide", "combined"):
+            haircut_addition += 0.05
+
         result = self._compute(self._bs, outflow_multiplier - 1.0, haircut_addition)
         result["scenario"] = scenario
+        result["bbb_oas_bps"] = round(_BBB_OAS_BPS, 1)
         return result
 
     def _compute(

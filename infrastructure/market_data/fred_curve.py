@@ -111,3 +111,52 @@ def fetch_live_curve() -> dict[float, float]:
         len(live), len(_FRED_SERIES),
     )
     return live
+
+
+# ── Credit spread indices ─────────────────────────────────────────────────────
+# ICE BofA option-adjusted spreads. FRED reports these in percent
+# (i.e. 1.20 = 120 bps). Multiply by 100 to get basis points.
+
+_FRED_CREDIT: dict[str, str] = {
+    "BAMLC0A1CAAA": "AAA",   # ICE BofA AAA US Corporate OAS
+    "BAMLC0A2CAA":  "AA",    # ICE BofA AA US Corporate OAS
+    "BAMLC0A3CA":   "A",     # ICE BofA A US Corporate OAS
+    "BAMLC0A4CBBB": "BBB",   # ICE BofA BBB US Corporate OAS
+    "BAMLH0A0HYM2": "HY",    # ICE BofA US High Yield OAS
+}
+
+
+def fetch_credit_spreads() -> dict[str, float]:
+    """
+    Fetch ICE BofA option-adjusted credit spreads from FRED.
+
+    Returns a dict of {rating: oas_bps}, e.g. {"BBB": 123.4, "HY": 315.0}.
+    Values are in basis points. Returns only successfully fetched ratings;
+    caller should apply hardcoded fallbacks for any missing ones.
+
+    Never raises.
+    """
+    try:
+        import httpx
+    except ImportError:
+        log.warning("fred_curve: httpx not installed")
+        return {}
+
+    live: dict[str, float] = {}
+
+    with httpx.Client(follow_redirects=True) as client:
+        for series_id, rating in _FRED_CREDIT.items():
+            value = _fetch_series(series_id, client)
+            if value is not None and value > 0:
+                oas_bps = round(value * 100.0, 1)   # FRED reports in %, convert to bps
+                live[rating] = oas_bps
+                log.info(
+                    "fred_curve: %s (%s OAS) = %.1f bps",
+                    series_id, rating, oas_bps,
+                )
+
+    log.info(
+        "fred_curve: loaded %d/%d credit spread indices from FRED",
+        len(live), len(_FRED_CREDIT),
+    )
+    return live

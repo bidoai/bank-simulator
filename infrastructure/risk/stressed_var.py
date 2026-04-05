@@ -77,6 +77,42 @@ _FIRM_60D_AVG_VAR_M  = 95.0    # $95M
 _SVAR_MULTIPLIER     = 3.2     # sVaR is ~3.2× normal VaR (2008-calibrated)
 
 
+def _calibrate_credit_vol() -> None:
+    """
+    Scale IG_CDX baseline vol from live BBB OAS.
+
+    BBB OAS is a proxy for credit market risk — wider spreads → higher
+    realised credit vol.  Historical typical BBB OAS ≈ 100 bps.
+
+    Formula: new_vol = base_vol × clamp(bbb_oas / 100, 0.5, 4.0)
+    Stressed vol scales accordingly (multiplier stays fixed at 4×).
+    """
+    import logging
+    log = logging.getLogger(__name__)
+    _HIST_BBB_OAS_BPS = 100.0
+    try:
+        from infrastructure.market_data.fred_curve import fetch_credit_spreads
+        spreads = fetch_credit_spreads()
+        bbb_oas = spreads.get("BBB")
+        if bbb_oas is None:
+            return
+        factor = max(0.5, min(4.0, bbb_oas / _HIST_BBB_OAS_BPS))
+        old = _NORMAL_VOLS["IG_CDX"]
+        _NORMAL_VOLS["IG_CDX"] = round(old * factor, 4)
+        _STRESSED_VOLS["IG_CDX"] = round(
+            _NORMAL_VOLS["IG_CDX"] * STRESSED_PERIOD["credit_spread_vol_multiplier"], 4
+        )
+        log.info(
+            "stressed_var: BBB OAS=%.0fbps factor=%.3f → IG_CDX vol %.4f → %.4f",
+            bbb_oas, factor, old, _NORMAL_VOLS["IG_CDX"],
+        )
+    except Exception as exc:
+        log.warning("stressed_var: credit vol calibration failed — %s", exc)
+
+
+_calibrate_credit_vol()
+
+
 class StressedVaREngine:
     """
     Basel 2.5 Stressed VaR calculation.

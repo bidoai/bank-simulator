@@ -58,6 +58,37 @@ def _load_live_curve() -> None:
         log.warning("ftp_dynamic: live curve load failed — %s", exc)
 
 
+def _load_live_credit_spreads() -> None:
+    """
+    Scale BANK_SPREAD_BPS from live AA OAS.
+
+    The base curve assumes AA OAS ≈ 35 bps (historical benign level).
+    A proportional adjustment shifts all tenors when the market moves.
+
+    Formula: new_spread = base_spread × clamp(aa_oas / 35, 0.5, 3.0)
+    Capped at 3× to avoid runaway values in extreme stress.
+    """
+    import logging
+    log = logging.getLogger(__name__)
+    _HIST_AA_OAS_BPS = 35.0   # historical benign AA OAS
+    try:
+        from infrastructure.market_data.fred_curve import fetch_credit_spreads
+        spreads = fetch_credit_spreads()
+        aa_oas = spreads.get("AA")
+        if aa_oas is None:
+            return
+        factor = max(0.5, min(3.0, aa_oas / _HIST_AA_OAS_BPS))
+        for tenor in list(BANK_SPREAD_BPS.keys()):
+            old = BANK_SPREAD_BPS[tenor]
+            BANK_SPREAD_BPS[tenor] = round(old * factor, 1)
+        log.info(
+            "ftp_dynamic: AA OAS=%.0fbps factor=%.3f → bank spreads scaled",
+            aa_oas, factor,
+        )
+    except Exception as exc:
+        log.warning("ftp_dynamic: live credit spread load failed — %s", exc)
+
+
 _load_live_curve()
 
 # Bank credit spread above SOFR OIS (bps) for AA-rated Apex Global Bank
@@ -100,6 +131,9 @@ INSTRUMENT_TENOR: dict[str, float] = {
     "fhlb_advance":         1.00,
     "senior_unsecured":     7.00,
 }
+
+# Scale BANK_SPREAD_BPS from live AA OAS — called after all dicts are defined
+_load_live_credit_spreads()
 
 
 def _interp(x: float, xs: list[float], ys: list[float]) -> float:
