@@ -40,11 +40,14 @@ uv run --with fastapi --with pytest-asyncio --with httpx --with structlog --with
 | `risk/` | `RiskService`, `VaRCalculator`, `CounterpartyRegistry`, `ConcentrationRiskMonitor`, `CorrelationRegimeModel`, `RegulatoryCapitalEngine` |
 | `collateral/` | `VMEngine`, `SIMMEngine`, `CollateralStressScenarios` (5 CSAs, SIMM 2.6 IR+CRQ, 3 stress scenarios) |
 | `credit/` | `IFRS9ECLEngine` (50-obligor portfolio) |
-| `treasury/` | `ALMEngine`, `FTPEngine` |
+| `treasury/` | `ALMEngine`, `FTPEngine`, `NMDModel`, `DynamicFTP`, `ALMHedging`, `RAROCEngine`, `BalanceSheetOptimizer` |
 | `compliance/` | `AMLTransactionMonitor` |
 | `stress/` | `DFASTEngine` (9-quarter CET1 projection, 3 scenarios) |
 | `xva/` | `XVAAdapter` wrapping pyxva (local dep `../pyxva`). Now live via `SimulationXVAService` |
-| `market_data/` | `MarketDataFeed` (GBM simulation, 11 tickers, 500ms ticks) |
+| `market_data/` | `MarketDataFeed` (GBM simulation, 11 tickers, 500ms ticks). `LiveSeed` pulls Yahoo Finance prices at startup; `FREDCurve` loads UST/SOFR + BBB OAS; `DFASTScenarios` loads 2025 official Fed parameters. |
+| `liquidity/` | `LCREngine`, `NSFREngine`, `IntradayMonitor`, `LiquidityLadder`, `LiquidityStressScenarios` |
+| `securities_finance/` | `SecuritiesFinanceService` (repo/stock-borrow desk shell) |
+| `securitized_products/` | `SecuritizedProductsService` (agency MBS analytics shell with OAS/duration) |
 | `events/` | `EventLog` (append-only SQLite audit trail) |
 | `reference/` | `InstrumentMaster` (SQLite, 9 seeded instruments) |
 | `persistence/` | `PositionSnapshots` (SQLite, survives restart) |
