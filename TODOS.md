@@ -186,6 +186,97 @@ All three added to registry.json.
 
 ---
 
+## Phase 4 — Strategic Roadmap (from 2026-04-05 board session)
+
+### TODO-035: End-to-End Integration Stress Scenario — P1
+**What:** Design and run a single compound crisis scenario that exercises every integrated system simultaneously: equity shock → margin calls triggered → LCR breached → DFAST CET1 depleted → IMA exception counter incremented. Audit each system's output for correctness and cross-system consistency.
+**Why:** We have never run a full simulated market crisis through the integrated stack. Individual modules are tested in isolation; integration gaps are unknown until a scenario forces every pipe to flow at once.
+**Scope:**
+- Design scenario: equity −30%, rates +150bps, IG spreads ×3, HY spreads ×5 over a single trading session
+- Trigger: fire via `POST /api/scenarios/activate` + `POST /api/trading/orders` to accumulate positions
+- Verify: LCR drops below 100% threshold; CollateralEngine fires margin calls on all five CSAs; DFAST CET1 projection shows red-zone depletion; VaR backtest logs a 99% exception; XVA CVA reprices upward
+- Capture: write a scenario script in `scenarios/integration_stress_test.py`; save full audit trail to EventLog
+**Effort:** S | **Priority:** P1 | **Depends on:** nothing — all systems exist
+
+---
+
+### TODO-036: Daily P&L Attribution by Greek Bucket — P1
+**What:** A P&L explain engine that decomposes each day's trading P&L into delta, gamma, vega, theta, and unexplained residual — per desk and firm-wide.
+**Why:** Without P&L explain, the trading desk is a black box. Every real desk head starts the morning with a P&L explain. This is the single most important feature for making the simulation feel like a real trading operation.
+**Scope:**
+- `infrastructure/trading/pnl_explain.py` — `PnLExplainEngine` with Greeks-based attribution:
+  - Delta P&L = Σ (delta_i × Δprice_i)
+  - Gamma P&L = ½ × Σ (gamma_i × Δprice_i²)
+  - Theta P&L = Σ (theta_i × Δt)
+  - Vega P&L = Σ (vega_i × Δvol_i)
+  - Unexplained = actual P&L − sum of above
+- Requires: end-of-day Greeks snapshot vs start-of-day (store two snapshots in SQLite)
+- `GET /api/trading/pnl-explain` — returns attribution breakdown per desk + firm
+- Dashboard panel on `trading.html` showing waterfall chart (Plotly)
+**Effort:** M | **Priority:** P1 | **Depends on:** GreeksCalculator (done), MarketDataFeed (done)
+
+---
+
+### TODO-037: Credit Portfolio Model (Factor Copula → Credit VaR) — P2
+**What:** A portfolio-level credit risk model generating correlated defaults across the loan book, producing credit VaR, EC allocation, and concentration-adjusted loss distribution.
+**Why:** The IFRS 9 ECL engine computes expected loss loan-by-loan. There is no portfolio-level view of unexpected loss or credit VaR. A real bank allocates economic capital by credit portfolio — this gap means the capital dashboard cannot tie credit risk to the EC framework.
+**Scope:**
+- `infrastructure/credit/portfolio_model.py` — `CreditPortfolioModel` with:
+  - Single-factor Gaussian copula (systematic factor + idiosyncratic noise)
+  - Asset correlation by sector (IG corporate 0.20, HY 0.30, retail 0.10, mortgage 0.15)
+  - Monte Carlo loss distribution (10,000 scenarios × 50 obligors)
+  - Credit VaR at 99.9% (EC) and 99% (management VaR)
+  - Marginal contribution to portfolio CVaR per obligor
+- `GET /api/credit/portfolio-var` — credit VaR, EC, loss distribution percentiles
+- `GET /api/credit/marginal-contribution` — per-obligor EC contribution
+- Wire EC into regulatory capital dashboard (compare SA RWA vs EC)
+**Effort:** L | **Priority:** P2 | **Depends on:** IFRS9ECLEngine (done), CounterpartyRegistry (done)
+
+---
+
+### TODO-038: Real-Time Event Bus + Intraday Risk Cycle — P2
+**What:** Decouple market data ticks from risk recomputation via an in-process event bus (asyncio.Queue). Market feed publishes tick events; risk engine subscribes and recomputes on a 15-second cycle independently of API calls.
+**Why:** All risk computation is currently synchronous and API-triggered. A real bank runs intraday VaR and Greeks on a sub-minute cycle. The simulation can't yet demonstrate a live risk breach alert without a polling client.
+**Scope:**
+- `infrastructure/events/bus.py` — `EventBus` (asyncio.Queue-backed pub/sub, typed events)
+- Event types: `TickEvent`, `TradeBookedEvent`, `RiskSnapshotEvent`, `LimitBreachEvent`
+- `MarketDataFeed` publishes `TickEvent` on each 500ms tick
+- `RiskService` subscribes, runs snapshot every 15 seconds (not on every tick)
+- `LimitManager` publishes `LimitBreachEvent` when a limit is crossed → boardroom broadcaster alerts
+- Intraday risk timeline endpoint: `GET /api/risk/intraday-timeline` (last 60 snapshots)
+**Effort:** L | **Priority:** P2 | **Depends on:** nothing structurally, but TODO-036 produces better risk data
+
+---
+
+### TODO-039: Transaction Banking Franchise — P3
+**What:** Simulate the transaction banking business: corporate cash management, FX payments, correspondent banking, and trade finance — the capital-light revenue engine that generates ~40% of major bank revenues.
+**Why:** The current simulation is purely markets/risk. Transaction banking adds the corporate client franchise, fee income, and deposit funding that make the balance sheet model realistic.
+**Scope:**
+- `infrastructure/transaction_banking/` — `CorporateClientRegistry`, `PaymentEngine`, `FXConversionEngine`, `TradeFinanceEngine`
+- Corporate client registry: 20 seeded clients with industry, credit rating, operating accounts, payment volumes
+- FX conversion: spot + forward pricing from live feed; daily FX P&L accrual
+- Trade finance: LC issuance, utilization tracking, fee income
+- Cash management: notional pooling, overdraft facility, intraday liquidity monitoring
+- New dashboard: `dashboard/transaction_banking.html`
+**Effort:** XL | **Priority:** P3 | **Depends on:** TODO-038 (event bus for payment events)
+
+---
+
+### TODO-040: Dynamic Multi-Period Balance Sheet Optimizer — P3
+**What:** Extend the static single-period balance sheet optimizer to a multi-period dynamic NLP where DFAST stress scenarios feed back into capital constraints, deposit repricing shifts NSFR, and loan book evolution changes RWA quarter by quarter.
+**Why:** The current optimizer (`infrastructure/treasury/balance_sheet_optimizer.py`) optimizes a single snapshot. A real bank plans over 4-8 quarters with regulatory constraints that evolve as the economic cycle moves. The DFAST output should constrain the optimizer — CET1 depletion under stress sets the floor on capital buffers.
+**Scope:**
+- Extend `BalanceSheetOptimizer` to multi-period (8-quarter) with:
+  - Quarter-by-quarter RWA evolution (loan growth, risk migration)
+  - NII accrual and DFAST stress P&L feeding into retained earnings
+  - Dynamic LCR/NSFR constraints (deposit repricing β, HQLA runoff)
+  - DFAST CET1 floor as a hard constraint on capital deployment
+- `GET /api/treasury/dynamic-plan` — 8-quarter optimized balance sheet trajectory
+- Integration: DFAST engine output → capital constraint → optimizer → treasury dashboard
+**Effort:** XL | **Priority:** P3 | **Depends on:** DFAST (done), BalanceSheetOptimizer (done), TODO-037 (credit EC)
+
+---
+
 ## Phase 3 — Product Expansion
 
 ### TODO-029: Securities Finance Lifecycle ✅ DONE
