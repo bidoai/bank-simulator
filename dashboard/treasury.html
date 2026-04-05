@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treasury &amp; ALM — Apex Global Bank</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <style>
+    body { max-width: 1480px; margin: 0 auto; padding: 20px 24px; }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.7;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--positive);
+      box-shadow: 0 0 8px rgba(63, 185, 80, 0.55);
+    }
+
+    .refresh-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .kpi-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .kpi-value.pos { color: var(--positive); }
+    .kpi-value.neg { color: var(--negative); }
+    .kpi-value.warn { color: var(--warning); }
+    .kpi-value.accent { color: var(--accent); }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card-title h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .card-title .meta {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .split-55-45 {
+      display: grid;
+      grid-template-columns: 1.22fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: start;
+    }
+
+    .split-40-60 {
+      display: grid;
+      grid-template-columns: 0.67fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: start;
+    }
+
+    .full-width {
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      vertical-align: top;
+    }
+
+    td.right, th.right { text-align: right; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .status-pill.above {
+      color: var(--positive);
+      background: rgba(63, 185, 80, 0.12);
+    }
+
+    .status-pill.below {
+      color: var(--negative);
+      background: rgba(248, 81, 73, 0.14);
+    }
+
+    .cell-pos { color: var(--positive); }
+    .cell-neg { color: var(--negative); }
+    .cell-warn { color: var(--warning); }
+
+    .bg-pos { background: rgba(63, 185, 80, 0.10); }
+    .bg-neg { background: rgba(248, 81, 73, 0.10); }
+    .bg-warn { background: rgba(227, 179, 65, 0.10); }
+
+    /* Priority row borders for hedge table */
+    tr.prio-high td:first-child { border-left: 3px solid var(--negative); }
+    tr.prio-medium td:first-child { border-left: 3px solid var(--warning); }
+    tr.prio-low td:first-child { border-left: 3px solid var(--positive); }
+
+    /* FTP stress columns */
+    .col-idio { color: var(--warning); }
+    .col-mws  { color: var(--negative); }
+
+    /* Repricing gap chart */
+    .repricing-gap-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rg-bucket {
+      display: grid;
+      grid-template-columns: 50px 1fr 80px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .rg-label {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .rg-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .rg-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rg-bar-type {
+      font-size: 9px;
+      color: var(--muted);
+      width: 14px;
+      text-align: right;
+      letter-spacing: 0.05em;
+    }
+
+    .rg-bar-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(99, 110, 123, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .rg-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .rg-bar-fill.asset { background: var(--positive); }
+    .rg-bar-fill.liability { background: var(--negative); }
+
+    .rg-gap-val {
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    /* EVE vertical bar chart */
+    .eve-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 180px;
+      padding: 0 4px;
+      position: relative;
+    }
+
+    .eve-chart-inner {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .eve-bar-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+
+    .eve-bar-label {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .eve-bar-val {
+      font-size: 9px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .eve-bar {
+      width: 100%;
+      border-radius: 3px 3px 0 0;
+      min-height: 3px;
+    }
+
+    .eve-bar.positive { background: var(--positive); }
+    .eve-bar.negative { background: var(--negative); }
+    .eve-bar.warning  { background: var(--warning); }
+
+    .eve-threshold-line {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      height: 1px;
+      border-top: 1px dashed rgba(248, 81, 73, 0.6);
+    }
+
+    .eve-threshold-label {
+      position: absolute;
+      right: 8px;
+      font-size: 9px;
+      color: rgba(248, 81, 73, 0.8);
+    }
+
+    .error-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(248, 81, 73, 0.45);
+      background: rgba(248, 81, 73, 0.08);
+      color: #ffb3ad;
+      font-size: 12px;
+    }
+
+    .error-banner.visible {
+      display: block;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 8px 0;
+    }
+
+    tr.firm-total td {
+      font-weight: 700;
+      border-top: 1px solid var(--border);
+    }
+
+    td em {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1180px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .split-55-45, .split-40-60 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <div>
+      <div class="page-title">Treasury &amp; ALM</div>
+      <div class="page-subtitle">
+        Duration gap, EVE sensitivity, NII at risk, FTP curve, RAROC by desk, and balance sheet optimization.
+        The treasury desk owns the bank's interest rate risk in the banking book — this page surfaces
+        the key regulatory and management indicators in one view.
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span id="live-text">Live snapshot</span>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
+    </div>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- KPI Strip -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Duration Gap</div>
+      <div class="kpi-value" id="kpi-duration-gap">—</div>
+      <div class="kpi-sub" id="kpi-duration-gap-sub">asset vs liability duration</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">NII at Risk</div>
+      <div class="kpi-value neg" id="kpi-nii-at-risk">—</div>
+      <div class="kpi-sub" id="kpi-nii-at-risk-sub">unhedged / +100bps shock</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Blended FTP Rate</div>
+      <div class="kpi-value accent" id="kpi-ftp-rate">—</div>
+      <div class="kpi-sub" id="kpi-ftp-rate-sub">all-in funding cost</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top Hedge Rec</div>
+      <div class="kpi-value" id="kpi-hedge-rec" style="font-size:14px;line-height:1.3;">—</div>
+      <div class="kpi-sub" id="kpi-hedge-rec-sub">highest priority recommendation</div>
+    </div>
+  </section>
+
+  <!-- Row 1: Repricing Gap | NII Sensitivity -->
+  <div class="split-55-45">
+    <section class="card">
+      <div class="card-title">
+        <h2>Repricing Gap Schedule</h2>
+        <span class="meta">assets vs liabilities by tenor bucket</span>
+      </div>
+      <div id="repricing-gap-chart"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">
+        <h2>NII Sensitivity</h2>
+        <span class="meta">rate shock scenarios</span>
+      </div>
+      <div id="nii-sensitivity-table"></div>
+    </section>
+  </div>
+
+  <!-- Row 2: EVE Sensitivity | ALM Hedge Recommendations -->
+  <div class="split-40-60">
+    <section class="card">
+      <div class="card-title">
+        <h2>EVE Sensitivity</h2>
+        <span class="meta">rate shock vs equity</span>
+      </div>
+      <div id="eve-chart-wrap"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">
+        <h2>ALM Hedge Recommendations</h2>
+        <span class="meta">sorted by priority</span>
+      </div>
+      <div id="hedge-table-wrap"></div>
+    </section>
+  </div>
+
+  <!-- Row 3: Dynamic FTP Curve | RAROC by Desk -->
+  <div class="split-40-60">
+    <section class="card">
+      <div class="card-title">
+        <h2>Dynamic FTP Curve</h2>
+        <span class="meta">base + stress scenarios (%)</span>
+      </div>
+      <div id="ftp-curve-table"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">
+        <h2>RAROC by Desk</h2>
+        <span class="meta">hurdle rate 12%</span>
+      </div>
+      <div id="raroc-table-wrap"></div>
+    </section>
+  </div>
+
+  <!-- Row 4: Balance Sheet Optimization -->
+  <section class="card full-width">
+    <div class="card-title">
+      <h2>Balance Sheet Optimization — RWA Density</h2>
+      <span class="meta" id="bs-meta">ranked by RoRWA%</span>
+    </div>
+    <div id="bs-table-wrap"></div>
+  </section>
+
+  <!-- Row 5: NMD Model Analysis -->
+  <section class="card full-width">
+    <div class="card-title">
+      <h2>NMD Model Analysis</h2>
+      <span class="meta" id="nmd-meta">segment-level behavioral deposit model</span>
+    </div>
+    <div id="nmd-table-wrap"></div>
+    <div id="nmd-summary" style="margin-top:12px;font-size:12px;color:var(--muted);"></div>
+  </section>
+
+  <script>
+    /* ── Utilities ──────────────────────────────────────────────────────── */
+    function fmtUsd(value) {
+      const n = Number(value || 0);
+      const abs = Math.abs(n);
+      if (abs >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+      if (abs >= 1e9)  return `$${(n / 1e9).toFixed(2)}B`;
+      if (abs >= 1e6)  return `$${(n / 1e6).toFixed(1)}M`;
+      if (abs >= 1e3)  return `$${(n / 1e3).toFixed(1)}K`;
+      return `$${n.toFixed(0)}`;
+    }
+
+    function fmtUsdM(value) {
+      return `$${(Number(value || 0) / 1e6).toFixed(1)}M`;
+    }
+
+    function fmtUsdB(value) {
+      return `$${(Number(value || 0) / 1e9).toFixed(2)}B`;
+    }
+
+    function fmtPct(value) {
+      return `${Number(value || 0).toFixed(1)}%`;
+    }
+
+    function fmtNum(value, decimals) {
+      return Number(value || 0).toFixed(decimals ?? 2);
+    }
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function setHtml(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+
+    function showError(message) {
+      const banner = document.getElementById("error-banner");
+      banner.textContent = message;
+      banner.classList.add("visible");
+    }
+
+    function clearError() {
+      const banner = document.getElementById("error-banner");
+      banner.textContent = "";
+      banner.classList.remove("visible");
+    }
+
+    function renderEmpty(targetId, message) {
+      setHtml(targetId, `<div class="empty-state">${esc(message)}</div>`);
+    }
+
+    async function safeFetch(url) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    /* ── Repricing Gap ──────────────────────────────────────────────────── */
+    async function loadRepricingGap() {
+      const data = await safeFetch("/api/treasury/alm/repricing-gap");
+      const wrap = document.getElementById("repricing-gap-chart");
+      if (!data || !data.schedule || !data.schedule.length) {
+        wrap.innerHTML = '<div class="empty-state">No repricing gap data.</div>';
+        return;
+      }
+
+      const schedule = data.schedule;
+      const maxNotional = Math.max(...schedule.flatMap(b => [
+        Math.abs(b.asset_notional || 0),
+        Math.abs(b.liability_notional || 0),
+      ]));
+
+      const rows = schedule.map(function (b) {
+        const assetW = maxNotional > 0 ? (Math.abs(b.asset_notional) / maxNotional * 100) : 0;
+        const liabW  = maxNotional > 0 ? (Math.abs(b.liability_notional) / maxNotional * 100) : 0;
+        const gap = b.gap || 0;
+        const gapClass = gap >= 0 ? "cell-pos" : "cell-neg";
+
+        return `
+          <div class="rg-bucket">
+            <div class="rg-label">${esc(b.bucket)}</div>
+            <div class="rg-bars">
+              <div class="rg-bar-row">
+                <span class="rg-bar-type">A</span>
+                <div class="rg-bar-track"><div class="rg-bar-fill asset" style="width:${assetW.toFixed(1)}%"></div></div>
+                <span style="font-size:10px;color:var(--muted);width:56px;text-align:right">${fmtUsdB(b.asset_notional)}</span>
+              </div>
+              <div class="rg-bar-row">
+                <span class="rg-bar-type">L</span>
+                <div class="rg-bar-track"><div class="rg-bar-fill liability" style="width:${liabW.toFixed(1)}%"></div></div>
+                <span style="font-size:10px;color:var(--muted);width:56px;text-align:right">${fmtUsdB(b.liability_notional)}</span>
+              </div>
+            </div>
+            <div class="rg-gap-val ${gapClass}">${gap >= 0 ? "+" : ""}${fmtUsdB(gap)}</div>
+          </div>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `<div class="repricing-gap-chart">${rows}</div>`;
+    }
+
+    /* ── NII Sensitivity ────────────────────────────────────────────────── */
+    async function loadNIISensitivity() {
+      const data = await safeFetch("/api/treasury/alm/nii-sensitivity");
+      const wrap = document.getElementById("nii-sensitivity-table");
+      if (!data || !data.scenarios || !data.scenarios.length) {
+        wrap.innerHTML = '<div class="empty-state">No NII sensitivity data.</div>';
+        return;
+      }
+
+      const rows = data.scenarios.map(function (s) {
+        const nii = s.nii_change_usd || 0;
+        const shockLabel = `${s.shock_bps > 0 ? "+" : ""}${s.shock_bps}bps`;
+        const dirClass = nii >= 0 ? "cell-pos" : "cell-neg";
+        const rowClass = nii >= 0 ? "bg-pos" : "bg-neg";
+        return `
+          <tr class="${rowClass}">
+            <td>${esc(shockLabel)}</td>
+            <td class="right ${dirClass}">${fmtUsdM(nii)}</td>
+            <td>${nii >= 0 ? "Benefit" : "Loss"}</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Shock</th>
+              <th class="right">NII Impact</th>
+              <th>Direction</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    /* ── EVE Sensitivity ────────────────────────────────────────────────── */
+    async function loadEVESensitivity() {
+      const data = await safeFetch("/api/treasury/alm/eve-sensitivity");
+      const wrap = document.getElementById("eve-chart-wrap");
+      if (!data || !data.scenarios || !data.scenarios.length) {
+        wrap.innerHTML = '<div class="empty-state">No EVE sensitivity data.</div>';
+        return;
+      }
+
+      const scenarios = data.scenarios;
+      const svbThresholdPct = -15; // SVB warning: -15% equity
+
+      // Find max absolute EVE change for bar scaling
+      const maxAbs = Math.max(...scenarios.map(s => Math.abs(s.eve_change_usd || 0)), 1);
+
+      const equityUsd = data.equity_usd || 300e9;
+      const svbAbsUsd = Math.abs(equityUsd * svbThresholdPct / 100);
+
+      // Total chart height = 160px for bars
+      const chartH = 160;
+      const maxBarH = chartH * 0.90;
+
+      // Threshold line position (relative to bottom of chart)
+      const thresholdLineH = Math.min((svbAbsUsd / maxAbs) * maxBarH, chartH - 4);
+
+      const bars = scenarios.map(function (s) {
+        const eveUsd = s.eve_change_usd || 0;
+        const absUsd = Math.abs(eveUsd);
+        const barH = Math.max((absUsd / maxAbs) * maxBarH, 3);
+        const isClose = eveUsd < 0 && absUsd >= svbAbsUsd * 0.75;
+        const barClass = eveUsd >= 0 ? "positive" : (isClose ? "warning" : "negative");
+        const shockLabel = `${s.shock_bps > 0 ? "+" : ""}${s.shock_bps}`;
+        const valLabel = `${(eveUsd / 1e9).toFixed(1)}B`;
+
+        return `
+          <div class="eve-bar-group">
+            <div class="eve-bar-val">${esc(valLabel)}</div>
+            <div class="eve-bar ${barClass}" style="height:${barH.toFixed(0)}px"></div>
+            <div class="eve-bar-label">${esc(shockLabel)}</div>
+          </div>
+        `;
+      }).join("");
+
+      const thresholdTop = chartH - thresholdLineH;
+
+      wrap.innerHTML = `
+        <div style="position:relative;">
+          <div class="eve-chart" style="height:${chartH + 40}px;position:relative;">
+            <div class="eve-chart-inner">${bars}</div>
+            <div class="eve-threshold-line" style="bottom:${thresholdLineH.toFixed(0)}px;position:absolute;left:0;right:0;"></div>
+            <div class="eve-threshold-label" style="bottom:${(thresholdLineH + 3).toFixed(0)}px;position:absolute;right:4px;">SVB threshold (−15% equity)</div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center;">Rate shock (bps)</div>
+        </div>
+      `;
+    }
+
+    /* ── Hedge Recommendations ──────────────────────────────────────────── */
+    async function loadHedgeRecommendations() {
+      const data = await safeFetch("/api/treasury/alm/hedge-recommendations");
+      if (!data) return;
+
+      // KPI: Duration Gap
+      if (data.duration_gap) {
+        const gap = data.duration_gap.duration_gap_raw || 0;
+        const gapEl = document.getElementById("kpi-duration-gap");
+        if (gapEl) {
+          gapEl.textContent = `${gap.toFixed(2)}yr`;
+          gapEl.className = "kpi-value " + (gap <= 0.25 ? "pos" : gap <= 0.5 ? "warn" : "neg");
+        }
+        setText("kpi-duration-gap-sub",
+          `Asset ${(data.duration_gap.asset_duration_years||0).toFixed(2)}yr vs Liability ${(data.duration_gap.liability_duration_years||0).toFixed(2)}yr`);
+      }
+
+      // KPI: NII at Risk
+      if (data.nii_at_risk) {
+        const nii = data.nii_at_risk.unhedged_nii_impact_usd || 0;
+        setText("kpi-nii-at-risk", fmtUsdM(nii));
+        setText("kpi-nii-at-risk-sub", `unhedged / +${data.nii_at_risk.rate_shock_bps || 100}bps shock`);
+      }
+
+      // KPI: Top Hedge Rec
+      const recs = data.recommendations || [];
+      if (recs.length > 0) {
+        const top = recs[0];
+        setText("kpi-hedge-rec", `${top.instrument || "—"} ${top.tenor || ""}`);
+        setText("kpi-hedge-rec-sub", `${top.priority || ""} priority — $${(top.notional_bn || 0).toFixed(0)}B notional`);
+      }
+
+      // Hedge table
+      const wrap = document.getElementById("hedge-table-wrap");
+      if (!recs.length) {
+        wrap.innerHTML = '<div class="empty-state">No hedge recommendations.</div>';
+        return;
+      }
+
+      const prioOrder = { "HIGH": 0, "MEDIUM": 1, "LOW": 2 };
+      const sorted = [...recs].sort((a, b) => (prioOrder[a.priority] ?? 9) - (prioOrder[b.priority] ?? 9));
+
+      const rows = sorted.map(function (r) {
+        const prioClass = r.priority === "HIGH" ? "prio-high" : r.priority === "MEDIUM" ? "prio-medium" : "prio-low";
+        const prioColor = r.priority === "HIGH" ? "cell-neg" : r.priority === "MEDIUM" ? "cell-warn" : "cell-pos";
+        return `
+          <tr class="${prioClass}">
+            <td>${esc(r.instrument || "—")}</td>
+            <td>${esc(r.tenor || "—")}</td>
+            <td class="right">$${fmtNum(r.notional_bn, 1)}B</td>
+            <td style="max-width:240px;font-size:11px;">${esc(r.rationale || "—")}</td>
+            <td class="${prioColor}">${esc(r.priority || "—")}</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Instrument</th>
+              <th>Tenor</th>
+              <th class="right">Notional</th>
+              <th>Rationale</th>
+              <th>Priority</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    /* ── Dynamic FTP Curve ──────────────────────────────────────────────── */
+    async function loadFTPCurve() {
+      const data = await safeFetch("/api/treasury/ftp/curve-dynamic");
+      const wrap = document.getElementById("ftp-curve-table");
+      if (!data || !data.base_curve) {
+        wrap.innerHTML = '<div class="empty-state">No FTP curve data.</div>';
+        return;
+      }
+
+      const tenors = Object.keys(data.base_curve);
+
+      // FTP KPI — use first available rate from base curve as proxy
+      const ftpSummary = await safeFetch("/api/treasury/ftp/summary");
+      if (ftpSummary) {
+        const rate = ftpSummary.blended_ftp_rate_pct;
+        if (rate != null) {
+          setText("kpi-ftp-rate", `${(rate * 100).toFixed(0)}bps`);
+          setText("kpi-ftp-rate-sub", `blended all-in / ${new Date().toLocaleTimeString()}`);
+        }
+      }
+
+      const rows = tenors.map(function (tenor) {
+        const base  = (data.base_curve[tenor]          || 0).toFixed(2);
+        const idio  = (data.idiosyncratic_stress[tenor] || 0).toFixed(2);
+        const mws   = (data.market_wide_stress[tenor]   || 0).toFixed(2);
+        // SOFR OIS approximation: base minus average bank spread (~0.30%)
+        const sofr  = Math.max(0, (data.base_curve[tenor] || 0) - 0.35).toFixed(2);
+
+        return `
+          <tr>
+            <td>${esc(tenor)}</td>
+            <td class="right">${sofr}%</td>
+            <td class="right">${base}%</td>
+            <td class="right col-idio">${idio}%</td>
+            <td class="right col-mws">${mws}%</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Tenor</th>
+              <th class="right">SOFR OIS</th>
+              <th class="right">Base Funding</th>
+              <th class="right col-idio">Idiosyncratic</th>
+              <th class="right col-mws">Market-Wide</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    /* ── RAROC by Desk ──────────────────────────────────────────────────── */
+    async function loadRAROC() {
+      const data = await safeFetch("/api/treasury/ftp/raroc");
+      const wrap = document.getElementById("raroc-table-wrap");
+      if (!data || !data.by_desk) {
+        wrap.innerHTML = '<div class="empty-state">No RAROC data.</div>';
+        return;
+      }
+
+      const desks = data.by_desk;
+      const firm = data.firm || {};
+      const hurdleRate = firm.hurdle_rate_pct || 12;
+
+      const deskRows = desks.map(function (d) {
+        const rarocClass = d.raroc_pct >= hurdleRate ? "bg-pos" : "bg-neg";
+        const rarocTextClass = d.raroc_pct >= hurdleRate ? "cell-pos" : "cell-neg";
+        const vsHurdle = d.raroc_pct - hurdleRate;
+        const vsHurdleText = `${vsHurdle >= 0 ? "+" : ""}${vsHurdle.toFixed(1)}pp`;
+        const vsClass = vsHurdle >= 0 ? "cell-pos" : "cell-neg";
+
+        return `
+          <tr>
+            <td>${esc(d.desk)}</td>
+            <td class="right">${fmtUsdM(d.revenue_usd)}</td>
+            <td class="right">${fmtUsdM(d.ftp_charge_usd)}</td>
+            <td class="right">${fmtUsdM(d.economic_capital_usd)}</td>
+            <td class="right ${rarocTextClass} ${rarocClass}">${fmtPct(d.raroc_pct)}</td>
+            <td class="right ${vsClass}">${vsHurdleText}</td>
+          </tr>
+        `;
+      }).join("");
+
+      const firmRarocClass = (firm.firm_raroc_pct || 0) >= hurdleRate ? "cell-pos" : "cell-neg";
+      const firmVsHurdle = (firm.firm_raroc_pct || 0) - hurdleRate;
+      const firmVsClass = firmVsHurdle >= 0 ? "cell-pos" : "cell-neg";
+
+      const firmRow = `
+        <tr class="firm-total">
+          <td>FIRM TOTAL</td>
+          <td class="right">${fmtUsdM(firm.total_revenue_usd)}</td>
+          <td class="right">${fmtUsdM(firm.total_ftp_charge_usd)}</td>
+          <td class="right">${fmtUsdM(firm.total_economic_capital_usd)}</td>
+          <td class="right ${firmRarocClass}">${fmtPct(firm.firm_raroc_pct)}</td>
+          <td class="right ${firmVsClass}">${firmVsHurdle >= 0 ? "+" : ""}${firmVsHurdle.toFixed(1)}pp</td>
+        </tr>
+      `;
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Desk</th>
+              <th class="right">Revenue</th>
+              <th class="right">FTP Charge</th>
+              <th class="right">EC</th>
+              <th class="right">RAROC%</th>
+              <th class="right">vs Hurdle</th>
+            </tr>
+          </thead>
+          <tbody>${deskRows}${firmRow}</tbody>
+        </table>
+      `;
+    }
+
+    /* ── Balance Sheet Optimization ─────────────────────────────────────── */
+    async function loadBSOptimization() {
+      const data = await safeFetch("/api/treasury/balance-sheet/optimization");
+      const wrap = document.getElementById("bs-table-wrap");
+      if (!data || !data.rwa_density_by_business) {
+        wrap.innerHTML = '<div class="empty-state">No balance sheet optimization data.</div>';
+        return;
+      }
+
+      const rwa = data.rwa_density_by_business;
+      const businesses = rwa.by_business || [];
+      const hurdle = rwa.hurdle_pct || 12;
+
+      // Build optimization action lookup
+      const actionMap = {};
+      (data.optimization_recommendations || []).forEach(function (rec) {
+        actionMap[rec.business] = rec.action || null;
+      });
+
+      setText("bs-meta", `${businesses.length} business lines — hurdle ${hurdle}% RoRWA`);
+
+      const rows = businesses.map(function (b) {
+        const above = b.rorwa_pct >= hurdle;
+        const pillClass = above ? "above" : "below";
+        const pillText = above ? "ABOVE HURDLE" : "BELOW HURDLE";
+        const action = actionMap[b.business];
+
+        return `
+          <tr>
+            <td>${esc(b.business)}</td>
+            <td class="right">${fmtUsdB(b.rwa_usd)}</td>
+            <td class="right">${fmtUsdM(b.revenue_usd)}</td>
+            <td class="right ${above ? "cell-pos" : "cell-neg"}">${fmtPct(b.rorwa_pct)}</td>
+            <td><span class="status-pill ${pillClass}">${pillText}</span></td>
+            <td>${action ? `<em>${esc(action)}</em>` : "<span style='color:var(--muted)'>—</span>"}</td>
+          </tr>
+        `;
+      }).join("");
+
+      // Firm total row
+      const firmAbove = rwa.firm_rorwa_pct >= hurdle;
+      const firmRow = `
+        <tr class="firm-total">
+          <td>FIRM TOTAL</td>
+          <td class="right">${fmtUsdB(rwa.firm_total_rwa_usd)}</td>
+          <td class="right">${fmtUsdM(rwa.firm_total_revenue_usd)}</td>
+          <td class="right ${firmAbove ? "cell-pos" : "cell-neg"}">${fmtPct(rwa.firm_rorwa_pct)}</td>
+          <td><span class="status-pill ${firmAbove ? "above" : "below"}">${firmAbove ? "ABOVE HURDLE" : "BELOW HURDLE"}</span></td>
+          <td>—</td>
+        </tr>
+      `;
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th class="right">RWA ($B)</th>
+              <th class="right">Revenue ($M)</th>
+              <th class="right">RoRWA%</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>${rows}${firmRow}</tbody>
+        </table>
+      `;
+    }
+
+    /* ── NMD Model Analysis ──────────────────────────────────────────────── */
+    async function loadNMD() {
+      const data = await safeFetch("/api/treasury/nmd");
+      const wrap = document.getElementById("nmd-table-wrap");
+      if (!data || !data.core_duration_profile) {
+        wrap.innerHTML = '<div class="empty-state">No NMD model data.</div>';
+        return;
+      }
+
+      const profile = data.core_duration_profile;
+      const segments = Object.entries(profile);
+
+      // Runoff risk: use 100bps shock runoff pct if available
+      const runoff100 = (data.runoff_scenarios && data.runoff_scenarios.shock_100bps)
+        ? data.runoff_scenarios.shock_100bps.by_segment
+        : {};
+
+      // Friendly name map
+      const nameMap = {
+        "retail_checking": "Retail Checking",
+        "retail_savings": "Retail Savings",
+        "commercial_operating": "Commercial Operating",
+        "commercial_non_operating": "Commercial Non-Operating",
+      };
+
+      const rows = segments.map(function ([name, seg]) {
+        const runoffData = runoff100[name];
+        const runoffPct = runoffData ? runoffData.runoff_pct_of_balance : null;
+        const runoffText = runoffPct != null ? `${runoffPct.toFixed(2)}%` : "—";
+        const runoffClass = runoffPct != null ? (runoffPct > 5 ? "cell-neg" : runoffPct > 3 ? "cell-warn" : "cell-pos") : "";
+        const betaClass = seg.beta > 0.5 ? "cell-neg" : seg.beta > 0.3 ? "cell-warn" : "cell-pos";
+
+        return `
+          <tr>
+            <td>${esc(nameMap[name] || name)}</td>
+            <td class="right">${fmtUsdB(seg.balance_usd)}</td>
+            <td class="right">${fmtPct(seg.core_pct)}</td>
+            <td class="right">${fmtNum(seg.duration_years, 1)}yr</td>
+            <td class="right ${betaClass}">${fmtNum(seg.beta, 2)}</td>
+            <td class="right ${runoffClass}">${runoffText}</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Segment</th>
+              <th class="right">Balance</th>
+              <th class="right">Core %</th>
+              <th class="right">Core Duration</th>
+              <th class="right">Beta</th>
+              <th class="right">Runoff Risk (+100bps)</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      // Summary footer
+      const totalBal = data.total_nmd_balance_usd || 0;
+      const totalCore = data.total_core_usd || 0;
+      const corePct = data.core_pct_of_total || 0;
+      const effDur = data.effective_duration_years || 0;
+
+      setText("nmd-meta", `${segments.length} segments — total NMD book`);
+      document.getElementById("nmd-summary").innerHTML = `
+        Total NMD book: <strong style="color:var(--text)">${fmtUsdB(totalBal)}</strong>
+        &nbsp;|&nbsp; Core: <strong style="color:var(--positive)">${fmtUsdB(totalCore)} (${fmtPct(corePct)})</strong>
+        &nbsp;|&nbsp; Effective duration: <strong style="color:var(--accent)">${effDur.toFixed(2)}yr</strong>
+      `;
+    }
+
+    /* ── Master load ─────────────────────────────────────────────────────── */
+    async function loadAll() {
+      clearError();
+      setText("live-text", "Refreshing...");
+      try {
+        await Promise.all([
+          loadRepricingGap(),
+          loadNIISensitivity(),
+          loadEVESensitivity(),
+          loadHedgeRecommendations(),
+          loadFTPCurve(),
+          loadRAROC(),
+          loadBSOptimization(),
+          loadNMD(),
+        ]);
+      } catch (err) {
+        showError(`Treasury dashboard error: ${err.message}`);
+      } finally {
+        setText("live-text", `Updated ${new Date().toLocaleTimeString()}`);
+      }
+    }
+
+    document.getElementById("refresh-btn").addEventListener("click", loadAll);
+    document.addEventListener("DOMContentLoaded", loadAll);
+    setInterval(loadAll, 30000);
+  </script>
+
+  <script src="/static/shared_nav.js"></script>
+</body>
+</html>

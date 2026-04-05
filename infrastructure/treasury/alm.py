@@ -74,12 +74,23 @@ class BehavioralAssumptions:
     Non-maturity deposit behavioral model.
 
     Demand deposits are contractually repayable on demand but empirically
-    behave as long-dated, stable funding. The behavioral model splits them
-    into a 'core' stable tranche (treated as 5yr funding) and a 'non-core'
-    volatile tranche (reprices within 1yr).
+    behave as long-dated, stable funding. Parameters are now driven by the
+    NMD model; these values are retained as fallback for the repricing schedule.
     """
-    CORE_PCT = 0.70      # 70% of demand deposits → 5yr bucket
-    NON_CORE_PCT = 0.30  # 30% → reprices within 1yr (spread evenly 0-12m)
+    CORE_PCT: float
+    NON_CORE_PCT: float
+
+    def __init__(self) -> None:
+        try:
+            from infrastructure.treasury.nmd_model import nmd_model as _nmd
+            profile = _nmd.get_core_duration_profile()
+            total_bal = sum(v["balance_usd"] for v in profile.values())
+            total_core = sum(v["core_amount_usd"] for v in profile.values())
+            self.CORE_PCT = total_core / total_bal if total_bal else 0.70
+            self.NON_CORE_PCT = 1.0 - self.CORE_PCT
+        except Exception:
+            self.CORE_PCT = 0.70
+            self.NON_CORE_PCT = 0.30
 
 
 def _build_repricing_schedule() -> list[RepricePoint]:
@@ -87,7 +98,7 @@ def _build_repricing_schedule() -> list[RepricePoint]:
     Distribute assets and liabilities across the 7 repricing buckets.
     Applies behavioral assumptions to non-maturity deposits.
     """
-    ba = BehavioralAssumptions()
+    ba = BehavioralAssumptions()   # now reads from NMDModel
 
     # Asset allocation per bucket (index 0-6 → 0-1m, 1-3m, 3-6m, 6-12m, 1-3y, 3-5y, 5y+)
     asset_alloc = [0.0] * 7
@@ -265,16 +276,27 @@ class ALMEngine:
         nii = self.nii_sensitivity()
         eve = self.eve_sensitivity()
         gap = [p.to_dict() for p in self.get_repricing_gap_schedule()]
+        ba = BehavioralAssumptions()
+
+        nmd_analysis: dict = {}
+        try:
+            from infrastructure.treasury.nmd_model import nmd_model as _nmd
+            nmd_analysis = _nmd.get_full_report()
+        except Exception:
+            pass
+
         return {
             "nii_sensitivity": nii,
             "eve_sensitivity": eve,
             "repricing_gap_schedule": gap,
             "behavioral_assumptions": {
-                "core_deposit_pct": BehavioralAssumptions.CORE_PCT * 100,
-                "non_core_deposit_pct": BehavioralAssumptions.NON_CORE_PCT * 100,
+                "core_deposit_pct": round(ba.CORE_PCT * 100, 1),
+                "non_core_deposit_pct": round(ba.NON_CORE_PCT * 100, 1),
                 "core_deposit_assumed_tenor_years": 5.0,
                 "mortgage_prepayment_cpr": 8.0,
+                "source": "NMDModel (segment-level behavioral model)",
             },
+            "nmd_analysis": nmd_analysis,
             "as_of": datetime.utcnow().isoformat(),
         }
 
