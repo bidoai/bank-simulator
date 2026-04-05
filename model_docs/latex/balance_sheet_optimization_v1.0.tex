@@ -170,8 +170,10 @@ binding constraints are:
     Basel III / 12 CFR 3 & Leverage ratio & 3.0\% (SLR) & 7.8\% \\
     Basel III / 12 CFR 249 & LCR & 100\% & 118\% \\
     Basel III / 12 CFR 249 & NSFR & 100\% & 112\% \\
-    Dodd-Frank / 12 CFR 252 & DFAST CET1 floor (adverse) & 4.5\% (regulatory) & 8.7\% trough \\
-    Basel IV / FRTB & FRTB-SA floor & Binding from 2025 & --- \\
+    Dodd-Frank / 12 CFR 252 & SCB / DFAST CET1 floor & 4.5\% + SCB (regulatory) & 8.7\% trough \\
+    Basel IV / FRTB & FRTB-SA floor & Binding from Jan 2026 (US) & --- \\
+    Basel III / 12 CFR 3 & G-SIB surcharge (CET1) & +1.0\%--3.5\% additive & +2.5\% (Bucket 3) \\
+    Basel III / 12 CFR 3 & CCyB (countercyclical) & 0\%--2.5\% (jurisdiction) & 0\% (US current) \\
     Concentration rules & Single-name limit & 25\% of CET1 & Monitored \\
     \bottomrule
   \end{tabular}
@@ -323,7 +325,7 @@ where $\beta^{\text{ASF}}$ and $\beta^{\text{RSF}}$ are Basel-prescribed factors
 High-RSF assets (e.g., loans > 1 year, RSF = 65--85\%) paired with low-ASF
 short-term funding creates NSFR pressure.
 
-\subsection{DFAST Stress Constraint}
+\subsection{DFAST / Stress Capital Buffer Constraint}
 
 The stress test constraint ensures the CET1 ratio survives the 9-quarter
 projection even under the severely adverse scenario:
@@ -334,6 +336,18 @@ projection even under the severely adverse scenario:
 \end{equation}
 
 where $\kappa_{\text{floor}} = 6.5\%$ (internal risk appetite) or 4.5\% (regulatory minimum).
+
+\begin{remark}[Stress Capital Buffer]
+Since 2020 (12 CFR 252.70), the Federal Reserve replaced the old DFAST-based
+capital action restrictions with the \emph{Stress Capital Buffer} (SCB).  The
+SCB equals the maximum decline in the CET1 ratio during the severely adverse
+scenario (subject to a 2.5\% floor), and is added directly to the firm's
+minimum CET1 requirement.  A bank that projects a 3.5\% CET1 drawdown in
+the severe scenario faces a minimum CET1 requirement of $4.5\% + 3.5\% = 8.0\%$
+(before the G-SIB surcharge and CCyB).  Balance sheet optimization must
+therefore target a CET1 level sufficient to pass the SCB test, not merely a
+static 7\% floor.
+\end{remark}
 
 This constraint is forward-looking and non-linear: it couples the current balance
 sheet composition to the modelled stressed loss path over 9 quarters.
@@ -452,21 +466,44 @@ Optimal capital management requires maintaining a buffer above the regulatory
 minimum.  The buffer serves multiple purposes:
 
 \begin{equation}
-  \text{CET1}_{\text{target}} = \kappa_{\text{min}} + B_{\text{CCB}} + B_{\text{DFAST}} + B_{\text{management}}
+  \text{CET1}_{\text{target}} = \kappa_{\text{min}} + B_{\text{CCB}} + B_{\text{G-SIB}}
+    + B_{\text{CCyB}} + B_{\text{SCB}} + B_{\text{management}}
 \end{equation}
 
 \begin{itemize}[noitemsep]
   \item $\kappa_{\text{min}} = 4.5\%$: Basel III minimum
-  \item $B_{\text{CCB}} = 2.5\%$: Capital Conservation Buffer
-  \item $B_{\text{DFAST}}$: buffer between trough (severely adverse) and minimum;
-        at Apex this is $\approx 2.2\%$ (trough 6.7\%, minimum 4.5\%)
+  \item $B_{\text{CCB}} = 2.5\%$: Capital Conservation Buffer (restrictions on
+        distributions trigger below this level)
+  \item $B_{\text{G-SIB}} = 1.0\text{--}3.5\%$: G-SIB surcharge assessed annually
+        (Apex: $+2.5\%$ at Bucket 3 based on systemic importance scores)
+  \item $B_{\text{CCyB}} = 0\text{--}2.5\%$: Countercyclical Capital Buffer, set
+        by each national regulator; currently 0\% in the US but active in
+        several European and Asian jurisdictions; must be monitored for
+        cross-border portfolios
+  \item $B_{\text{SCB}}$: Stress Capital Buffer (max CET1 drawdown in DFAST
+        severely adverse, floor 2.5\%); at Apex $\approx 3.5\%$ based on most
+        recent stress test results
   \item $B_{\text{management}} = 1.0\text{--}1.5\%$: management buffer for
         strategic flexibility, acquisitions, unexpected losses
 \end{itemize}
 
+\begin{remark}[TLAC / MREL]
+G-SIBs face a further constraint on liability structure: the \emph{Total
+Loss-Absorbing Capacity} (TLAC) requirement (12 CFR 252.61--252.65 in the US;
+MREL in the EU).  TLAC requires a minimum of $18\%$ of RWA (or $6.75\%$ of
+leverage exposure) in loss-absorbing instruments (CET1, AT1, Tier 2, and
+eligible long-term senior unsecured debt held at the holding company level).
+This imposes a floor on the long-term unsecured debt stack and directly
+interacts with the funding mix optimization: TLAC-eligible issuance is more
+expensive than secured funding, but it improves resolution feasibility and
+is a hard constraint on the liability optimization problem.
+\end{remark}
+
 A bank holding excess capital beyond these buffers faces pressure from
 shareholders to deploy it efficiently via buybacks, dividends, or accretive
-acquisitions.
+acquisitions.  In practice, the binding constraint often rotates between
+CET1, the leverage ratio (SLR), and TLAC depending on the balance sheet
+composition and the interest rate environment.
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Liquidity Optimization}
@@ -505,8 +542,11 @@ composition constraints:
 \end{equation}
 
 Within Level 1, the bank can substitute between cash (0\% yield), central bank
-reserves (Fed Funds: 5.25\%), and Treasury bills/bonds (4.5\%--4.7\%).
-The optimization shifts toward Treasuries and away from excess cash.
+reserves (IORB: currently $\approx 4.40\%$ as of April 2026 following the
+2024--2025 Fed easing cycle), and Treasury bills/bonds (4.2\%--4.6\% along
+the curve).  The optimization shifts toward Treasuries and away from excess cash.
+Note that IORB rates and Treasury yields are model parameters that must be
+refreshed monthly; the numbers here reflect Q1 2026 conditions.
 
 \subsection{Intraday Liquidity Management}
 
@@ -605,6 +645,26 @@ rate environment but reduces EVE (less benefit from discounting liabilities
 at higher rates).  This is the fundamental ALM trade-off.
 \end{proposition}
 
+\begin{remark}[IRRBB Outlier Test and EVE Risk Appetite]
+Under BCBS 368 (\textit{Interest Rate Risk in the Banking Book}, 2016) and
+its domestic implementations (e.g., the Fed's 2023 IRRBB guidance), supervisors
+apply a standardized \emph{outlier test}: a bank whose EVE declines by more
+than $15\%$ of Tier 1 Capital under a $\pm 200$\,bp parallel shock is flagged
+as an outlier and subject to enhanced supervisory scrutiny or mandatory capital
+add-ons.  Formally:
+
+\begin{equation}
+  |\Delta\text{EVE}|_{\pm 200\text{bp}} \leq 0.15 \times \text{Tier1}
+\end{equation}
+
+At Apex (Tier 1 $\approx \$27B$), this implies an EVE sensitivity limit of
+$\approx \$4.0B$ per $\pm 200$\,bp shock.  The risk appetite band $[D^-, D^+]$
+on the duration gap should be calibrated to keep the bank comfortably inside
+this threshold.  The SVB collapse in March 2023 was in part attributable to
+an EVE sensitivity \emph{exceeding 100\% of equity} under a $+300$\,bp scenario ---
+a failure of this exact governance guardrail.
+\end{remark}
+
 The optimal duration gap maximizes the utility function:
 
 \begin{equation}
@@ -615,17 +675,87 @@ The optimal duration gap maximizes the utility function:
 
 subject to duration gap within the risk appetite band $[D^-, D^+]$.
 
-\subsection{Hedging the Duration Gap}
+\subsection{Non-Maturity Deposit Behavioral Modeling}
+
+Non-maturity deposits (NMDs) — demand deposits, savings accounts, money market
+accounts — are contractually repayable on demand but in practice exhibit far
+longer behavioural maturities.  Modelling these correctly is the single most
+important and most model-risk-intensive assumption in bank ALM.
+
+\paragraph{Deposit Beta.}
+The \emph{deposit beta} $\beta_d$ measures how much a deposit rate moves in
+response to a 100\,bp change in the policy rate:
+
+\begin{equation}
+  \Delta r_{\text{deposit}} = \beta_d \cdot \Delta r_{\text{FF}}
+\end{equation}
+
+Empirically, $\beta_d$ varies by product: checking accounts $\approx 0.10$--$0.25$
+(highly sticky, slow pass-through), savings accounts $\approx 0.30$--$0.55$,
+and retail money market accounts $\approx 0.60$--$0.85$.  A bank with
+predominantly checking-account deposits has a substantial NIM advantage in a
+rising rate environment: liability costs rise only 10--25\% as fast as
+asset yields.
+
+\paragraph{Effective Maturity and Core / Non-Core Classification.}
+For ALM and IRRBB purposes, NMDs are modeled with a \emph{behavioural maturity}
+that reflects historical runoff patterns:
+
+\begin{equation}
+  D_{\text{deposit}}^{\text{effective}} = \sum_{\tau} s_\tau \cdot \tau
+\end{equation}
+
+where $s_\tau$ is the fraction of the deposit balance with modelled maturity
+$\tau$.  The Basel IRRBB guidelines cap the effective maturity at 5 years for
+retail NMDs and 4 years for wholesale NMDs.  Balances are split into:
+\begin{itemize}[noitemsep]
+  \item \textbf{Core (stable) deposits}: the fraction expected to remain on
+        balance sheet even in a stressed environment; ASF factor = 90\%.
+        Modelled with longer effective maturity (3--5 years).
+  \item \textbf{Non-core (volatile) deposits}: rate-sensitive or
+        institutionally-driven balances; ASF factor = 50\%; modelled as
+        effectively short-dated (3--12 months).
+\end{itemize}
+
+\paragraph{Model Risk Warning.}
+NMD behavioral models are among the highest-risk ALM models under SR 11-7.
+The 2022--2023 rate cycle exposed significant over-estimation of deposit
+stickiness at several mid-sized US banks: depositors migrated to higher-yielding
+alternatives (money market funds, T-bills) at a pace not captured in pre-2022
+behavioral models.  Any NMD model must include:
+\begin{enumerate}[noitemsep]
+  \item A stress scenario where deposit beta = 1.0 (full pass-through) to
+        test NII sensitivity in a worst-case repricing scenario.
+  \item A run-off scenario calibrated to 2023 stress events (not just
+        pre-GFC history).
+  \item Annual validation comparing model-predicted deposit rates to realized
+        rates, with explicit back-testing of the beta assumption.
+\end{enumerate}
 
 If the current duration gap exceeds the target, the ALM desk uses interest rate
 swaps to close the gap:
 
 \begin{itemize}[noitemsep]
-  \item \textbf{Pay-fixed receiver IRS:} Converts a floating-rate liability
-        into fixed-rate, increasing effective liability duration.
-  \item \textbf{Receive-fixed payer IRS:} Converts a fixed-rate asset into
-        floating, reducing effective asset duration.
+  \item \textbf{Receive-fixed IRS (``receiver swap''):} The bank receives the
+        fixed leg and pays floating.  Overlaid on a floating-rate liability,
+        this converts the net liability cost to fixed, \emph{increasing}
+        effective liability duration and thereby \emph{reducing} the duration
+        gap.  Used when the bank is over-positioned asset-sensitive and wishes
+        to extend liability duration.
+  \item \textbf{Pay-fixed IRS (``payer swap''):} The bank pays the fixed leg
+        and receives floating.  Overlaid on a fixed-rate asset (e.g., a
+        fixed-rate loan or AFS bond), this converts the net asset return to
+        floating, \emph{reducing} effective asset duration.  Used when the
+        bank is too asset-sensitive and wants to shorten the asset side of
+        the gap.
 \end{itemize}
+
+\begin{remark}[Swap Terminology Clarity]
+``Payer'' and ``receiver'' always refer to the \emph{fixed leg}: a payer IRS
+pays fixed/receives floating; a receiver IRS receives fixed/pays floating.
+This convention is universal in inter-dealer markets and must not be confused
+with the underlying asset or liability being hedged.
+\end{remark}
 
 The notional of swap required to close a duration gap of $\Delta D$ over a
 target balance sheet of $A$:
@@ -659,6 +789,56 @@ A bank with a large MBS portfolio must hedge convexity separately using:
   \item CMS caps/floors
   \item Callable bond portfolios to offset MBS negative convexity
 \end{itemize}
+
+\subsection{AFS vs.\ HTM Classification and AOCI Risk}
+
+The accounting classification of the securities portfolio has direct
+consequences for capital management:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Available-for-Sale (AFS):} Marked to market through
+        \emph{Other Comprehensive Income} (OCI).  Unrealized losses
+        \emph{reduce} AOCI and therefore reduce CET1 capital (for banks
+        subject to AOCI opt-out removal or those that have not opted out
+        under 12 CFR 3.22(b)).  AFS assets have high HQLA eligibility.
+  \item \textbf{Held-to-Maturity (HTM):} Carried at amortized cost; unrealized
+        losses do not flow through AOCI or reduce CET1.  However, the intent
+        to hold to maturity must be demonstrable --- reclassification ``taints''
+        the entire HTM portfolio.  HTM assets are \emph{not} HQLA-eligible.
+\end{itemize}
+
+\paragraph{AOCI Capital Risk.}
+The 2022--2023 rate rise created a systemic AOCI problem: banks that had
+accumulated large AFS securities portfolios during the ZIRP era suffered
+mark-to-market losses that eroded CET1 ratios.  The canonical failure:
+Silicon Valley Bank held \$91B of AFS/HTM securities against a
+\$173B balance sheet; a +200\,bp rate move generated unrealized losses
+exceeding its equity.  The integrated CET1 sensitivity to a rate shock:
+
+\begin{equation}
+  \Delta\text{CET1} \approx -D_{\text{securities}} \cdot A_{\text{securities}} \cdot \Delta r
+                           + \text{NII benefit} \cdot \text{PV multiplier}
+\end{equation}
+
+The AOCI effect dominates in the short run; the NII benefit accrues over
+multiple years.  This is the \emph{duration trap} reverse stress scenario
+identified in Section~8.
+
+\paragraph{Practical Guidance.}
+An experienced balance sheet manager will:
+\begin{enumerate}[noitemsep]
+  \item Monitor the aggregate unrealized gain/loss in the AFS portfolio and
+        the implied CET1 impact daily (not just at quarter-end).
+  \item Ladder the securities portfolio to limit duration concentration ---
+        avoid excessive accumulation of 10-year Treasuries or Agency MBS
+        funded by short-dated liabilities.
+  \item Consider HTM classification only for assets genuinely intended to be
+        held to maturity, with documented liquidity-independent funding to
+        back those positions.
+  \item Ensure the ALM committee receives a regular report on the ``AOCI
+        CET1 bridge'' (unrealized P\&L versus capital buffers) as a standing
+        agenda item.
+\end{enumerate}
 
 % ══════════════════════════════════════════════════════════════════════════════
 \section{Fund Transfer Pricing (FTP)}
@@ -837,9 +1017,15 @@ Key reverse stress scenarios:
   \item \textbf{Credit concentration}: a sector-concentrated credit shock
         (e.g., CRE collapse of -55\%) combined with deposit run causes simultaneous
         asset loss and liability instability.
-  \item \textbf{Duration trap}: a sharp rate rise (+300bps rapidly) reduces
-        EVE to near-zero while simultaneously increasing funding costs on
-        short-dated liabilities (SVB-type scenario).
+  \item \textbf{Duration trap / AOCI spiral}: a sharp rate rise (+300bps
+        rapidly) reduces both EVE and AFS unrealized values; the AFS mark
+        flows through AOCI, directly eroding CET1.  If CET1 approaches the
+        SCB-adjusted floor, management credibility is damaged and deposit
+        outflows accelerate (the exact SVB 2023 failure mechanism).  The
+        key insight: the duration trap is a \emph{solvency-then-liquidity}
+        event, not purely a liquidity event.  Reverse stress must therefore
+        model the second-round deposit outflow triggered by a visible capital
+        deterioration.
   \item \textbf{Liquidity-solvency spiral}: an LCR breach forces fire-sale
         of HQLA, which depresses prices of the HQLA assets themselves (pro-cyclical).
 \end{enumerate}
@@ -1062,6 +1248,37 @@ of $\$45M \times 5.25\% = \$2.4M/\text{yr}$ per portfolio of this size.
 For a large derivatives book (\$500B notional), clearing-driven IM reduction
 can generate \$50--150M/yr in FVA/MVA savings.
 
+\subsubsection{Securitization and Synthetic Risk Transfer}
+
+Loan securitization (ABS, CLO, RMBS, CMBS) and synthetic risk transfer (SRT)
+transactions are powerful balance sheet optimization tools that reduce both
+capital consumption and balance sheet size:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Traditional securitization (true-sale):} Loans are transferred
+        to a special purpose vehicle (SPV); if derecognition criteria are met
+        (SFAS 166/167, ASC 860), assets come off balance sheet, reducing both
+        RWA and total leverage exposure.  The bank retains a first-loss piece
+        (``retained interest'') which absorbs credit risk, but the senior
+        tranches are placed with third-party investors.
+  \item \textbf{Synthetic SRT:} The bank retains the loans on balance sheet but
+        purchases credit protection (CDS or funded guarantee) on the mezzanine
+        tranche.  Under Basel III SEC-SA or the SEC-IRBA framework, this can
+        reduce RWA by 40--70\% on the reference portfolio.
+\end{itemize}
+
+\textbf{Example --- CLO securitization of \$5B leveraged loan portfolio:}
+\begin{align}
+  \text{Pre-securitization RWA} &= 100\% \times \$5B = \$5B \\
+  \text{Retained first-loss (5\%)} &= \$250M \text{ at 1250\% RWA} = \$3.1B \text{ RWA} \\
+  \text{RWA reduction} &= \$5B - \$3.1B = \$1.9B \\
+  \text{CET1 freed} &= 7\% \times \$1.9B = \$133M
+\end{align}
+
+The freed CET1, deployed at RAROC 15\%, generates \$20M/yr of incremental
+returns.  SRT transactions typically cost 3--5\% of the protected tranche
+notional in guarantee fees, so the economics must be evaluated on a net basis.
+
 \subsubsection{HQLA Yield Optimization}
 
 Within the LCR/NSFR constraints, optimizing the HQLA portfolio composition
@@ -1086,10 +1303,12 @@ no reduction in LCR compliance.
     Optimization Lever & Annual P\&L Impact & Key Model / Engine \\
     \midrule
     HQLA yield optimization & +\$2.1B & ALM Engine \\
-    NII duration positioning (\$+200bps scenario) & +\$6.8B & ALM Engine \\
+    NII duration positioning (+200bps scenario) & +\$6.8B (scenario-dep.) & ALM Engine \\
     Clearing-driven IM reduction (MVA/FVA saving) & +\$50--150M & SIMM / XVA \\
     KVA pricing into new derivatives & +\$100--250M & XVA Suite \\
     CET1 release via lower-RWA assets & +\$200--500M (redeployed) & Capital Engine \\
+    Securitization / SRT (CET1 redeployment) & +\$100--300M & Capital Engine \\
+    AOCI management (AFS/HTM laddering) & Avoid \$1--3B AOCI capital erosion & ALM Engine \\
     Loan pricing discipline (RAROC floor) & Prevents erosion of 50--100bps NIM & RAROC \\
     FTP governance (correct term premium) & Eliminates \$0.5--1.5B cross-subsidy & FTP Engine \\
     \bottomrule
@@ -1163,32 +1382,61 @@ balance sheet transactions above materiality thresholds.
 Balance sheet optimization is the highest-leverage quantitative discipline
 in banking.  Its scope encompasses capital structure, liquidity management,
 interest rate risk, pricing discipline, and regulatory strategy.  It is not
-a single model or a single optimization problem — it is an integrated system
+a single model or a single optimization problem --- it is an integrated system
 of models, calculators, governance processes, and strategic decisions that
 operates continuously over the life of the bank.
 
 The key insight is that the regulatory constraints (capital ratios, LCR, NSFR,
-DFAST) are not merely compliance requirements — they are \emph{priced inputs}
+SCB, TLAC) are not merely compliance requirements --- they are \emph{priced inputs}
 to the optimization.  A bank that treats them as binding constraints to be
 minimally satisfied leaves significant value on the table.  A bank that treats
 them as the efficient frontier of the feasible set, and optimizes within it,
 can generate several hundred basis points of incremental RORWA relative to
 peers.
 
-At Apex Global Bank, the infrastructure described in this document — the ALM
-engine, FTP engine, DFAST engine, XVA suite, SIMM collateral engine, and
-regulatory capital engine — provides the quantitative foundation for this
-optimization program.  The SR 11-7 model governance framework ensures that
-the outputs of these models are reliable, independently validated, and used
-only within their authorized scope.
+\paragraph{Lessons from the 2022--2023 Cycle.}
+The rate rise of 2022--2023 and the subsequent regional bank failures of 2023
+provided a stark reminder of the interconnection between the balance sheet
+optimization dimensions:
+\begin{itemize}[noitemsep]
+  \item \textbf{AOCI is capital}: unrealized losses in the securities portfolio
+        are real solvency risk, not just accounting noise.
+  \item \textbf{Deposit beta assumptions are fragile}: behavioral models built
+        on pre-2015 data underestimated the speed of deposit migration in a
+        digital banking environment.
+  \item \textbf{Duration mismatch is fatal at the extremes}: the NIM benefit
+        of running a positive duration gap does not compensate for the
+        existential risk of an AOCI-driven CET1 breach.
+  \item \textbf{Concentration in the liability mix amplifies failure}: banks
+        with concentrated, rate-sensitive, non-insured depositor bases are
+        inherently more fragile than those with a diversified, sticky retail
+        deposit franchise.
+\end{itemize}
 
+\paragraph{Open Priorities.}
+At Apex Global Bank, the near-term balance sheet optimization priorities are:
+\begin{enumerate}[noitemsep]
+  \item Wire \texttt{CollateralEngine} balances into the CVA exposure
+        calculation (TODO-025) to ensure XVA reflects post-collateral exposure.
+  \item Build a deposit beta dashboard that monitors realized vs.\ model beta
+        monthly and triggers an ALM committee review if the spread exceeds 15\,bp.
+  \item Implement AOCI sensitivity reporting into the capital dashboard with
+        daily granularity, including a ``capital at risk from AOCI'' metric.
+  \item Evaluate the TLAC eligible debt stack and model the issuance cost
+        trade-off between callable senior preferred and bail-in-able Tier 2.
+\end{enumerate}
+
+\paragraph{Dynamic Optimization: The Next Frontier.}
 The next frontier is dynamic balance sheet optimization: replacing the current
 static quarterly cycle with a continuous, model-driven optimization that
 updates recommendations in real-time as market conditions change.  This requires
 AAD (Adjoint Algorithmic Differentiation) sensitivities across all models,
 GPU-accelerated Monte Carlo, and reinforcement learning for the hedging
-decision layer — capabilities that are commercially available and being
-deployed at G-SIBs today.
+decision layer --- capabilities that are commercially available and being
+deployed at G-SIBs today.  The Apex infrastructure is positioned to support
+this transition, with the real-time market data feed, event-log audit trail,
+and WebSocket-enabled dashboards providing the data backbone for a real-time
+optimization loop.
 
 % ── Bibliography ──────────────────────────────────────────────────────────────
 \newpage
