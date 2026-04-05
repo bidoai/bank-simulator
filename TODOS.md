@@ -188,13 +188,15 @@ All three added to registry.json.
 
 ## Phase 3 — Product Expansion
 
-### TODO-029: Securities Finance Lifecycle
+### TODO-029: Securities Finance Lifecycle ✅ DONE
 **What:** Extend the seeded securities-finance desk into a live lifecycle: repo ladders, margin events, stock-borrow availability, and client term repricing.
-**Context:** `infrastructure/securities_finance/service.py` and `dashboard/securities_finance.html` establish the first operating surface. Next step is event-driven financing state rather than static seeded metrics.
+**Context:** `infrastructure/securities_finance/lifecycle.py` — `RepoLadder` (4-tenor O/N/1W/1M/3M repo book with live FRED rate pricing, repricing trigger on >2bps move), `MarginEngine` (4 counterparty accounts with daily VM lifecycle, margin call simulation via `POST /api/securities-finance/margin/shock`). New endpoints: `GET /api/securities-finance/repo-ladder`, `POST /api/securities-finance/repo-ladder/reprice`, `GET /api/securities-finance/margin`, `POST /api/securities-finance/margin/shock`.
+**Completed:** v0.3.1.0
 
-### TODO-030: Agency MBS Analytics Engine
+### TODO-030: Agency MBS Analytics Engine ✅ DONE
 **What:** Add a true agency MBS pricing engine: rate paths, prepayment model, pathwise cash flows, OAS, effective duration, and convexity.
-**Context:** `infrastructure/securitized_products/service.py` and `dashboard/securitized.html` currently provide the desk shell and analytics surface. Next step is replacing seeded metrics with model-driven MBS outputs.
+**Context:** `infrastructure/securitized_products/mbs_analytics.py` — PSA prepayment model (100% PSA baseline, speed-adjustable), Ho-Lee short-rate paths (100 paths), pathwise cash flow generator, OAS bisection solver (±50bp effective duration/convexity bump-and-reprice), 7-scenario analysis (±50/100/200bps). `GET /api/securitized/mbs-analytics` returns live OAS + effective duration + convexity for FNMA 5.5 TBA and Specified Pool LLB 5.0.
+**Completed:** v0.3.1.0
 
 ---
 *Updated by /plan-eng-review on 2026-03-23*

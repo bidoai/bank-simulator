@@ -3,6 +3,17 @@
 All notable changes to Apex Global Bank Simulator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1.0] - 2026-04-05
+
+### Added
+- **Agency MBS Analytics Engine**: PSA prepayment model (100% PSA baseline, adjustable speed), Ho-Lee short-rate paths (100 paths), OAS bisection solver, effective duration + convexity (bump-and-reprice ±50bps), 7-scenario analysis (±50/100/200bps). `GET /api/securitized/mbs-analytics` (`infrastructure/securitized_products/mbs_analytics.py`)
+- **Securities Finance Lifecycle**: `RepoLadder` with 4-tenor book priced from live FRED rates, repricing trigger on >2bps move; `MarginEngine` with 4-counterparty VM lifecycle and shock simulation. New endpoints: repo-ladder, reprice, margin, margin/shock (`infrastructure/securities_finance/lifecycle.py`)
+- **IMA Backtesting Endpoints**: `POST /api/risk/backtesting/observation` records daily P&L vs VaR; `GET /api/risk/ima-status` returns IMA approval status (GREEN/YELLOW/RED) with SA revert recommendation on RED zone (Basel 2.5 MAR99)
+- **OMS Concurrency Hardening**: `asyncio.Lock` serialises concurrent `submit_order` calls; `oms.submit_order` offloaded to `run_in_executor`; `_persist_trade` awaited (no longer fire-and-forget)
+
+### Fixed
+- MBS analytics `get_pipeline()` now shows Agency MBS OAS engine as LIVE
+
 ## [0.3.0.0] - 2026-04-05
 
 ### Added

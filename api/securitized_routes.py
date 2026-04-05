@@ -31,3 +31,9 @@ def stress() -> dict:
 @router.get("/pipeline")
 def pipeline() -> dict:
     return securitized_products_service.get_pipeline()
+
+
+@router.get("/mbs-analytics")
+def mbs_analytics(r0: float | None = None) -> list[dict]:
+    """Live agency MBS analytics: OAS, effective duration, convexity, PSA cash flows, 7-scenario analysis."""
+    return securitized_products_service.get_mbs_analytics(r0)
