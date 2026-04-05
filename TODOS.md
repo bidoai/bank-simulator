@@ -146,6 +146,39 @@
 
 ---
 
+## v0.4.x Live Market Data Integrations (feature/v04-integration-stress-pnl-attribution)
+
+### TODO-041: Yahoo Finance Live Price Seeding ✅ DONE
+**What:** At startup, fetch live prices for all 10/11 simulation tickers from Yahoo Finance and overwrite GBM seed prices.
+**Context:** `infrastructure/market_data/live_seed.py` — `fetch_live_seeds()` maps YF symbols to internal tickers (CL=F → CL1, EURUSD=X → EURUSD, ^TNX → US10Y, ^IRX → _3M). Bond yields converted to prices via first-order DV01 (`P = 100 - ModDur × (y - c)`). US2Y derived from 3M bill × 1.06 proxy. AAPL_CALL_200 from live spot (intrinsic + time value). `MarketDataFeed._apply_live_seeds()` called in `__init__` before GBM starts. Added `yfinance>=0.2.54` to requirements.txt.
+**Completed:** 2026-04-05
+
+### TODO-042: FRED SOFR/UST Yield Curve Integration ✅ DONE
+**What:** Fetch live 12-tenor SOFR/UST yield curve from FRED public CSV endpoint; overwrite `SOFR_OIS` dict in `ftp_dynamic.py` at startup.
+**Context:** `infrastructure/market_data/fred_curve.py` — `fetch_live_curve()` hits FRED for SOFR, DTB4WK, DTB3, DTB6, DGS1–DGS30. Parses CSV backward to find last non-"." value. `ftp_dynamic._load_live_curve()` called at module import; overwrites `SOFR_OIS` in-place so existing `DynamicFTPEngine` instances pick up live values.
+**Completed:** 2026-04-05
+
+### TODO-043: FRED Credit Spreads + Dynamic Risk Calibration ✅ DONE
+**What:** Fetch ICE BofA OAS indices (AAA/AA/A/BBB/HY) from FRED; wire live spreads into FTP engine, stressed VaR calibration, and LCR stress haircuts.
+**Context:** `fred_curve.fetch_credit_spreads()` fetches BAMLC0A1CAAA/BAMLC0A2CAA/BAMLC0A3CA/BAMLC0A4CBBB/BAMLH0A0HYM2. FRED reports in percent; ×100 for bps. Three downstream effects:
+- `ftp_dynamic._load_live_credit_spreads()`: scales `BANK_SPREAD_BPS` by (AA_OAS / 35bps_historical), capped [0.5×, 3×]
+- `stressed_var._calibrate_credit_vol()`: scales `_NORMAL_VOLS["IG_CDX"]` by (BBB_OAS / 100bps), cascades to stressed vol
+- `lcr.LCREngine.calculate_stress()`: widens haircut +5% when BBB OAS > 200bps (market-wide/combined scenarios)
+Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
+**Completed:** 2026-04-05
+
+### TODO-044: DFAST 2025 Official Scenario Import + Live FRED Calibration ✅ DONE
+**What:** Replace hardcoded DFAST scenario parameters with official 2025 Fed Supervisory Scenario values, calibrated to live FRED macro (UNRATE, GDP, 3M T-bill, S&P 500).
+**Context:** `infrastructure/market_data/dfast_scenarios.py` — official 2025 parameters: ur peaks (4.1/6.4/10.0%), cumulative GDP (+5%/-1.9%/-8.2%), equity shocks (+3%/-15%/-55%), rate deltas (−30/−280/−350bps). `fetch_macro_starting_point()` fetches UNRATE, A191RL1Q225SBEA, SP500, DTB3 from FRED. `build_scenarios()` expresses ur_delta relative to live UNRATE. `dfast_engine._load_official_scenarios()` replaces hardcoded dict; fallback retained for FRED outage. `GET /api/stress/dfast/meta` returns active params + source.
+**Completed:** 2026-04-05
+
+### TODO-045: User Manual ✅ DONE
+**What:** Comprehensive narrative reference document explaining the complete flow between all systems.
+**Context:** `USER_MANUAL.md` — ~3,200 words, 12 sections covering capital stack, live market data startup sequence, 9-step order lifecycle, risk management (VaR/correlation/limits/sVaR/FRTB/SA-CCR), collateral & XVA pipeline, treasury & ALM, liquidity (LCR 64.8% intentional breach explained), DFAST live calibration, model governance (SR 11-7, 17 models), boardroom (14 agents), dashboard reference table (11 dashboards), and complete system flow ASCII diagram.
+**Completed:** 2026-04-05
+
+---
+
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
 - Production cloud deployment (pre-v1)
