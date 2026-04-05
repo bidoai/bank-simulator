@@ -8,6 +8,16 @@ from infrastructure.stress.dfast_engine import dfast_engine, SCENARIOS
 router = APIRouter(prefix="/stress", tags=["stress"])
 
 
+@router.get("/dfast/meta")
+def get_dfast_meta() -> dict:
+    """Return the active scenario parameters and their calibration source."""
+    return {
+        "scenarios": SCENARIOS,
+        "publication": "Federal Reserve Board — 2025 Supervisory Scenarios (Feb 5, 2025)",
+        "horizon_quarters": 9,
+    }
+
+
 @router.get("/dfast")
 def get_dfast_all() -> dict:
     """Run all three DFAST scenarios (baseline, adverse, severely_adverse) × 9 quarters."""
