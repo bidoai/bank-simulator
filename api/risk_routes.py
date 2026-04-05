@@ -155,6 +155,77 @@ async def var_backtesting_history(desk: str = "FIRM", days: int = 250):
     }
 
 
+@router.post("/backtesting/observation")
+async def record_backtest_observation(body: dict):
+    """Record a daily P&L observation against VaR forecast.
+
+    Body: { trade_date, var_99, var_95, realized_pnl, desk? }
+    """
+    from infrastructure.risk.var_backtest_store import backtest_store
+    trade_date = body.get("trade_date")
+    var_99 = float(body.get("var_99", 0))
+    var_95 = float(body.get("var_95", var_99 * 0.72))
+    realized_pnl = float(body.get("realized_pnl", 0))
+    desk = str(body.get("desk", "FIRM"))
+    if not trade_date:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="trade_date required (YYYY-MM-DD)")
+    backtest_store.add_observation(trade_date, var_99, var_95, realized_pnl, desk)
+    exc = backtest_store.get_exception_count(desk, 250)
+    zone = backtest_store.get_traffic_light_zone(desk)
+    return {
+        "recorded": True,
+        "trade_date": trade_date,
+        "desk": desk,
+        "exception_99": 1 if realized_pnl < -var_99 else 0,
+        "exception_count_250d": exc,
+        "zone": zone,
+    }
+
+
+@router.get("/ima-status")
+async def ima_status(desk: str = "FIRM"):
+    """IMA approval status — GREEN/YELLOW stays on IMA; RED triggers SA revert.
+
+    Basel 2.5 / FRTB: 10+ exceptions in 250-day window → supervisor may require
+    reversion to Standardised Approach for affected desks.
+    """
+    from infrastructure.risk.var_backtest_store import backtest_store
+    exc = backtest_store.get_exception_count(desk, 250)
+    zone = backtest_store.get_traffic_light_zone(desk)
+    k = backtest_store.get_capital_multiplier(desk)
+
+    if zone == "RED":
+        approval = "IMA_BREACH"
+        recommendation = (
+            "10+ exceptions in 250-day window. Supervisor review required. "
+            "Desk may be required to revert to Standardised Approach (SA) for "
+            "regulatory capital calculation until backtesting is remediated."
+        )
+    elif zone == "YELLOW":
+        approval = "IMA_APPROVED_WITH_PENALTY"
+        recommendation = (
+            f"{exc} exceptions in 250-day window. Capital multiplier k elevated to {k:.2f}. "
+            "Internal model review recommended. Monitor closely — 10 exceptions triggers SA revert."
+        )
+    else:
+        approval = "IMA_APPROVED"
+        recommendation = (
+            f"{exc} exceptions in 250-day window. Green zone. Capital multiplier k = {k:.2f}."
+        )
+
+    return {
+        "desk": desk,
+        "approval_status": approval,
+        "exception_count_250d": exc,
+        "traffic_light_zone": zone,
+        "capital_multiplier_k": k,
+        "sa_revert_required": zone == "RED",
+        "recommendation": recommendation,
+        "regulatory_reference": "Basel 2.5 MAR99 / FRTB MAR99.6",
+    }
+
+
 @router.get("/stressed-var")
 async def stressed_var_report():
     """Stressed VaR report — Basel 2.5 sVaR calibrated to 2008-09 crisis."""

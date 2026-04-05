@@ -43,9 +43,10 @@
 **Context:** `infrastructure/trading/greeks.py` — `GreeksCalculator` with BSM for options, DV01 for bonds/IRS, delta-1 for equities/FX. Aggregates per-book and portfolio. Exposed via `GET /api/trading/greeks` (live from real positions).
 **Completed:** v0.2.0.0
 
-### TODO-012: Stressed VaR + FRTB Backtesting — P2
-**What:** Historical market data store for 2007-2009 GFC and 2020 COVID windows. Continuous backtesting runner to track IMA exceptions (3 in 250 days triggers revert to Standardised Approach).
-**Effort:** M | **Priority:** P2 | **Depends on:** market data feed
+### TODO-012: Stressed VaR + FRTB Backtesting ✅ DONE
+**What:** Historical market data store for 2007-2009 GFC and 2020 COVID windows. Continuous backtesting runner to track IMA exceptions.
+**Context:** `infrastructure/risk/var_backtest_store.py` — SQLite-backed 252-day seeded history, traffic-light zone (Green 0-4, Yellow 5-9, Red 10+ exceptions), capital multiplier k. `infrastructure/risk/stressed_var.py` — sVaR calibrated to 2008-09 crisis (3.5× equity vol, 4× credit spread vol). New endpoints: `POST /api/risk/backtesting/observation` (record daily P&L vs VaR), `GET /api/risk/ima-status` (IMA approval status — RED zone triggers SA revert recommendation, ref Basel 2.5 MAR99).
+**Completed:** v0.3.1.0
 
 ### TODO-013: Correlation Regime Model ✅ DONE
 **What:** Two correlation matrices (normal / stress regime) with HMM-proxy regime detection from realized cross-asset vol.
@@ -119,10 +120,10 @@
 **What:** `infrastructure/stress/dfast_engine.py` — 9-quarter CET1 projection under baseline/adverse/severely_adverse scenarios. `GET /api/stress/dfast` and `/api/stress/dfast/{scenario}`. DFAST panel in `dashboard/scenarios.html` with Plotly CET1 chart + Basel 4.5% minimum line.
 **Completed:** v0.3.0.0
 
-### TODO-026: OMS Hardening (concurrency, event loop, pre-trade consistency) — P3
-**What:** Harden the OMS for concurrent use: add asyncio.Lock around `submit_order`, offload `risk_service.run_snapshot()` to a thread-pool executor (blocks event loop ~100ms), make `_persist_trade` non-fire-and-forget, align pre-trade (parametric VaR) and post-trade (Monte Carlo VaR) methodologies.
-**Why:** Adversarial review identified these as latent issues. For a single-user demo they don't matter; for multi-user or production they would cause data corruption.
-**Effort:** S (CC: ~15 min) | **Priority:** P3 | **Depends on:** nothing
+### TODO-026: OMS Hardening ✅ DONE
+**What:** Harden the OMS for concurrent use.
+**Context:** `api/oms_routes.py` — module-level `_ORDER_LOCK = asyncio.Lock()` serialises concurrent `submit_order` calls. `oms.submit_order()` offloaded to `run_in_executor` so Monte Carlo risk snapshot (~100ms) no longer blocks the event loop. `_persist_trade` now awaited (not fire-and-forget) so SQLite write failures surface. Pre-trade (parametric VaR) vs post-trade (Monte Carlo) methodology mismatch remains documented in `infrastructure/trading/oms.py` — methodology alignment is P4 work.
+**Completed:** v0.3.1.0
 
 ### TODO-027: Treasury Route Repair + State Ownership Hardening ✅ DONE
 **What:** Fix all three treasury route failures and enforce single PositionManager ownership.
