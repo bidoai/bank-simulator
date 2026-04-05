@@ -452,13 +452,36 @@ The capital ratio under SA vs.\ IMA:
 \end{equation}
 
 \begin{equation}
-  \text{RWA}^{\text{IMA}}(k) = 12.5 \cdot \left[ \max\left(\text{VaR}_t, \bar{k} \cdot \overline{\text{VaR}}_{60d}\right)
-                                         + \max\left(\text{SVaR}_t, \bar{k} \cdot \overline{\text{SVaR}}_{60d}\right) \right]
+  \text{RWA}^{\text{FRTB\text{-}IMA}}(k) = 12.5 \cdot \left[
+    \text{IMCC}(k) + \text{SES}(k) + \text{DRC}(k)
+  \right]
 \end{equation}
 
-For a well-diversified trading book, $\text{RWA}^{\text{IMA}} < \text{RWA}^{\text{SA}}$ by
-30--60\%, representing a significant capital saving that justifies the cost of
-IMA model development and validation.
+where under the FRTB-IMA framework (effective US: Jan 2026):
+\begin{itemize}[noitemsep]
+  \item $\text{IMCC}(k)$: Internal Models Capital Charge, based on
+        97.5\% Expected Shortfall (ES) with liquidity-horizon scaling
+        ($\sqrt{\text{LH}/10}$ for each risk class), replacing the
+        old 99\% 10-day VaR + Stressed VaR structure of Basel 2.5
+  \item $\text{SES}(k)$: Stressed Expected Shortfall for
+        Non-Modellable Risk Factors (NMRFs) --- factors with fewer
+        than 24 observations per year must use stressed scenarios
+        rather than modelled distributions
+  \item $\text{DRC}(k)$: Default Risk Charge (replaces Incremental
+        Risk Charge), computed via a one-year 99.9\% simulation of
+        jump-to-default for credit-sensitive positions
+\end{itemize}
+
+\begin{remark}[Basel 2.5 vs.\ FRTB-IMA]
+The prior regime (Basel 2.5, still operative until Jan 2026 in the US) used
+$\text{RWA}^{\text{IMA}} = 12.5 \cdot [\max(\text{VaR}_t, \bar{k}\cdot\overline{\text{VaR}}_{60d})
++ \max(\text{SVaR}_t, \bar{k}\cdot\overline{\text{SVaR}}_{60d})]$.
+Under FRTB, SVaR is eliminated; ES replaces VaR; and liquidity horizons
+(10--120 trading days by risk class) replace the uniform 10-day horizon.
+For a well-diversified trading book, $\text{RWA}^{\text{FRTB\text{-}IMA}} < \text{RWA}^{\text{SA}}$ by
+20--50\%, somewhat lower than the 30--60\% saving under Basel 2.5 because
+the FRTB-SA floor (72.5\% output floor) limits the benefit.
+\end{remark}
 
 \subsection{Capital Buffer Tiering}
 
@@ -591,8 +614,11 @@ for a $T$-year asset satisfies:
   \tau^* = \argmin_\tau \left[ r^L(\tau) + \text{Rollover\_Risk}(\tau, T) \right]
 \end{equation}
 
-where $\text{Rollover\_Risk}(\tau, T) = \sigma_r^2 \cdot (T - \tau)$ is the
-expected cost of refunding if short-term rates rise.
+where $\text{Rollover\_Risk}(\tau, T) = \frac{1}{2}\sigma_r^2 \cdot (T - \tau)$
+is a first-order approximation of the expected refunding cost premium if
+short-term rates drift upward, with $\sigma_r$ the annualised rate volatility
+(units: \%/yr) and $(T-\tau)$ the remaining tenor gap in years.  The
+$\frac{1}{2}$ factor arises from the Ito correction for the expected rate path.
 \end{definition}
 
 In a normal upward-sloping curve, short-term funding is cheaper but
@@ -605,8 +631,8 @@ funding may be cheaper even without considering rollover risk.
 
 \subsection{NII Sensitivity and the Repricing Gap}
 
-The repricing gap model described in Section~2 provides a
-first-order linear approximation of NII sensitivity:
+The repricing gap model provides a first-order linear approximation of
+NII sensitivity:
 
 \begin{equation}
   \Delta\text{NII} \approx \text{RSA}^{12m} \cdot \Delta r - \text{RSL}^{12m} \cdot \Delta r
@@ -1132,8 +1158,9 @@ outflow waterfall.  Intraday liquidity utilization vs.\ credit line.
 \paragraph{3.\ ALM / Rate Risk Dashboard} NII sensitivity bar chart
 ($\pm$100bps, $\pm$200bps, instantaneous).  EVE sensitivity.  Repricing gap
 schedule (7 buckets, asset vs.\ liability bars).  Duration gap trend vs.\
-risk appetite band.  Warning indicators (SVB-style flag if EVE sensitivity
-exceeds --15\%).
+risk appetite band.  Warning indicators (SVB-style flag if $|\Delta\text{EVE}|$
+under $\pm 200$\,bp exceeds 15\% of Tier 1 Capital --- the IRRBB outlier
+threshold per BCBS 368).
 
 \paragraph{4.\ DFAST / Stress Dashboard} 9-quarter CET1 trajectory under all
 3 scenarios (Plotly chart with min CET1 floor and internal risk appetite band).
