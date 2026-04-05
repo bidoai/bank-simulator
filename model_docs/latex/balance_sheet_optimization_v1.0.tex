@@ -1571,6 +1571,445 @@ decision layer --- capabilities commercially available and being deployed
 at G-SIBs today.  The banks that build this capability next will have
 a structural advantage in the decade ahead.
 
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
+\section*{Glossary of Abbreviations}
+\addcontentsline{toc}{section}{Glossary of Abbreviations}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{3.2cm} p{10.8cm}}
+  \toprule
+  \textbf{Abbreviation} & \textbf{Full Term and Brief Description} \\
+  \midrule
+  \endhead
+  \midrule
+  \multicolumn{2}{r}{\small\itshape continued on next page} \\
+  \endfoot
+  \bottomrule
+  \endlastfoot
+
+  AAD   & \textbf{Adjoint Algorithmic Differentiation.}
+          A mathematical technique for computing derivatives of model outputs
+          with respect to all inputs simultaneously.  Used in XVA and FRTB for
+          computing ``Greeks'' (sensitivities) at GPU speed. \\[4pt]
+
+  AFS   & \textbf{Available for Sale.}
+          A balance sheet classification for securities the bank intends to
+          hold but may sell before maturity.  Unrealised gains and losses flow
+          through Other Comprehensive Income (OCI). \\[4pt]
+
+  ALM   & \textbf{Asset-Liability Management.}
+          The discipline of managing the interest rate sensitivity and
+          liquidity profile of the entire balance sheet.  Overseen by the
+          ALM Committee. \\[4pt]
+
+  AML   & \textbf{Anti-Money Laundering.}
+          Regulatory framework and internal controls designed to detect and
+          report suspicious financial activity.  Governed by the Bank Secrecy
+          Act and FinCEN guidance in the US. \\[4pt]
+
+  ASF   & \textbf{Available Stable Funding.}
+          The numerator of the NSFR.  Liabilities weighted by their stability
+          over a one-year stress horizon --- long-term debt receives a high
+          ASF factor; overnight funding receives a low one. \\[4pt]
+
+  BCBS  & \textbf{Basel Committee on Banking Supervision.}
+          The international standard-setter for bank prudential regulation,
+          hosted at the Bank for International Settlements (BIS) in Basel,
+          Switzerland. \\[4pt]
+
+  CAPM  & \textbf{Capital Asset Pricing Model.}
+          A finance model that relates expected return to systematic risk
+          (beta).  Used to estimate the bank's cost of equity for the RAROC
+          hurdle rate calculation. \\[4pt]
+
+  CCB   & \textbf{Capital Conservation Buffer.}
+          A 2.5\% CET1 buffer above the 4.5\% minimum.  Breaching it triggers
+          restrictions on dividends and buybacks.  Together they set the
+          effective CET1 floor at 7\%. \\[4pt]
+
+  CCP   & \textbf{Central Clearing Counterparty.}
+          An exchange-like intermediary (e.g.\ LCH, CME) that sits between
+          the two sides of a derivatives trade, guaranteeing settlement and
+          netting obligations.  Attracts lower initial margin than bilateral
+          trades. \\[4pt]
+
+  CET1  & \textbf{Common Equity Tier 1.}
+          The highest-quality form of bank capital: ordinary shares plus
+          retained earnings minus regulatory deductions.  The headline capital
+          ratio reported by banks and scrutinised by regulators. \\[4pt]
+
+  CFO   & \textbf{Chief Financial Officer.}
+          The senior executive responsible for the bank's financial planning,
+          reporting, and capital management. \\[4pt]
+
+  CFP   & \textbf{Contingency Funding Plan.}
+          A documented strategy for how the bank would raise emergency liquidity
+          in a stress scenario.  The cost of maintaining CFP reserves is a
+          component of the FTP liquidity premium. \\[4pt]
+
+  CHIPS & \textbf{Clearing House Interbank Payments System.}
+          The US private large-value payment system handling the majority of
+          USD cross-border and domestic wholesale transactions. \\[4pt]
+
+  CME   & \textbf{Chicago Mercantile Exchange.}
+          One of the world's largest derivatives exchanges and clearing houses. \\[4pt]
+
+  CMS   & \textbf{Constant Maturity Swap.}
+          An interest rate swap where one leg pays a floating rate linked to a
+          constant maturity rate (e.g., the 10-year swap rate) rather than a
+          standard overnight rate. \\[4pt]
+
+  CRE   & \textbf{Commercial Real Estate.}
+          Loans and securities backed by income-producing properties
+          (offices, retail, warehouses).  High risk weight; a common
+          source of credit concentration risk. \\[4pt]
+
+  CRIF  & \textbf{Common Risk Interchange Format.}
+          The standardised file format used to exchange SIMM sensitivity data
+          between counterparties under the ISDA SIMM methodology. \\[4pt]
+
+  CRO   & \textbf{Chief Risk Officer.}
+          The senior executive responsible for the bank's risk management
+          framework, including capital, credit, market, and operational risk. \\[4pt]
+
+  CSA   & \textbf{Credit Support Annex.}
+          A legal agreement appended to an ISDA Master Agreement that governs
+          the posting and receipt of collateral (both variation margin and
+          initial margin) between two derivatives counterparties. \\[4pt]
+
+  CUSIP & \textbf{Committee on Uniform Securities Identification Procedures.}
+          A nine-character alphanumeric identifier for North American financial
+          instruments. \\[4pt]
+
+  CVA   & \textbf{Credit Valuation Adjustment.}
+          The market value of counterparty credit risk embedded in a derivatives
+          portfolio.  Represents the expected loss from counterparty default,
+          discounted to present value. \\[4pt]
+
+  DFAST & \textbf{Dodd-Frank Act Stress Test.}
+          An annual Federal Reserve supervisory exercise requiring US banks
+          to model their capital adequacy under three macroeconomic scenarios
+          (baseline, adverse, and severely adverse) over nine quarters. \\[4pt]
+
+  DRC   & \textbf{Default Risk Charge.}
+          A component of FRTB-SA capital that captures the jump-to-default
+          risk for credit instruments not captured by the sensitivity-based
+          method. \\[4pt]
+
+  DV01  & \textbf{Dollar Value of 01 (one basis point).}
+          The change in market value of a fixed-income instrument for a 1 basis
+          point (0.01\%) parallel shift in interest rates.  A fundamental
+          measure of interest rate risk. \\[4pt]
+
+  DVA   & \textbf{Debit Valuation Adjustment.}
+          The adjustment to derivatives value reflecting the bank's \emph{own}
+          credit risk --- the value the bank would capture if it defaulted on
+          its derivatives obligations. \\[4pt]
+
+  EAD   & \textbf{Exposure at Default.}
+          The estimated outstanding balance of a loan or derivative at the
+          moment a counterparty defaults.  Used in credit risk capital
+          calculations: RWA = risk weight $\times$ EAD. \\[4pt]
+
+  EC    & \textbf{Economic Capital.}
+          The bank's internal estimate of the capital needed to absorb
+          unexpected losses at a given confidence level (typically 99.9\%).
+          Distinct from regulatory capital, which follows a fixed rulebook. \\[4pt]
+
+  ECL   & \textbf{Expected Credit Loss.}
+          Under IFRS 9, the probability-weighted estimate of credit losses
+          over the life of a financial instrument.  Drives loan loss
+          provisioning. \\[4pt]
+
+  EL    & \textbf{Expected Loss.}
+          $\text{EL} = \text{PD} \times \text{LGD} \times \text{EAD}$.
+          The average annual credit loss on a loan or portfolio, incorporated
+          into pricing via the RAROC formula. \\[4pt]
+
+  EVE   & \textbf{Economic Value of Equity.}
+          The net present value of all asset and liability cash flows.
+          EVE sensitivity measures how much equity value is gained or lost
+          under a shift in interest rates. \\[4pt]
+
+  FATF  & \textbf{Financial Action Task Force.}
+          The inter-governmental body that sets international standards
+          for combating money laundering and terrorist financing.
+          Maintains the ``grey list'' of jurisdictions under increased
+          monitoring. \\[4pt]
+
+  Fed   & \textbf{Federal Reserve.}
+          The central bank of the United States; the primary prudential
+          regulator for large US bank holding companies. \\[4pt]
+
+  FHLB  & \textbf{Federal Home Loan Bank.}
+          A US government-sponsored enterprise that provides wholesale
+          funding (advances) to member banks, primarily used for mortgage
+          funding. \\[4pt]
+
+  FinCEN & \textbf{Financial Crimes Enforcement Network.}
+           A bureau of the US Treasury that administers the Bank Secrecy
+           Act and manages AML/CFT reporting. \\[4pt]
+
+  FRTB  & \textbf{Fundamental Review of the Trading Book.}
+          The Basel IV reform of market risk capital standards (finalized 2019,
+          effective 2025).  Introduces a revised SA floor and tighter IMA
+          eligibility rules. \\[4pt]
+
+  FTP   & \textbf{Fund Transfer Pricing.}
+          An internal pricing mechanism that allocates the cost and benefit
+          of funding to each business line, ensuring desks see the true
+          all-in cost of originating assets and raising liabilities. \\[4pt]
+
+  FVA   & \textbf{Funding Valuation Adjustment.}
+          The cost of funding uncollateralised derivatives exposures.
+          Reflects the bank's own credit spread applied to the unsecured
+          funding component of the derivatives book. \\[4pt]
+
+  GDP   & \textbf{Gross Domestic Product.}
+          The total monetary value of goods and services produced in an
+          economy.  A primary driver variable in DFAST macroeconomic
+          scenario design. \\[4pt]
+
+  G-SIB & \textbf{Global Systemically Important Bank.}
+          Banks designated by the FSB as posing systemic risk to the global
+          financial system.  Subject to additional capital surcharges
+          (1--3.5\% of RWA) and enhanced supervision. \\[4pt]
+
+  GPU   & \textbf{Graphics Processing Unit.}
+          Massively parallel processor originally designed for graphics
+          rendering.  Widely adopted for Monte Carlo simulation in XVA and
+          VaR, where thousands of paths can run simultaneously. \\[4pt]
+
+  HQLA  & \textbf{High-Quality Liquid Assets.}
+          Assets that can be quickly converted to cash with minimal loss of
+          value in a stress scenario.  Level 1 (cash, Treasuries), Level 2A
+          (Agency debt, covered bonds), and Level 2B (equities, corporate
+          bonds) receive progressively lower credit in LCR. \\[4pt]
+
+  HTM   & \textbf{Held to Maturity.}
+          A balance sheet classification for securities the bank intends to
+          hold until they mature.  Not marked to market --- which is why SVB's
+          HTM bond losses did not immediately appear in its capital ratios. \\[4pt]
+
+  IFRS 9 & \textbf{International Financial Reporting Standard 9.}
+           The accounting standard governing the classification and measurement
+           of financial instruments, including the three-stage expected credit
+           loss model for loan provisioning. \\[4pt]
+
+  IM    & \textbf{Initial Margin.}
+          Collateral posted at the outset of a derivatives trade (and
+          dynamically adjusted) to cover potential future exposure.
+          Computed under SIMM for bilateral trades; exchange-defined
+          for cleared trades. \\[4pt]
+
+  IMA   & \textbf{Internal Models Approach.}
+          The Basel/FRTB method that allows banks with regulatory approval
+          to compute market risk capital using their own VaR models rather
+          than the standardised rulebook --- typically producing 30--60\%
+          less capital for diversified books. \\[4pt]
+
+  IRS   & \textbf{Interest Rate Swap.}
+          A derivatives contract in which two parties exchange a stream of
+          fixed-rate payments for floating-rate payments (or vice versa) on
+          a notional principal.  The primary instrument used by ALM desks
+          to manage duration gaps. \\[4pt]
+
+  ISIN  & \textbf{International Securities Identification Number.}
+          A 12-character alphanumeric code that uniquely identifies
+          securities globally. \\[4pt]
+
+  ISDA  & \textbf{International Swaps and Derivatives Association.}
+          The industry body that publishes standard legal documentation
+          (Master Agreements, CSAs) and quantitative methodologies (SIMM)
+          for over-the-counter derivatives markets. \\[4pt]
+
+  KRI   & \textbf{Key Risk Indicator.}
+          A metric tracked continuously to signal that a model or process
+          may be degrading.  Examples: VaR backtesting exception rate,
+          SIMM vs.\ actual IM reconciliation error. \\[4pt]
+
+  KVA   & \textbf{Capital Valuation Adjustment.}
+          The present value of the cost of holding regulatory capital against
+          a derivatives trade over its lifetime.  Equal to the hurdle rate
+          times the expected capital requirement, discounted to today. \\[4pt]
+
+  LCH   & \textbf{London Clearing House (LCH Group).}
+          One of the world's largest central clearing counterparties,
+          handling the majority of cleared interest rate swap volume globally. \\[4pt]
+
+  LCR   & \textbf{Liquidity Coverage Ratio.}
+          A Basel III requirement: HQLA must cover at least 100\% of net
+          stressed cash outflows over a 30-day horizon.  Ensures banks can
+          survive a short-term liquidity crisis without central bank support. \\[4pt]
+
+  LGD   & \textbf{Loss Given Default.}
+          The fraction of an exposure that is lost when a borrower defaults,
+          after recovery from collateral and other sources.  Typically
+          35--65\% for unsecured corporate loans. \\[4pt]
+
+  LMM   & \textbf{LIBOR Market Model (also known as the BGM model).}
+          A term-structure model that directly models the evolution of
+          forward LIBOR/SOFR rates.  Used for pricing callable derivatives
+          and path-dependent instruments. \\[4pt]
+
+  MBS   & \textbf{Mortgage-Backed Securities.}
+          Securities backed by pools of mortgage loans.  Exhibit negative
+          convexity due to borrower prepayment optionality, complicating
+          ALM hedging. \\[4pt]
+
+  MDD   & \textbf{Model Development Document.}
+          The SR 11-7 documentation artefact that captures a model's
+          theoretical basis, implementation, validation results, limitations,
+          use authorization, and open findings. \\[4pt]
+
+  MVA   & \textbf{Margin Valuation Adjustment.}
+          The funding cost associated with posting initial margin over the
+          life of a cleared or bilateral derivatives trade.
+          Cleared trades generally attract lower MVA than bilateral. \\[4pt]
+
+  NII   & \textbf{Net Interest Income.}
+          The difference between interest earned on assets and interest paid
+          on liabilities.  The primary revenue line for most commercial banks. \\[4pt]
+
+  NIM   & \textbf{Net Interest Margin.}
+          NII expressed as a percentage of average earning assets.  The
+          headline profitability metric for comparing banks of different sizes.
+          Typical range: 2--4\% for US commercial banks. \\[4pt]
+
+  NLP   & \textbf{Nonlinear Program (Nonlinear Programming).}
+          An optimisation problem where the objective function or constraints
+          are nonlinear.  The full balance sheet optimisation is an NLP with
+          stochastic and integer components. \\[4pt]
+
+  NSFR  & \textbf{Net Stable Funding Ratio.}
+          A Basel III requirement: Available Stable Funding must exceed
+          Required Stable Funding.  Ensures that long-term assets are funded
+          with long-term liabilities, not short-term borrowing. \\[4pt]
+
+  OCI   & \textbf{Other Comprehensive Income.}
+          A component of equity that records unrealised gains and losses on
+          AFS securities, derivatives designated as hedges, and other items
+          not yet recognised in profit and loss. \\[4pt]
+
+  OIS   & \textbf{Overnight Indexed Swap.}
+          An interest rate swap referencing an overnight rate (SOFR in the US,
+          €STR in Europe).  The OIS curve is the risk-free term structure used
+          as the base for FTP rates and derivatives discounting. \\[4pt]
+
+  OMS   & \textbf{Order Management System.}
+          The system that records, routes, and tracks trading orders and
+          resulting positions.  The real-time positions feed for the VaR
+          and FRTB calculators. \\[4pt]
+
+  OpRisk & \textbf{Operational Risk.}
+           The risk of loss from inadequate or failed internal processes,
+           people, systems, or external events (including fraud, fines, and
+           cyber incidents). \\[4pt]
+
+  PD    & \textbf{Probability of Default.}
+          The estimated likelihood that a borrower will fail to meet its
+          debt obligations within a given horizon (typically one year).
+          Combined with LGD to compute EL and with EAD for RWA. \\[4pt]
+
+  PEP   & \textbf{Politically Exposed Person.}
+          An individual who holds or has held a prominent public function.
+          Subject to enhanced AML due diligence under FATF standards. \\[4pt]
+
+  PPNR  & \textbf{Pre-Provision Net Revenue.}
+          Revenue before loan loss provisions --- NII plus non-interest income
+          minus operating expenses.  Used in DFAST projections to estimate the
+          income buffer available to absorb stressed losses. \\[4pt]
+
+  RAROC & \textbf{Risk-Adjusted Return on Capital.}
+          Net income (after funding costs and expected losses) divided by
+          economic capital.  The primary metric for comparing profitability
+          across business lines with different risk profiles. \\[4pt]
+
+  ROA   & \textbf{Return on Assets.}
+          Net income divided by total assets.  A high-level profitability
+          metric; at JPMorgan scale, 5 basis points of ROA improvement is
+          worth approximately \$2 billion per year. \\[4pt]
+
+  RORWA & \textbf{Return on Risk-Weighted Assets.}
+          Net income divided by RWA.  Preferred over ROA by bank management
+          because it accounts for capital intensity --- a business that earns
+          the same income on lower RWA is more efficient. \\[4pt]
+
+  RSA   & \textbf{Rate-Sensitive Assets.}
+          Assets whose yield will reprice within a given period (typically
+          12 months) when interest rates change.  Includes floating-rate
+          loans, maturing fixed-rate instruments, and short-dated securities. \\[4pt]
+
+  RSF   & \textbf{Required Stable Funding.}
+          The denominator of the NSFR.  Assets weighted by their need for
+          stable funding over a one-year horizon --- long-term loans receive
+          a high RSF factor; short-dated liquid assets receive a low one. \\[4pt]
+
+  RSL   & \textbf{Rate-Sensitive Liabilities.}
+          Liabilities whose cost will reprice when interest rates change.
+          Variable-rate deposits and short-term wholesale borrowings are
+          highly rate-sensitive. \\[4pt]
+
+  RWA   & \textbf{Risk-Weighted Assets.}
+          Assets multiplied by their regulatory risk weights.  The denominator
+          of all capital ratios.  A measure of economic risk, not raw balance
+          sheet size. \\[4pt]
+
+  SA    & \textbf{Standardised Approach.}
+          The Basel regulatory method for computing capital charges using
+          prescribed risk weights.  Less capital-intensive to operate than IMA
+          but typically produces higher capital requirements for diversified
+          portfolios. \\[4pt]
+
+  SIMM  & \textbf{Standard Initial Margin Model.}
+          The ISDA industry-standard model for computing initial margin on
+          bilateral (uncleared) OTC derivatives.  Version 2.6 covers six
+          risk classes: IR, CRQ, CRNQ, EQ, FX, and Commodity. \\[4pt]
+
+  SLR   & \textbf{Supplementary Leverage Ratio.}
+          A leverage ratio that uses total leverage exposure (assets plus
+          off-balance-sheet items plus derivative add-ons) rather than
+          RWA as the denominator.  Catches banks that game risk weights. \\[4pt]
+
+  SOFR  & \textbf{Secured Overnight Financing Rate.}
+          The US dollar risk-free rate based on overnight repo transactions
+          secured by US Treasuries.  Replaced LIBOR as the primary USD
+          reference rate from June 2023. \\[4pt]
+
+  SR 11-7 & \textbf{Federal Reserve Supervisory Guidance on Model Risk Management (2011).}
+            The foundational US regulatory guidance requiring banks to maintain
+            rigorous model development, independent validation, and ongoing
+            monitoring for all quantitative models used in material decisions. \\[4pt]
+
+  SVaR  & \textbf{Stressed Value at Risk.}
+          VaR computed using a historical stress window (typically the 2007--2009
+          financial crisis).  Added to regular VaR in the Basel 2.5 market risk
+          capital formula to ensure capital does not fall too low in benign
+          periods. \\[4pt]
+
+  SVB   & \textbf{Silicon Valley Bank.}
+          A US regional bank that collapsed in March 2023, illustrating the
+          consequences of duration mismatch (long HTM bonds funded by
+          rate-sensitive deposits) and weak NSFR management. \\[4pt]
+
+  VaR   & \textbf{Value at Risk.}
+          The maximum expected loss on a portfolio over a given horizon at a
+          given confidence level.  At 99\% over 1 day: there is a 1\% chance
+          of losing more than VaR on any given day. \\[4pt]
+
+  VM    & \textbf{Variation Margin.}
+          Daily cash collateral exchanged between derivatives counterparties
+          to reflect changes in the mark-to-market value of outstanding trades.
+          Eliminates the accumulation of unrealised losses. \\[4pt]
+
+  XVA   & \textbf{X-Valuation Adjustment (collective term).}
+          The family of valuation adjustments applied to derivatives to
+          capture counterparty credit risk (CVA), own credit (DVA), funding
+          (FVA), margin funding (MVA), capital (KVA), and collateral (ColVA). \\
+
+\end{longtable}
+
 % ── Bibliography ──────────────────────────────────────────────────────────────
 \newpage
 \begin{thebibliography}{99}
