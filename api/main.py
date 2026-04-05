@@ -277,6 +277,13 @@ try:
 except ImportError:
     log.warning("api.securitized_routes not found — securitized products API endpoints unavailable")
 
+try:
+    from api import liquidity_routes
+    app.include_router(liquidity_routes.router, prefix="/api")
+    log.info("liquidity_routes loaded")
+except ImportError:
+    log.warning("api.liquidity_routes not found — liquidity API endpoints unavailable")
+
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
@@ -349,6 +356,11 @@ async def capital() -> FileResponse:
 @app.get("/treasury")
 async def treasury() -> FileResponse:
     return _html("treasury.html")
+
+
+@app.get("/liquidity")
+async def liquidity() -> FileResponse:
+    return _html("liquidity.html")
 
 # ---------------------------------------------------------------------------
 # WebSocket: Boardroom live stream
