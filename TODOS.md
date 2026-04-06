@@ -13,8 +13,8 @@
 
 ### TODO-002: XVA Position Field Mapping ✅ DONE
 **What:** Complete `XVAAdapter.from_positions()` — map `Position.symbol`, `.quantity`, `.avg_entry_price` to pyxva Trade fields
-**Context:** `SimulationXVAService._map_fills_to_pyxva_config()` in `infrastructure/xva/service.py` maps OMS blotter fills to pyxva config. Equity tickers (AAPL/MSFT/SPY/NVDA) excluded from pyxva; CVA computed analytically. Non-equity tickers routed by product type (IRS, FX forward, bond, options).
-**Completed:** v0.3.0.0
+**Context:** `SimulationXVAService._map_fills_to_pyxva_config()` in `infrastructure/xva/service.py` maps OMS blotter fills to pyxva config. Equity tickers (AAPL/MSFT/SPY/NVDA) excluded from pyxva; CVA computed analytically. Non-equity tickers routed by product type (IRS, FX forward, bond, options). `XVAAdapter.from_positions()` now fully implemented (was a dead stub returning [] — fixed in eng review remediation 2026-04-06).
+**Completed:** v0.3.0.0 / fixed 2026-04-06
 
 ### TODO-003: Model Governance AI (Quant Agent Q&A) ✅ DONE
 **What:** `/api/models/chat` endpoint + chat UI on `models.html` — multi-persona Q&A on model cards
@@ -171,6 +171,16 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 **What:** Replace hardcoded DFAST scenario parameters with official 2025 Fed Supervisory Scenario values, calibrated to live FRED macro (UNRATE, GDP, 3M T-bill, S&P 500).
 **Context:** `infrastructure/market_data/dfast_scenarios.py` — official 2025 parameters: ur peaks (4.1/6.4/10.0%), cumulative GDP (+5%/-1.9%/-8.2%), equity shocks (+3%/-15%/-55%), rate deltas (−30/−280/−350bps). `fetch_macro_starting_point()` fetches UNRATE, A191RL1Q225SBEA, SP500, DTB3 from FRED. `build_scenarios()` expresses ur_delta relative to live UNRATE. `dfast_engine._load_official_scenarios()` replaces hardcoded dict; fallback retained for FRED outage. `GET /api/stress/dfast/meta` returns active params + source.
 **Completed:** 2026-04-05
+
+### TODO-046: Engineering Review Remediation ✅ DONE
+**What:** Address 5 findings from external engineering review.
+**Context:**
+- Finding 1 (position_manager short lots): BUG CONFIRMED AND FIXED. `apply_trade()` opening branch was appending `[qty, price]` (with negative qty for shorts) instead of `[abs(qty), price]`. This caused `min(remaining, lot_qty)` to go negative on short covers, corrupting realised P&L, avg_cost, and flip handling. Fixed `position_manager.py:113`. Added 7 tests in `tests/test_position_manager.py` covering short open, partial/full cover, cover-at-loss, short-to-long flip, long-to-short flip, and FIFO ordering.
+- Finding 2 (OMS VaR enforcement): Fixed. `submit_order()` now raises `HTTPException(422)` when `_pre_trade_check` returns `approved=False`. Added `from fastapi import HTTPException` import. Updated README.
+- Finding 3 (XVA credit_spread dead): Fixed. Added `credit_spread: float` field to `Counterparty` dataclass, `_RATING_SPREAD` lookup table, populated all 5 seeded counterparties with rating-based spreads, and exposed `credit_spread`/`credit_spread_bps` in `to_dict()`.
+- Finding 4 (XVAAdapter.from_positions stub): Implemented. Maps non-equity positions from `PositionManager.get_all_positions()` to pyxva Trade dicts by product type with representative maturities.
+- Finding 5 (trading_routes static mock): Documented intent with module docstring explaining shadow routing pattern.
+**Completed:** 2026-04-06
 
 ### TODO-045: User Manual ✅ DONE
 **What:** Comprehensive narrative reference document explaining the complete flow between all systems.

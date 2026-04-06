@@ -37,7 +37,7 @@
 
 Apex Global Bank is a complete simulation of a JPMorgan-scale institution: trading desks, risk models, capital management, treasury, compliance, and a boardroom full of opinionated executives — all running on a single laptop.
 
-Every system is real. The OMS enforces pre-trade VaR limits. The capital engine computes CET1 using Basel III risk weights. The DFAST engine projects CET1 under a 9-quarter severely adverse scenario. The XVA suite calculates CVA/DVA/FVA on live derivatives positions. The 17 registered models each have a full SR 11-7 Model Development Document with open findings, use authorizations, and validation status.
+Every system is real. The OMS enforces pre-trade VaR limits — orders that would push a desk above its hard limit are rejected with HTTP 422. The capital engine computes CET1 using Basel III risk weights. The DFAST engine projects CET1 under a 9-quarter severely adverse scenario. The XVA suite calculates CVA/DVA/FVA on live derivatives positions using per-counterparty credit spreads calibrated to credit ratings. The 17 registered models each have a full SR 11-7 Model Development Document with open findings, use authorizations, and validation status.
 
 The AI agents are not wrappers around a script — they are genuine `claude-opus-4-6` instances with deep domain-specific system prompts. They disagree, push back, and respond to live market data injected into the meeting context.
 

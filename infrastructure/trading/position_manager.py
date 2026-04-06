@@ -109,8 +109,9 @@ class BookPosition:
             return realised
 
         # Opening or adding to existing position
+        # Lots always store abs(qty) — direction is tracked via self.quantity
         self.quantity += qty
-        self._lots.append([qty, price])
+        self._lots.append([abs(qty), price])
         self._update_avg_cost()
         return 0.0
 

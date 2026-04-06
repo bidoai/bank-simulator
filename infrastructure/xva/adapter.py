@@ -23,14 +23,47 @@ class XVAAdapter:
     @staticmethod
     def from_positions(positions: list) -> list:
         """
-        Convert a list of bank-simulator Position objects to pyxva Trade dicts.
+        Convert a list of bank-simulator position dicts (from PositionManager.get_all_positions())
+        to pyxva Trade dicts.
 
-        TODO: implement full field mapping once Position schema is finalised.
-              For now returns an empty list so the pipeline can be tested with
-              sample_config() data instead.
+        Equity positions are excluded — their CVA is computed analytically.
+        Non-equity positions are mapped by instrument type to a product_type
+        with a representative maturity.
         """
-        # TODO: map Position.symbol, .quantity, .avg_entry_price → pyxva Trade fields
-        return []
+        _PRODUCT_MAP: dict[str, str] = {
+            "US10Y": "IRS", "US2Y": "IRS",
+            "IRS_USD_10Y": "IRS",
+            "EURUSD": "FX_FORWARD", "GBPUSD": "FX_FORWARD",
+            "IG_CDX": "CDS",
+            "CL1": "COMMODITY_FORWARD",
+        }
+        _MATURITY_MAP: dict[str, float] = {
+            "IRS": 7.0,
+            "FX_FORWARD": 0.5,
+            "CDS": 5.0,
+            "COMMODITY_FORWARD": 1.0,
+        }
+        _EQUITY_INSTRUMENTS = {"AAPL", "MSFT", "GOOGL", "NVDA", "AAPL_CALL_200"}
+
+        trades = []
+        for p in positions:
+            instrument = p.get("instrument", "")
+            if instrument in _EQUITY_INSTRUMENTS:
+                continue
+            product_type = _PRODUCT_MAP.get(instrument, "IRS")
+            notional = abs(float(p.get("quantity", 0)) * float(p.get("avg_cost", 0)))
+            if notional < 1.0:
+                continue
+            trades.append({
+                "trade_id": f"{instrument}_{p.get('book_id', 'UNK')}",
+                "product_type": product_type,
+                "notional": round(notional, 2),
+                "currency": p.get("currency", "USD"),
+                "maturity_years": _MATURITY_MAP.get(product_type, 1.0),
+                "fixed_rate": 0.045,
+                "pay_leg": "fixed" if float(p.get("quantity", 0)) > 0 else "float",
+            })
+        return trades
 
     @staticmethod
     def from_trade(trade: Any) -> dict:

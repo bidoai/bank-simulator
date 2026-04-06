@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import structlog
+from fastapi import HTTPException
 
 from infrastructure.risk.risk_service import risk_service
 from infrastructure.trading.greeks import GreeksCalculator
@@ -92,9 +93,10 @@ class OrderManagementSystem:
 
         if projected_util >= 100.0:
             msg = (
-                f"Pre-trade WARNING: projected {desk} VaR utilisation "
-                f"{projected_util:.1f}% would breach 100% limit. "
-                f"Trade booked anyway (demo mode)."
+                f"Pre-trade REJECTED: projected {desk} VaR utilisation "
+                f"{projected_util:.1f}% would breach 100% limit "
+                f"(current ${current/1e6:.1f}M + est ${est_var/1e6:.1f}M > "
+                f"limit ${lim.hard_limit/1e6:.1f}M)."
             )
             return False, msg, est_var
 
@@ -132,8 +134,11 @@ class OrderManagementSystem:
         signed_qty = qty if side.lower() == "buy" else -qty
         notional = abs(signed_qty * fill_price)
 
-        # --- Pre-trade check ---
+        # --- Pre-trade check (hard enforcement — rejected orders raise 422) ---
         approved, pre_msg, est_var = self._pre_trade_check(desk, signed_qty, fill_price)
+        if not approved:
+            log.warning("oms.pre_trade_rejected", desk=desk, ticker=ticker, qty=qty, reason=pre_msg)
+            raise HTTPException(status_code=422, detail=pre_msg)
 
         # --- Snapshot VaR before ---
         limit_name = _DESK_LIMIT_MAP.get(desk)

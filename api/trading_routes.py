@@ -1,4 +1,13 @@
-"""FastAPI routes for the Trading Floor dashboard."""
+"""
+FastAPI routes for the Trading Floor dashboard — static fallback layer.
+
+NOTE ON SHADOW ROUTING: api/main.py registers oms_routes BEFORE these
+trading_routes. FastAPI resolves the first matching route, so the live
+endpoints at /api/trading/blotter, /greeks, /pnl, and /ccr are served
+by oms_routes (backed by the live OMS and PositionManager). The static
+routes in this file are never reached in a running server; they exist
+only for offline testing and as documentation of the expected schemas.
+"""
 from __future__ import annotations
 
 import math

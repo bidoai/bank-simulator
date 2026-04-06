@@ -11,6 +11,16 @@ import structlog
 log = structlog.get_logger()
 
 
+# Credit spread by rating band (fraction, e.g. 0.010 = 100bps)
+_RATING_SPREAD: dict[str, float] = {
+    "AAA": 0.005, "AA+": 0.005, "AA": 0.005, "AA-": 0.005,
+    "A+":  0.010, "A":   0.010, "A-": 0.010,
+    "BBB+": 0.020, "BBB": 0.020, "BBB-": 0.020,
+    "BB+": 0.035, "BB":  0.035, "BB-": 0.035,
+}
+_SPREAD_DEFAULT = 0.020
+
+
 @dataclass
 class Counterparty:
     id: str
@@ -21,6 +31,7 @@ class Counterparty:
     csa_threshold: float
     mta: float
     pfe_limit: float
+    credit_spread: float = 0.015   # annual hazard proxy (fraction)
     current_pfe: float = 0.0
     current_ead: float = 0.0
 
@@ -53,6 +64,8 @@ class Counterparty:
             "csa_threshold": self.csa_threshold,
             "mta": self.mta,
             "pfe_limit": self.pfe_limit,
+            "credit_spread": self.credit_spread,
+            "credit_spread_bps": round(self.credit_spread * 10_000, 1),
             "current_pfe": self.current_pfe,
             "current_ead": self.current_ead,
             "pfe_utilization_pct": round(self.pfe_utilization_pct, 2),
@@ -70,6 +83,7 @@ _DEFAULT_COUNTERPARTIES: list[Counterparty] = [
         csa_threshold=0,
         mta=10_000,
         pfe_limit=2_000_000_000,
+        credit_spread=_RATING_SPREAD["A+"],
         current_ead=8_400_000,
         current_pfe=7_200_000,
     ),
@@ -82,6 +96,7 @@ _DEFAULT_COUNTERPARTIES: list[Counterparty] = [
         csa_threshold=50_000,
         mta=25_000,
         pfe_limit=2_000_000_000,
+        credit_spread=_RATING_SPREAD["A+"],
         current_ead=11_200_000,
         current_pfe=10_080_000,
     ),
@@ -94,6 +109,7 @@ _DEFAULT_COUNTERPARTIES: list[Counterparty] = [
         csa_threshold=100_000,
         mta=50_000,
         pfe_limit=800_000_000,
+        credit_spread=_RATING_SPREAD["BBB+"],
         current_ead=7_100_000,
         current_pfe=5_992_000,
     ),
@@ -106,6 +122,7 @@ _DEFAULT_COUNTERPARTIES: list[Counterparty] = [
         csa_threshold=0,
         mta=20_000,
         pfe_limit=2_000_000_000,
+        credit_spread=_RATING_SPREAD["A"],
         current_ead=5_300_000,
         current_pfe=3_780_000,
     ),
@@ -118,6 +135,7 @@ _DEFAULT_COUNTERPARTIES: list[Counterparty] = [
         csa_threshold=0,
         mta=15_000,
         pfe_limit=2_000_000_000,
+        credit_spread=_RATING_SPREAD["A+"],
         current_ead=6_000_000,
         current_pfe=4_500_000,
     ),
