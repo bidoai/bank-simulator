@@ -80,6 +80,8 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 
         _feed = MarketDataFeed()
 
+        from infrastructure.events.bus import event_bus, TickEvent
+
         # Sync callback: mark positions to market on every tick, then broadcast
         def _on_tick(quote) -> None:
             risk_service.position_manager.mark_to_market(quote.ticker, float(quote.mid))
@@ -87,6 +89,8 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
             asyncio.ensure_future(
                 trading_broadcaster.broadcast_tick({quote.ticker: float(quote.mid)})
             )
+            # Publish TickEvent onto the event bus (non-blocking)
+            event_bus.publish_sync(TickEvent(ticker=quote.ticker, price=float(quote.mid)))
 
         for ticker in _feed.get_all_quotes():
             _feed.subscribe(ticker, _on_tick)
@@ -103,6 +107,14 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     except Exception as exc:
         log.error("market_data.startup_failed", error=str(exc))
         _feed = None
+
+    # Start intraday risk cycle (15s risk re-compute loop)
+    try:
+        from infrastructure.risk.intraday_cycle import intraday_cycle
+        intraday_cycle.start()
+        log.info("intraday_cycle.started")
+    except Exception as exc:
+        log.error("intraday_cycle.startup_failed", error=str(exc))
 
     # SOD P&L explain snapshot (taken after feed is seeded with live prices)
     try:
@@ -135,6 +147,12 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
 
     if _feed is not None:
         await _feed.stop()
+
+    try:
+        from infrastructure.risk.intraday_cycle import intraday_cycle
+        await intraday_cycle.stop()
+    except Exception:
+        pass
 
 
 app = FastAPI(

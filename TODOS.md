@@ -256,7 +256,10 @@ All three added to registry.json.
 
 ---
 
-### TODO-037: Credit Portfolio Model (Factor Copula → Credit VaR) — P2
+### TODO-037: Credit Portfolio Model (Factor Copula → Credit VaR) ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). `CreditPortfolioModel` in `infrastructure/credit/portfolio_model.py` — single-factor Gaussian copula, 10k MC scenarios, EL/VaR99/VaR99.9/ES/EC, marginal contributions, loss distribution. New endpoints: `GET /api/credit/portfolio-var`, `/marginal-contribution`, `/loss-distribution`, `POST /api/credit/portfolio-var/scenario`. 18 tests.
+
+### TODO-037 (archived): Credit Portfolio Model (Factor Copula → Credit VaR) — P2
 **What:** A portfolio-level credit risk model generating correlated defaults across the loan book, producing credit VaR, EC allocation, and concentration-adjusted loss distribution.
 **Why:** The IFRS 9 ECL engine computes expected loss loan-by-loan. There is no portfolio-level view of unexpected loss or credit VaR. A real bank allocates economic capital by credit portfolio — this gap means the capital dashboard cannot tie credit risk to the EC framework.
 **Scope:**
@@ -273,7 +276,10 @@ All three added to registry.json.
 
 ---
 
-### TODO-038: Real-Time Event Bus + Intraday Risk Cycle — P2
+### TODO-038: Real-Time Event Bus + Intraday Risk Cycle ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). `EventBus` in `infrastructure/events/bus.py` — asyncio.Queue pub/sub with fan-out, 4 event types (TickEvent/TradeBookedEvent/RiskSnapshotEvent/LimitBreachEvent). `IntradayRiskCycle` in `infrastructure/risk/intraday_cycle.py` — 15s risk re-compute loop, 60-snapshot rolling timeline, publishes breach events. MarketDataFeed ticks now publish TickEvents. New endpoints: `GET /api/risk/intraday-timeline`, `GET /api/risk/event-bus`. 10 tests.
+
+### TODO-038 (archived): Real-Time Event Bus + Intraday Risk Cycle — P2
 **What:** Decouple market data ticks from risk recomputation via an in-process event bus (asyncio.Queue). Market feed publishes tick events; risk engine subscribes and recomputes on a 15-second cycle independently of API calls.
 **Why:** All risk computation is currently synchronous and API-triggered. A real bank runs intraday VaR and Greeks on a sub-minute cycle. The simulation can't yet demonstrate a live risk breach alert without a polling client.
 **Scope:**
