@@ -104,6 +104,17 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
         log.error("market_data.startup_failed", error=str(exc))
         _feed = None
 
+    # SOD P&L explain snapshot (taken after feed is seeded with live prices)
+    try:
+        from infrastructure.trading.pnl_explain import pnl_explain_engine
+        from infrastructure.risk.risk_service import risk_service as _rs
+        _sod_positions = _rs.position_manager.get_all_positions()
+        _sod_prices = {t: float(q.mid) for t, q in _feed.get_all_quotes().items()} if _feed else {}
+        pnl_explain_engine.take_sod_snapshot(_sod_positions, _sod_prices)
+        log.info("pnl_explain.sod_snapshot_taken")
+    except Exception as exc:
+        log.error("pnl_explain.startup_failed", error=str(exc))
+
     # Initialise VaR backtest store (seeds 252 days of demo history)
     try:
         from infrastructure.risk.var_backtest_store import backtest_store

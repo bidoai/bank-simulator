@@ -221,7 +221,10 @@ All three added to registry.json.
 
 ## Phase 4 — Strategic Roadmap (from 2026-04-05 board session)
 
-### TODO-035: End-to-End Integration Stress Scenario — P1
+### TODO-035: End-to-End Integration Stress Scenario ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). 17/18 checks PASS (1 WARN: stress LCR baseline parity — expected). Fixed LCR key (`lcr_ratio_pct`→`lcr_ratio×100`) and sVaR key (`stressed_var_$M`→nested dict).
+
+### TODO-035 (archived): End-to-End Integration Stress Scenario — P1
 **What:** Design and run a single compound crisis scenario that exercises every integrated system simultaneously: equity shock → margin calls triggered → LCR breached → DFAST CET1 depleted → IMA exception counter incremented. Audit each system's output for correctness and cross-system consistency.
 **Why:** We have never run a full simulated market crisis through the integrated stack. Individual modules are tested in isolation; integration gaps are unknown until a scenario forces every pipe to flow at once.
 **Scope:**
@@ -233,7 +236,10 @@ All three added to registry.json.
 
 ---
 
-### TODO-036: Daily P&L Attribution by Greek Bucket — P1
+### TODO-036: Daily P&L Attribution by Greek Bucket ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). `PnLExplainEngine` in `infrastructure/trading/pnl_explain.py`. SOD snapshot taken at startup. `GET /api/trading/pnl-explain` + `POST /api/trading/pnl-explain/reset-sod`. Plotly waterfall chart + per-desk Greek table on `trading.html`. 10 tests.
+
+### TODO-036 (archived): Daily P&L Attribution by Greek Bucket — P1
 **What:** A P&L explain engine that decomposes each day's trading P&L into delta, gamma, vega, theta, and unexplained residual — per desk and firm-wide.
 **Why:** Without P&L explain, the trading desk is a black box. Every real desk head starts the morning with a P&L explain. This is the single most important feature for making the simulation feel like a real trading operation.
 **Scope:**

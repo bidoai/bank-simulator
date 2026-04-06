@@ -299,6 +299,39 @@ def get_ccr() -> dict:
     }
 
 
+@router.get("/trading/pnl-explain")
+def get_pnl_explain():
+    """
+    P&L attribution by Greek bucket — per desk and firm-wide.
+    Decomposes actual P&L into delta, gamma, theta, vega, and unexplained residual.
+    """
+    from infrastructure.trading.pnl_explain import pnl_explain_engine
+    from infrastructure.market_data.feed_handler import MarketDataFeed
+
+    positions = risk_service.position_manager.get_all_positions()
+    try:
+        _prices = {t: float(q.mid) for t, q in oms._feed.get_all_quotes().items()} if oms._feed else {}
+    except Exception:
+        _prices = {}
+
+    return pnl_explain_engine.explain(positions, _prices)
+
+
+@router.post("/trading/pnl-explain/reset-sod")
+def reset_sod_snapshot():
+    """Reset the SOD baseline to current prices and positions (for demo use)."""
+    from infrastructure.trading.pnl_explain import pnl_explain_engine
+
+    positions = risk_service.position_manager.get_all_positions()
+    try:
+        _prices = {t: float(q.mid) for t, q in oms._feed.get_all_quotes().items()} if oms._feed else {}
+    except Exception:
+        _prices = {}
+
+    pnl_explain_engine.take_sod_snapshot(positions, _prices)
+    return {"status": "ok", "positions_snapshotted": len(positions), "prices_snapshotted": len(_prices)}
+
+
 # ---------------------------------------------------------------------------
 # Initialise DB on import
 # ---------------------------------------------------------------------------

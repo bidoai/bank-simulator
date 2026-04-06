@@ -384,6 +384,19 @@
       </table>
     </div>
 
+    <!-- P&L Explain — Greek attribution waterfall -->
+    <div class="card">
+      <div class="section-header">
+        <div class="dot" style="background:#a5d6ff"></div>P&amp;L Explain — Greek Attribution
+        <button onclick="resetSod()" style="margin-left:auto;font-size:10px;padding:2px 8px;background:var(--border);color:var(--text);border:none;border-radius:3px;cursor:pointer">Reset SOD</button>
+      </div>
+      <div id="pnl-explain-chart" style="height:200px"></div>
+      <table class="pnl-table" style="margin-top:8px">
+        <thead><tr><th>Desk</th><th>Delta</th><th>Gamma</th><th>Theta</th><th>Vega</th><th>Unexpl.</th><th>Actual</th></tr></thead>
+        <tbody id="pnl-explain-tbody"></tbody>
+      </table>
+    </div>
+
     <!-- Circuit Breaker -->
     <div class="card">
       <div class="section-header"><div class="dot" style="background:var(--negative)"></div>Circuit Breakers</div>
@@ -639,6 +652,72 @@
       tbody.appendChild(tr);
     }
 
+    async function loadPnlExplain() {
+      const res = await fetch('/api/trading/pnl-explain').catch(() => null);
+      if (!res || !res.ok) return;
+      const data = await res.json();
+
+      const desks  = Object.keys(data.by_desk);
+      const p      = data.portfolio;
+      const cats   = ['Delta', 'Gamma', 'Theta', 'Vega', 'Unexpl.'];
+      const vals   = [p.delta_pnl, p.gamma_pnl, p.theta_pnl, p.vega_pnl, p.unexplained];
+      const colors = vals.map(v => v >= 0 ? 'rgba(63,185,80,0.8)' : 'rgba(248,81,73,0.8)');
+
+      Plotly.newPlot('pnl-explain-chart', [{
+        type: 'waterfall', orientation: 'v',
+        x: [...cats, 'Total'],
+        y: [...vals.map(v => v / 1e3), p.total_actual_pnl / 1e3],
+        measure: [...cats.map(() => 'relative'), 'total'],
+        connector: { line: { color: '#30363d' } },
+        increasing: { marker: { color: 'rgba(63,185,80,0.8)' } },
+        decreasing: { marker: { color: 'rgba(248,81,73,0.8)' } },
+        totals:     { marker: { color: 'rgba(88,166,255,0.8)' } },
+        texttemplate: '%{y:.1f}k', textposition: 'outside',
+      }], {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+        margin: { t: 18, b: 30, l: 45, r: 5 },
+        font: { family: 'monospace', size: 10, color: '#8b949e' },
+        xaxis: { gridcolor: '#21262d' },
+        yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
+        showlegend: false,
+      }, { displayModeBar: false, responsive: true });
+
+      const tbody = document.getElementById('pnl-explain-tbody');
+      tbody.innerHTML = '';
+      desks.forEach(desk => {
+        const d = data.by_desk[desk];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color:var(--text)">${desk}</td>
+          <td class="${pnlClass(d.delta_pnl)}">${fmtPnl(d.delta_pnl)}</td>
+          <td class="${pnlClass(d.gamma_pnl)}">${fmtPnl(d.gamma_pnl)}</td>
+          <td class="${pnlClass(d.theta_pnl)}">${fmtPnl(d.theta_pnl)}</td>
+          <td class="${pnlClass(d.vega_pnl)}">${fmtPnl(d.vega_pnl)}</td>
+          <td class="${pnlClass(d.unexplained)}">${fmtPnl(d.unexplained)}</td>
+          <td class="${pnlClass(d.total_actual_pnl)}">${fmtPnl(d.total_actual_pnl)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      // Firm total row
+      const tr = document.createElement('tr');
+      tr.className = 'total-row';
+      tr.innerHTML = `
+        <td>FIRM</td>
+        <td class="${pnlClass(p.delta_pnl)}">${fmtPnl(p.delta_pnl)}</td>
+        <td class="${pnlClass(p.gamma_pnl)}">${fmtPnl(p.gamma_pnl)}</td>
+        <td class="${pnlClass(p.theta_pnl)}">${fmtPnl(p.theta_pnl)}</td>
+        <td class="${pnlClass(p.vega_pnl)}">${fmtPnl(p.vega_pnl)}</td>
+        <td class="${pnlClass(p.unexplained)}">${fmtPnl(p.unexplained)}</td>
+        <td class="${pnlClass(p.total_actual_pnl)}">${fmtPnl(p.total_actual_pnl)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    async function resetSod() {
+      await fetch('/api/trading/pnl-explain/reset-sod', { method: 'POST' });
+      await loadPnlExplain();
+    }
+
     async function loadCircuitBreaker() {
       const res = await fetch('/api/trading/circuit-breaker').catch(() => null);
       if (!res || !res.ok) return;
@@ -818,7 +897,7 @@
     // ── Boot ─────────────────────────────────────────────────────────────────
 
     async function loadAll() {
-      await Promise.all([loadGreeks(), loadCCR(), loadPnl(), loadCircuitBreaker(), loadBlotter()]);
+      await Promise.all([loadGreeks(), loadCCR(), loadPnl(), loadPnlExplain(), loadCircuitBreaker(), loadBlotter()]);
     }
 
     loadAll();
