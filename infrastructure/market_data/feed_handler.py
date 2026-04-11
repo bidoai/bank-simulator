@@ -34,6 +34,15 @@ SEED_PRICES: dict[str, dict] = {
     "CL1":           {"price": 78.40,   "vol": 0.30,  "spread_bps": 3.0},
     "NVDA":          {"price": 875.00,  "vol": 0.35,  "spread_bps": 2.0},
     "US2Y":          {"price": 99.10,   "vol": 0.02,  "spread_bps": 1.5},
+    "GOOGL":         {"price": 175.0,   "vol": 0.24,  "spread_bps": 1.5},
+    "USD_IRS_1Y":    {"price": 100.0,   "vol": 0.008, "spread_bps": 3.0},
+    "USD_IRS_2Y":    {"price": 100.0,   "vol": 0.012, "spread_bps": 3.0},
+    "USD_IRS_10Y":   {"price": 100.0,   "vol": 0.025, "spread_bps": 5.0},
+    "USD_IRS_30Y":   {"price": 100.0,   "vol": 0.030, "spread_bps": 6.0},
+    "IG_CDX":        {"price": 100.0,   "vol": 0.090, "spread_bps": 10.0},
+    "HY_CDX":        {"price": 100.0,   "vol": 0.180, "spread_bps": 20.0},
+    "XAUUSD":        {"price": 2350.0,  "vol": 0.14,  "spread_bps": 4.0},
+    "NG1":           {"price": 2.20,    "vol": 0.50,  "spread_bps": 15.0},
 }
 
 

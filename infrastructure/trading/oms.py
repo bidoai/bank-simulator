@@ -113,9 +113,12 @@ class OrderManagementSystem:
         desk: str,
         book_id: str,
         ticker: str,
-        side: str,                      # "buy" or "sell"
+        side: str,                      # "buy" or "sell" (normalised by route handler)
         qty: float,
         trader_id: str = "system",
+        counterparty_id: Optional[str] = None,
+        product_subtype: Optional[str] = None,
+        product_details: Optional[dict] = None,
     ) -> TradeConfirmation:
         """
         Execute a market order synchronously.
@@ -211,20 +214,26 @@ class OrderManagementSystem:
             limit_status=limit_status,
             pre_trade_approved=approved,
             pre_trade_message=pre_msg,
+            counterparty_id=counterparty_id,
+            product_subtype=product_subtype,
+            product_details=product_details,
         )
 
         # --- Blotter entry (compact dict for fast rendering) ---
         blotter_entry = {
-            "id":         trade_id[:12],
-            "time":       executed_at.strftime("%H:%M:%S"),
-            "book":       book_id,
-            "instrument": ticker,
-            "side":       side.upper(),
-            "qty":        abs(qty),
-            "price":      round(fill_price, 4),
-            "notional":   round(notional, 0),
-            "status":     "FILLED",
-            "limit_status": limit_status,
+            "id":             trade_id[:12],
+            "time":           executed_at.strftime("%H:%M:%S"),
+            "book":           book_id,
+            "instrument":     ticker,
+            "side":           side.upper(),
+            "qty":            abs(qty),
+            "price":          round(fill_price, 4),
+            "notional":       round(notional, 0),
+            "status":         "FILLED",
+            "limit_status":   limit_status,
+            "product_subtype": product_subtype,
+            "counterparty_id": counterparty_id,
+            "product_details": product_details,
         }
         self._fills.insert(0, blotter_entry)
         if len(self._fills) > 1000:

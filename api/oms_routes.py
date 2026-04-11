@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 import aiosqlite
 import structlog
@@ -48,8 +49,18 @@ class OrderRequest(BaseModel):
     desk: str
     book_id: str
     ticker: str
-    side: str    # "buy" or "sell"
-    qty: float
+    side: str       # "buy"/"sell" for equity/bond/fx/commodity; "payer"/"receiver" for IRS; "protection_buy"/"protection_sell" for CDS
+    qty: float      # shares/lots for equity/commodity; notional for derivatives
+    # Optional derivative enrichment — ignored for plain equity/bond trades
+    notional: Optional[float] = None
+    counterparty_id: Optional[str] = None
+    fixed_rate: Optional[float] = None      # IRS fixed rate as decimal (e.g. 0.0425 for 4.25%)
+    tenor_years: Optional[float] = None     # IRS/CDS tenor
+    currency: Optional[str] = "USD"
+    strike: Optional[float] = None          # option strike
+    expiry_date: Optional[str] = None       # ISO date string
+    product_subtype: Optional[str] = None   # "irs","cds","fwd","option","gov_bond","spot","future"
+    spread_bps: Optional[float] = None      # CDS spread at booking
 
 
 # ---------------------------------------------------------------------------
@@ -57,28 +68,37 @@ class OrderRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 async def _init_db() -> None:
-    """Create oms_trades table if it doesn't exist."""
+    """Create oms_trades table if it doesn't exist, and migrate existing tables."""
     import os
     os.makedirs("data", exist_ok=True)
     async with aiosqlite.connect(_DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS oms_trades (
-                trade_id     TEXT PRIMARY KEY,
-                ticker       TEXT,
-                side         TEXT,
-                quantity     REAL,
-                fill_price   REAL,
-                notional     REAL,
-                desk         TEXT,
-                book_id      TEXT,
-                trader_id    TEXT,
-                executed_at  TEXT,
-                greeks_json  TEXT,
-                var_before   REAL,
-                var_after    REAL,
-                limit_status TEXT
+                trade_id        TEXT PRIMARY KEY,
+                ticker          TEXT,
+                side            TEXT,
+                quantity        REAL,
+                fill_price      REAL,
+                notional        REAL,
+                desk            TEXT,
+                book_id         TEXT,
+                trader_id       TEXT,
+                executed_at     TEXT,
+                greeks_json     TEXT,
+                var_before      REAL,
+                var_after       REAL,
+                limit_status    TEXT,
+                counterparty_id TEXT,
+                product_subtype TEXT,
+                product_details TEXT
             )
         """)
+        # Migrate existing tables — SQLite ignores duplicate column errors
+        for col in ("counterparty_id TEXT", "product_subtype TEXT", "product_details TEXT"):
+            try:
+                await db.execute(f"ALTER TABLE oms_trades ADD COLUMN {col}")
+            except Exception:
+                pass
         await db.commit()
 
 
@@ -89,7 +109,7 @@ async def _persist_trade(conf_dict: dict) -> None:
         async with aiosqlite.connect(_DB_PATH) as db:
             await db.execute(
                 """INSERT OR REPLACE INTO oms_trades VALUES
-                   (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     conf_dict["trade_id"],
                     conf_dict["ticker"],
@@ -105,6 +125,9 @@ async def _persist_trade(conf_dict: dict) -> None:
                     conf_dict["var_before"],
                     conf_dict["var_after"],
                     conf_dict["limit_status"],
+                    conf_dict.get("counterparty_id"),
+                    conf_dict.get("product_subtype"),
+                    json.dumps(conf_dict["product_details"]) if conf_dict.get("product_details") else None,
                 ),
             )
             await db.commit()
@@ -127,8 +150,28 @@ def _get_prices() -> dict[str, float]:
 async def submit_order(order: OrderRequest) -> dict:
     if order.qty <= 0:
         raise HTTPException(status_code=400, detail="qty must be positive")
-    if order.side.lower() not in ("buy", "sell"):
-        raise HTTPException(status_code=400, detail="side must be 'buy' or 'sell'")
+
+    # Normalise side aliases so PositionManager always sees "buy" or "sell"
+    _SIDE_ALIASES = {
+        "payer": "buy", "receiver": "sell",
+        "protection_buy": "buy", "protection_sell": "sell",
+    }
+    normalised_side = _SIDE_ALIASES.get(order.side.lower(), order.side.lower())
+    if normalised_side not in ("buy", "sell"):
+        raise HTTPException(status_code=400, detail=f"Unknown side: {order.side!r}")
+
+    # Build product_details dict for derivatives
+    product_details: dict | None = None
+    if order.product_subtype:
+        product_details = {k: v for k, v in {
+            "fixed_rate":   order.fixed_rate,
+            "tenor_years":  order.tenor_years,
+            "spread_bps":   order.spread_bps,
+            "strike":       order.strike,
+            "expiry_date":  order.expiry_date,
+            "currency":     order.currency,
+            "original_side": order.side,       # preserve "payer"/"receiver" etc.
+        }.items() if v is not None}
 
     async with _ORDER_LOCK:
         try:
@@ -138,8 +181,11 @@ async def submit_order(order: OrderRequest) -> dict:
                     desk=order.desk.upper(),
                     book_id=order.book_id,
                     ticker=order.ticker,
-                    side=order.side,
+                    side=normalised_side,
                     qty=order.qty,
+                    counterparty_id=order.counterparty_id,
+                    product_subtype=order.product_subtype,
+                    product_details=product_details,
                 ),
             )
         except (ValueError, RuntimeError) as exc:
@@ -330,6 +376,16 @@ def reset_sod_snapshot():
 
     pnl_explain_engine.take_sod_snapshot(positions, _prices)
     return {"status": "ok", "positions_snapshotted": len(positions), "prices_snapshotted": len(_prices)}
+
+
+# ---------------------------------------------------------------------------
+# GET /api/trading/prices — current mid prices (used by booking ticket)
+# ---------------------------------------------------------------------------
+
+@router.get("/trading/prices")
+def get_prices_snapshot() -> dict:
+    """Return current mid prices for all instruments in the feed."""
+    return _get_prices()
 
 
 # ---------------------------------------------------------------------------
