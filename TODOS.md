@@ -229,6 +229,19 @@ All three added to registry.json.
 
 ---
 
+## Phase 4 — Instrument-Aware Trading (feature/v04-integration-stress-pnl-attribution)
+
+### TODO-041: Instrument-Aware Trade Booking Ticket ✅ DONE
+**What:** Replaced the flat 4-field (Desk/Ticker/Side/Qty) Execute form with a full tab-based booking ticket covering 8 asset classes.
+**Context:**
+- Frontend: asset-class tab bar (Equity/Rates/FX/Credit/Commodities/Derivatives) with per-class sub-type selector (IRS vs Gov Bond, Spot vs Forward). Each class renders the semantically correct fields: IRS gets Tenor/Leg/Fixed Rate/Counterparty; CDS gets Reference/Protection Side/Spread/Tenor/Counterparty; FX Forward gets Tenor/Counterparty; Options get Underlying/Call-Put/Strike/Expiry. Live market context panel shows current mid price + derived metrics (notional est., DV01 est., annual CDS premium). Execute button label is contextual ("PAY FIXED $100MM 10Y @ 4.25%", "BUY PROT $50MM IG CDX 5Y", etc.).
+- Backend: `OrderRequest` extended with optional derivative fields (notional, counterparty_id, fixed_rate, tenor_years, strike, expiry_date, product_subtype, spread_bps). Side aliases normalised at route level (payer→buy, protection_buy→buy). `TradeConfirmation` extended with counterparty_id/product_subtype/product_details. DB schema migrated (ALTER TABLE ADD COLUMN). 9 new market data instruments (USD_IRS_1Y/2Y/10Y/30Y, IG_CDX, HY_CDX, XAUUSD, NG1, GOOGL). New `GET /api/trading/prices` endpoint for context panel.
+- Blotter: instrument-aware descriptions (e.g., "PAY FIXED 4.25% 10Y • JPM" for IRS, "BUY PROT IG CDX 5Y @ 65bps" for CDS).
+- 3 new demo buttons: USD IRS 10Y payer, IG CDX protection buy, XAUUSD long.
+**Completed:** 2026-04-11
+
+---
+
 ## Phase 4 — Strategic Roadmap (from 2026-04-05 board session)
 
 ### TODO-035: End-to-End Integration Stress Scenario ✅ DONE
