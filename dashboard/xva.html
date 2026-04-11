@@ -3,110 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XVA Analytics — Apex Global Bank</title>
+  <title>XVA — Apex Global Bank</title>
+  <link rel="stylesheet" href="/static/shared.css">
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #0d1117;
-      --card:     #161b22;
-      --card2:    #1c2128;
-      --border:   #30363d;
-      --text:     #c9d1d9;
-      --muted:    #8b949e;
-      --positive: #3fb950;
-      --negative: #f85149;
-      --accent:   #58a6ff;
-      --warning:  #e3b341;
-      --orange:   #ffa657;
-      --purple:   #bc8cff;
-    }
-
-    body {
-      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 12px;
-      line-height: 1.5;
-      min-height: 100vh;
-      padding: 0;
-    }
-
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 18px 20px 14px;
-      border-bottom: 1px solid var(--border);
-      background: var(--card);
-      flex-wrap: wrap;
-    }
-
-    .page-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
-    }
-
-    .page-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 760px;
-      line-height: 1.7;
-    }
-
-    .page-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--muted);
-    }
-
-    .badge.live { border-color: #238636; color: var(--positive); }
-
-    .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      display: inline-block;
-    }
-
-    /* ── Stress scenario selector ─────────────────────────────────── */
-    .stress-bar {
+    /* ── Stress scenario buttons ────────────────────────────────────── */
+    .stress-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 20px;
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
     }
 
-    .stress-label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+    .stress-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
 
     .stress-btn {
-      padding: 3px 12px;
+      padding: 4px 12px;
       border-radius: 4px;
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text);
-      font-family: inherit;
+      font-family: var(--font);
       font-size: 11px;
       cursor: pointer;
       transition: border-color 0.15s, background 0.15s, color 0.15s;
@@ -114,234 +38,62 @@
 
     .stress-btn:hover { border-color: var(--accent); color: var(--accent); }
     .stress-btn.active { background: var(--accent); border-color: var(--accent); color: #0d1117; }
-    .stress-btn.clear-stress { border-color: var(--border); color: var(--muted); }
+    .stress-btn.clear-stress { color: var(--muted); }
     .stress-btn.clear-stress:hover { border-color: var(--negative); color: var(--negative); }
 
-    /* ── KPI bar ──────────────────────────────────────────────────── */
-    .kpi-bar {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border-bottom: 1px solid var(--border);
-    }
+    /* ── Counterparty table ─────────────────────────────────────────── */
+    .cp-table th, .cp-table td { font-size: 11px; }
+    .cp-table th { text-align: left; }
+    .cp-table th:not(:first-child) { text-align: right; }
+    .cp-table td:not(:first-child) { text-align: right; }
+    .cp-table tbody tr { cursor: pointer; }
+    .cp-table tbody tr.active td { background: rgba(88, 166, 255, 0.08); }
 
-    .kpi-box {
-      background: var(--card);
-      padding: 10px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .kpi-label {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-
-    .kpi-value {
-      font-size: 20px;
-      font-weight: bold;
-      letter-spacing: -0.5px;
-    }
-
-    .kpi-value.neg { color: var(--negative); }
-    .kpi-value.pos { color: var(--positive); }
-    .kpi-value.accent { color: var(--accent); }
-    .kpi-value.warn { color: var(--warning); }
-
-    .kpi-sub { font-size: 10px; color: var(--muted); }
-
-    .provenance-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 18px;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(22, 27, 34, 0.94), rgba(22, 27, 34, 0.82));
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .provenance-banner strong {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .provenance-banner.mock strong { color: var(--warning); }
-    .provenance-banner.pyxva strong { color: var(--positive); }
-
-    /* ── Main grid ────────────────────────────────────────────────── */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 200px 1fr;
-      grid-template-rows: auto;
-      height: calc(100vh - 130px);
-      overflow: hidden;
-    }
-
-    /* ── Sidebar ──────────────────────────────────────────────────── */
-    .sidebar {
-      background: var(--card);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-
-    .sidebar-header {
-      padding: 10px 14px;
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .cp-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 9px 14px;
-      cursor: pointer;
-      border-bottom: 1px solid #21262d;
-      transition: background 0.12s;
-    }
-
-    .cp-item:hover { background: #1c2128; }
-    .cp-item.active { background: #1f2937; border-left: 3px solid var(--accent); padding-left: 11px; }
-
-    .cp-left { display: flex; flex-direction: column; gap: 2px; }
-    .cp-name { font-size: 12px; color: var(--text); }
-
-    .cp-cva {
-      font-size: 10px;
-      color: var(--negative);
-    }
-
-    .cp-util-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-
-    .cp-util-pct {
-      font-size: 10px;
-      color: var(--muted);
-    }
-
-    .cp-util-bar {
-      width: 40px;
-      height: 3px;
-      background: #21262d;
+    /* Util bar in table */
+    .util-wrap { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+    .util-bar {
+      width: 44px; height: 4px;
+      background: var(--border-subtle);
       border-radius: 2px;
       overflow: hidden;
     }
+    .util-fill { height: 100%; border-radius: 2px; }
 
-    .cp-util-fill {
-      height: 100%;
-      border-radius: 2px;
-    }
-
-    /* ── Right pane ───────────────────────────────────────────────── */
-    .right-pane {
-      display: grid;
-      grid-template-rows: 310px 1fr;
-      overflow: hidden;
-    }
-
-    /* ── Chart card ───────────────────────────────────────────────── */
-    .chart-card {
-      background: var(--card);
-      border-bottom: 1px solid var(--border);
-      padding: 0;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* ── Bottom grid ──────────────────────────────────────────────── */
-    .bottom-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      overflow: hidden;
-    }
-
-    .card {
-      background: var(--card);
-      border-right: 1px solid var(--border);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card:last-child { border-right: none; }
-
-    .card-header {
-      padding: 8px 14px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-
-    .card-title {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-
-    .card-body { overflow-y: auto; flex: 1; }
-
-    /* ── Tables ───────────────────────────────────────────────────── */
-    table { width: 100%; border-collapse: collapse; }
-
-    thead th {
-      position: sticky;
-      top: 0;
-      background: var(--card);
-      text-align: right;
-      font-size: 10px;
-      font-weight: normal;
-      color: var(--muted);
-      padding: 5px 8px;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-
-    thead th:first-child { text-align: left; }
-
-    tbody td {
-      padding: 5px 8px;
-      border-bottom: 1px solid #21262d;
-      text-align: right;
-      font-size: 11px;
-      white-space: nowrap;
-    }
-
-    tbody td:first-child { text-align: left; color: var(--text); }
-
-    tbody tr { cursor: pointer; transition: background 0.1s; }
-    tbody tr:hover { background: #1c2128; }
-    tbody tr.active { background: #1f2937; }
-    tbody tr:last-child td { border-bottom: none; }
-
-    tfoot td {
-      padding: 5px 8px;
-      border-top: 1px solid var(--border);
-      text-align: right;
-      font-size: 11px;
-      font-weight: bold;
-      color: var(--text);
-    }
-
-    tfoot td:first-child { text-align: left; }
-
-    .val-neg { color: var(--negative); }
-    .val-pos { color: var(--positive); }
+    /* ── Value color utilities ──────────────────────────────────────── */
+    .val-neg   { color: var(--negative); }
+    .val-pos   { color: var(--positive); }
     .val-muted { color: var(--muted); }
+    .val-warn  { color: var(--warning); }
 
-    /* ── Zone badges ──────────────────────────────────────────────── */
+    /* ── Exposure chart ─────────────────────────────────────────────── */
+    .chart-card { min-height: 300px; }
+    #exposure-chart { width: 100%; height: 300px; }
+
+    /* ── Util bar in detail drawer ──────────────────────────────────── */
+    .util-bar-lg {
+      width: 100%; height: 6px;
+      background: var(--border-subtle);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .util-fill-lg { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+    /* ── Rating badge ───────────────────────────────────────────────── */
+    .rating-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .rating-a { background: rgba(63,185,80,0.15);  color: var(--positive); border: 1px solid rgba(63,185,80,0.4); }
+    .rating-b { background: rgba(227,179,65,0.15); color: var(--warning);  border: 1px solid rgba(227,179,65,0.4); }
+    .rating-c { background: rgba(248,81,73,0.15);  color: var(--negative); border: 1px solid rgba(248,81,73,0.4); }
+
+    /* ── Zone badges ────────────────────────────────────────────────── */
     .zone-badge {
       display: inline-block;
       padding: 1px 6px;
@@ -350,12 +102,14 @@
       font-weight: bold;
       letter-spacing: 0.5px;
     }
-
     .zone-green  { background: #1a3a1f; color: var(--positive); border: 1px solid #238636; }
     .zone-yellow { background: #2e2500; color: var(--warning);  border: 1px solid #9e6a03; }
     .zone-red    { background: #3d1a1a; color: var(--negative); border: 1px solid #da3633; }
 
-    /* ── Spinner ──────────────────────────────────────────────────── */
+    /* ── Heatmap ────────────────────────────────────────────────────── */
+    #heatmap-chart { width: 100%; height: 220px; }
+
+    /* ── Spinner overlay ────────────────────────────────────────────── */
     .spinner-overlay {
       position: fixed;
       inset: 0;
@@ -366,9 +120,7 @@
       z-index: 1000;
       backdrop-filter: blur(2px);
     }
-
     .spinner-overlay.hidden { display: none; }
-
     .spinner-box {
       background: var(--card);
       border: 1px solid var(--border);
@@ -379,7 +131,6 @@
       align-items: center;
       gap: 14px;
     }
-
     .spinner {
       width: 28px; height: 28px;
       border: 2px solid var(--border);
@@ -387,160 +138,83 @@
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .spinner-text { font-size: 11px; color: var(--muted); }
 
-    /* ── Run button ───────────────────────────────────────────────── */
-    .run-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 14px;
-      background: var(--accent);
-      color: #0d1117;
-      border: none;
-      border-radius: 5px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      letter-spacing: 0.5px;
-      transition: opacity 0.15s;
+    /* ── Pre-trade form ─────────────────────────────────────────────── */
+    .pt-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
     }
-
-    .run-btn:hover { opacity: 0.88; }
-    .run-btn:active { opacity: 0.75; }
-
-    /* ── Heatmap container ────────────────────────────────────────── */
-    #heatmap-chart, #exposure-chart { width: 100%; height: 100%; }
-
-    /* ── Source tag ───────────────────────────────────────────────── */
-    .source-tag {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 3px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    .source-tag.pyxva { border-color: var(--positive); color: var(--positive); }
-    .source-tag.mock  { border-color: var(--warning);  color: var(--warning);  }
-
-    /* ── Scrollbar ────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    /* ── XVA source badge ─────────────────────────────────────────── */
-    .badge-demo { color: #e3b341; }
-    .badge-live { color: #3fb950; }
-
-    /* ── Pre-trade panel ──────────────────────────────────────────── */
-    #preTradePanelFull {
-      position: fixed;
-      right: 0;
-      top: 88px;
-      width: 280px;
-      background: var(--card);
-      border-left: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 14px;
-      z-index: 500;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: calc(100vh - 88px);
-      overflow-y: auto;
-    }
-
-    #preTradePanelFull .pt-title {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 4px;
-    }
-
-    #preTradePanelFull label {
-      font-size: 10px;
-      color: var(--muted);
+    .pt-field label {
       display: block;
-      margin-bottom: 2px;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
-
-    #preTradePanelFull select,
-    #preTradePanelFull input[type="number"] {
+    .pt-field select,
+    .pt-field input[type="number"] {
       width: 100%;
       padding: 5px 8px;
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 4px;
       color: var(--text);
-      font-family: inherit;
+      font-family: var(--font);
       font-size: 11px;
-      margin-bottom: 6px;
     }
-
-    #preTradePanelFull .pt-estimate-btn {
-      width: 100%;
-      padding: 6px;
-      background: var(--accent);
-      border: none;
-      border-radius: 4px;
-      color: #0d1117;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 4px;
-    }
-
-    #preTradePanelFull .pt-estimate-btn:hover { opacity: 0.88; }
-
-    #ptResults {
-      margin-top: 8px;
-      font-size: 11px;
+    .pt-field.full { grid-column: 1 / -1; }
+    .pt-results {
       display: none;
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      margin-top: 8px;
     }
-
-    #ptResults .pt-row {
+    .pt-result-row {
       display: flex;
       justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 5px 10px;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border-subtle);
     }
+    .pt-result-row:last-child { border-bottom: none; }
+    .pt-result-label { color: var(--muted); }
 
-    #ptResults .pt-row:last-child { border-bottom: none; }
-
-    #preTradePanelTab {
-      display: none;
-      position: fixed;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-right: none;
-      padding: 8px 6px;
-      z-index: 500;
-      cursor: pointer;
-      font-size: 10px;
+    /* ── Methodology notes ──────────────────────────────────────────── */
+    .method-note {
+      font-size: 11px;
       color: var(--muted);
-      writing-mode: vertical-rl;
-      border-radius: 4px 0 0 4px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
+      line-height: 1.65;
     }
+    .method-note strong { color: var(--text); }
 
-    @media (max-width: 1199px) {
-      #preTradePanelFull { display: none; }
-      #preTradePanelTab { display: block; }
-      #preTradePanelFull.open { display: flex; }
+    /* ── Advanced analytics grid ────────────────────────────────────── */
+    .adv-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+    }
+    @media (max-width: 900px) { .adv-grid { grid-template-columns: 1fr; } }
+
+    /* ── Drawer title with badge ────────────────────────────────────── */
+    .drawer-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .drawer-cpty-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
     }
   </style>
   <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
 
@@ -552,203 +226,276 @@
   </div>
 </div>
 
-<!-- XVA page controls injected into global nav right slot after nav loads -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var slot = document.getElementById('apex-nav-right');
-    if (slot) {
-      slot.innerHTML =
-        '<span id="source-tag" class="source-tag mock" style="' +
-          'font-size:10px;padding:2px 8px;border-radius:3px;' +
-          'background:#21262d;color:#8b949e;border:1px solid #30363d;' +
-          'font-family:ui-monospace,monospace;' +
-        '">MOCK DATA</span>' +
-        '<span id="xvaBadge" class="badge badge-demo">&#9679; DEMO</span>' +
-        '<span class="badge live" style="' +
-          'display:flex;align-items:center;gap:4px;' +
-          'font-size:10px;color:#3fb950;' +
-        '"><span style="width:6px;height:6px;border-radius:50%;background:#3fb950;display:inline-block;"></span>LIVE</span>' +
-        '<button onclick="runDemo()" style="' +
-          'background:#58a6ff;border:none;border-radius:4px;color:#0d1117;' +
-          'font-family:ui-monospace,monospace;font-size:11px;font-weight:700;' +
-          'padding:5px 12px;cursor:pointer;' +
-        '">&#9654; Run Demo</button>';
-    }
-  });
-</script>
+<div class="page-shell">
 
-<!-- Stress bar -->
-<div class="page-header">
-  <div>
-    <div class="page-title">XVA Analytics</div>
-    <div class="page-subtitle">
-      Counterparty risk, funding adjustments, and future exposure across the derivatives portfolio.
-      The core question here is provenance: what is live from `pyxva`, what is fallback, and where exposure is concentrating.
+  <!-- ── Page header ──────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">XVA</div>
+      <div class="page-subtitle">Counterparty and portfolio valuation adjustments</div>
+    </div>
+    <div class="page-header-right">
+      <span id="xva-source-chip" class="source-chip" data-source="DEMO">DEMO</span>
+      <span class="last-refresh" id="xva-refresh">—</span>
     </div>
   </div>
-  <div class="page-actions">
-    <span class="badge">Counterparty Risk</span>
-    <span class="badge">CVA / FVA / PFE</span>
-  </div>
-</div>
 
-<!-- Stress bar -->
-<div class="stress-bar">
-  <span class="stress-label">Stress:</span>
-  <button class="stress-btn" data-scenario="gfc" onclick="runStress(this)">GFC</button>
-  <button class="stress-btn" data-scenario="covid" onclick="runStress(this)">COVID</button>
-  <button class="stress-btn" data-scenario="rate_shock_200bp" onclick="runStress(this)">Rate +200bp</button>
-  <button class="stress-btn" data-scenario="credit_widening" onclick="runStress(this)">Credit Widening</button>
-  <button class="stress-btn clear-stress" onclick="clearStress()">&#x2715; Clear</button>
-</div>
-
-<!-- KPI bar -->
-<div class="kpi-bar">
-  <div class="kpi-box">
-    <span class="kpi-label">Total CVA</span>
-    <span class="kpi-value neg" id="kpi-cva">—</span>
-    <span class="kpi-sub">MM USD</span>
-  </div>
-  <div class="kpi-box">
-    <span class="kpi-label">Total FVA</span>
-    <span class="kpi-value neg" id="kpi-fva">—</span>
-    <span class="kpi-sub">Funding Value Adj.</span>
-  </div>
-  <div class="kpi-box">
-    <span class="kpi-label">Peak PFE</span>
-    <span class="kpi-value warn" id="kpi-pfe">—</span>
-    <span class="kpi-sub">97.5th pct · MM USD</span>
-  </div>
-  <div class="kpi-box">
-    <span class="kpi-label">Total EEPE</span>
-    <span class="kpi-value accent" id="kpi-eepe">—</span>
-    <span class="kpi-sub">Eff. Exp. Pos. Exposure</span>
-  </div>
-</div>
-
-<div class="provenance-banner mock" id="provenance-banner">
-  <div><strong>Fallback data active.</strong> The XVA view is currently showing mock analytics until a live `pyxva` run succeeds.</div>
-  <div id="provenance-detail">Source: mock</div>
-</div>
-
-<!-- Main grid -->
-<div class="main-grid">
-
-  <!-- Sidebar: counterparty list -->
-  <div class="sidebar">
-    <div class="sidebar-header">Counterparties</div>
-    <div id="cp-list"></div>
+  <!-- ── Alert rail ───────────────────────────────────────────────── -->
+  <div class="alert-rail" id="xva-alerts" data-empty="true">
+    <span class="alert-rail-label">Alerts</span>
   </div>
 
-  <!-- Right pane -->
-  <div class="right-pane">
-
-    <!-- Exposure profile chart -->
-    <div class="chart-card">
-      <div id="exposure-chart"></div>
+  <!-- ── KPI strip ────────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Total CVA</div>
+      <div class="kpi-value negative" id="kpi-cva">—</div>
+      <div class="kpi-sub">$M · credit valuation adj.</div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total FVA</div>
+      <div class="kpi-value negative" id="kpi-fva">—</div>
+      <div class="kpi-sub">$M · funding valuation adj.</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Peak PFE</div>
+      <div class="kpi-value warning" id="kpi-pfe">—</div>
+      <div class="kpi-sub">$M · 97.5th pct potential future exp.</div>
+    </div>
+  </div>
 
-    <!-- Bottom row: XVA table | Heatmap | Backtest -->
-    <div class="bottom-grid">
+  <!-- ── Main panel ───────────────────────────────────────────────── -->
+  <div class="main-panel">
 
-      <!-- XVA breakdown table -->
+    <!-- Left: main content -->
+    <div class="main-content">
+
+      <!-- Scenario selector card -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">XVA Breakdown</span>
-          <span style="font-size:10px;color:var(--muted)">MM USD</span>
+          <h2>Stress Scenarios</h2>
+          <span id="stress-status" style="font-size:10px;color:var(--muted);">Baseline</span>
         </div>
-        <div class="card-body">
-          <table id="xva-table">
+        <div class="stress-row">
+          <span class="stress-label">Apply:</span>
+          <button class="stress-btn" data-scenario="gfc"              onclick="runStress(this)">GFC</button>
+          <button class="stress-btn" data-scenario="covid"            onclick="runStress(this)">COVID</button>
+          <button class="stress-btn" data-scenario="rate_shock_200bp" onclick="runStress(this)">Rate +200bp</button>
+          <button class="stress-btn" data-scenario="credit_widening"  onclick="runStress(this)">Credit Widening</button>
+          <button class="stress-btn clear-stress" onclick="clearStress()">&#x2715; Clear</button>
+        </div>
+      </div>
+
+      <!-- Counterparty table card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Counterparties</h2>
+          <span style="font-size:10px;color:var(--muted);">Sorted by |CVA| desc &middot; click to inspect</span>
+        </div>
+        <table class="cp-table">
+          <thead>
+            <tr>
+              <th>Counterparty</th>
+              <th style="text-align:right">CVA ($M)</th>
+              <th style="text-align:right">DVA ($M)</th>
+              <th style="text-align:right">FVA ($M)</th>
+              <th style="text-align:right">EEPE ($M)</th>
+              <th style="text-align:right">Util%</th>
+            </tr>
+          </thead>
+          <tbody id="cp-tbody">
+            <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Exposure profile chart card -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <h2 id="chart-title">Exposure Profile</h2>
+          <span style="font-size:10px;color:var(--muted);">EE · PFE 97.5% · EE (MPOR)</span>
+        </div>
+        <div id="exposure-chart"></div>
+      </div>
+
+      <!-- PFE Heatmap card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>PFE Heatmap</h2>
+          <span style="font-size:10px;color:var(--muted);">97.5th pct $M</span>
+        </div>
+        <div id="heatmap-chart"></div>
+      </div>
+
+      <!-- Backtest traffic light card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Backtest Traffic Light</h2>
+          <span style="font-size:10px;color:var(--muted);">PFE exceedance</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Horizon</th>
+              <th style="text-align:right">Exceptions</th>
+              <th style="text-align:right">N Obs</th>
+              <th style="text-align:right">Zone</th>
+              <th style="text-align:right">Kupiec p</th>
+            </tr>
+          </thead>
+          <tbody id="backtest-tbody"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /.main-content -->
+
+    <!-- Right: detail drawer -->
+    <div class="detail-drawer" id="cpty-drawer">
+      <div class="detail-drawer-title">Counterparty Detail</div>
+      <div id="cpty-drawer-content">
+        <div class="detail-drawer-empty">Select a counterparty</div>
+      </div>
+    </div>
+
+  </div><!-- /.main-panel -->
+
+  <!-- ── Advanced Analytics expander ─────────────────────────────── -->
+  <div class="secondary-expander">
+    <div class="expander-header" id="adv-header">
+      Advanced Analytics
+      <span class="expander-caret">&#9660;</span>
+    </div>
+    <div class="expander-body" id="adv-body">
+
+      <div class="adv-grid">
+
+        <!-- DVA / MVA / KVA totals -->
+        <div class="card">
+          <div class="card-header"><h2>Portfolio XVA Totals</h2></div>
+          <div id="adv-xva-totals">
+            <div class="detail-row" style="margin-bottom:6px;">
+              <span class="detail-row-label">DVA</span>
+              <span class="detail-row-value val-pos" id="adv-dva">—</span>
+            </div>
+            <div class="detail-row" style="margin-bottom:6px;">
+              <span class="detail-row-label">MVA</span>
+              <span class="detail-row-value val-neg" id="adv-mva">—</span>
+            </div>
+            <div class="detail-row" style="margin-bottom:6px;">
+              <span class="detail-row-label">KVA</span>
+              <span class="detail-row-value val-neg" id="adv-kva">—</span>
+            </div>
+            <div class="detail-row" style="margin-bottom:6px;">
+              <span class="detail-row-label">BCVA (net)</span>
+              <span class="detail-row-value val-neg" id="adv-bcva">—</span>
+            </div>
+            <div class="detail-row" style="font-weight:600;">
+              <span class="detail-row-label">Total EEPE</span>
+              <span class="detail-row-value accent" id="adv-eepe">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pre-trade XVA estimator -->
+        <div class="card">
+          <div class="card-header"><h2>Pre-Trade XVA Estimator</h2></div>
+          <div class="pt-form-grid">
+            <div class="pt-field">
+              <label>Counterparty</label>
+              <select id="ptCounterparty">
+                <option value="Goldman Sachs">Goldman Sachs</option>
+                <option value="JPMorgan">JPMorgan</option>
+                <option value="Deutsche Bank">Deutsche Bank</option>
+                <option value="BNP Paribas">BNP Paribas</option>
+                <option value="HSBC">HSBC</option>
+              </select>
+            </div>
+            <div class="pt-field">
+              <label>Product</label>
+              <select id="ptProduct">
+                <option value="irs">IRS</option>
+                <option value="fx_forward">FX Forward</option>
+                <option value="fixed_rate_bond">Bond</option>
+              </select>
+            </div>
+            <div class="pt-field">
+              <label>Notional (USD)</label>
+              <input type="number" id="ptNotional" value="100000000" min="0">
+            </div>
+            <div class="pt-field">
+              <label>Tenor</label>
+              <select id="ptTenor">
+                <option value="1">1Y</option>
+                <option value="2">2Y</option>
+                <option value="5" selected>5Y</option>
+                <option value="10">10Y</option>
+              </select>
+            </div>
+            <div class="pt-field full">
+              <button class="btn btn-primary" style="width:100%" onclick="estimatePreTrade()">Estimate XVA</button>
+            </div>
+          </div>
+          <div class="pt-results" id="ptResults">
+            <div class="pt-result-row">
+              <span class="pt-result-label">CVA Charge</span>
+              <span class="val-neg" id="ptCVA"></span>
+            </div>
+            <div class="pt-result-row">
+              <span class="pt-result-label">FVA Charge</span>
+              <span class="val-neg" id="ptFVA"></span>
+            </div>
+            <div class="pt-result-row">
+              <span class="pt-result-label">Total XVA</span>
+              <span class="val-neg" id="ptTotal" style="font-weight:bold;"></span>
+            </div>
+            <div class="pt-result-row">
+              <span class="pt-result-label">Spread Used</span>
+              <span class="val-muted" id="ptSpread"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Netting set explorer -->
+        <div class="card">
+          <div class="card-header"><h2>Netting Set Explorer</h2></div>
+          <table id="netting-table">
             <thead>
               <tr>
+                <th>Agreement ID</th>
                 <th>Counterparty</th>
-                <th>CVA</th>
-                <th>DVA</th>
-                <th>BCVA</th>
-                <th>FVA</th>
-                <th>MVA</th>
-                <th>KVA</th>
-                <th>Total</th>
+                <th style="text-align:right">MPoR (days)</th>
+                <th style="text-align:right">EEPE ($M)</th>
               </tr>
             </thead>
-            <tbody id="xva-tbody"></tbody>
-            <tfoot id="xva-tfoot"></tfoot>
+            <tbody id="netting-tbody">
+              <tr><td colspan="4" class="empty-state">Load data to view netting sets</td></tr>
+            </tbody>
           </table>
         </div>
-      </div>
 
-      <!-- PFE Heatmap -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">PFE Heatmap</span>
-          <span style="font-size:10px;color:var(--muted)">97.5th pct · MM USD</span>
+        <!-- Methodology notes -->
+        <div class="card">
+          <div class="card-header"><h2>Methodology</h2></div>
+          <div class="method-note">
+            <p><strong>CVA</strong> — Credit Valuation Adjustment via Monte Carlo EPE.
+            Exposure simulated under risk-neutral measure; CDS spreads used for PD calibration.</p>
+            <br>
+            <p><strong>FVA</strong> — Funding Valuation Adjustment. Symmetric FVA using OIS–LIBOR basis
+            applied to uncollateralised exposures. Netting sets with full CSA excluded.</p>
+            <br>
+            <p><strong>PFE</strong> — Potential Future Exposure at 97.5th percentile. Used for
+            limit monitoring and stress. MPOR-adjusted EE reported separately.</p>
+            <br>
+            <p><strong>Source</strong> — <em>pyxva</em> engine when available; static demo fallback
+            otherwise. Stress multipliers are applied analytically to baseline profiles.</p>
+          </div>
         </div>
-        <div class="card-body" style="overflow:hidden;min-height:0;">
-          <div id="heatmap-chart" style="height:100%;min-height:180px;"></div>
-        </div>
-      </div>
 
-      <!-- Backtest traffic light -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Backtest Traffic Light</span>
-          <span style="font-size:10px;color:var(--muted)">PFE Exceedance</span>
-        </div>
-        <div class="card-body">
-          <table>
-            <thead>
-              <tr>
-                <th>Horizon</th>
-                <th>Exceptions</th>
-                <th>N Obs</th>
-                <th>Zone</th>
-                <th>Kupiec p</th>
-              </tr>
-            </thead>
-            <tbody id="backtest-tbody"></tbody>
-          </table>
-        </div>
-      </div>
+      </div><!-- /.adv-grid -->
+    </div><!-- /.expander-body -->
+  </div><!-- /.secondary-expander -->
 
-    </div>
-  </div>
-</div>
-
-<!-- Pre-trade XVA estimator panel -->
-<div id="preTradePanelFull">
-  <div class="pt-title">Pre-Trade XVA Estimator</div>
-  <label>Counterparty</label>
-  <select id="ptCounterparty">
-    <option value="Goldman Sachs">Goldman Sachs</option>
-    <option value="JPMorgan">JPMorgan</option>
-    <option value="Deutsche Bank">Deutsche Bank</option>
-    <option value="BNP Paribas">BNP Paribas</option>
-    <option value="HSBC">HSBC</option>
-  </select>
-  <label>Product</label>
-  <select id="ptProduct">
-    <option value="irs">IRS</option>
-    <option value="fx_forward">FX Forward</option>
-    <option value="fixed_rate_bond">Bond</option>
-  </select>
-  <label>Notional (USD)</label>
-  <input type="number" id="ptNotional" placeholder="100000000" value="100000000" min="0">
-  <label>Tenor</label>
-  <select id="ptTenor">
-    <option value="1">1Y</option>
-    <option value="2">2Y</option>
-    <option value="5" selected>5Y</option>
-    <option value="10">10Y</option>
-  </select>
-  <button class="pt-estimate-btn" onclick="estimatePreTrade()">Estimate XVA</button>
-  <div id="ptResults">
-    <div class="pt-row"><span style="color:var(--muted)">CVA Charge</span><span id="ptCVA" class="val-neg"></span></div>
-    <div class="pt-row"><span style="color:var(--muted)">FVA Charge</span><span id="ptFVA" class="val-neg"></span></div>
-    <div class="pt-row"><span style="color:var(--muted)">Total XVA</span><span id="ptTotal" class="val-neg" style="font-weight:bold;"></span></div>
-    <div class="pt-row"><span style="color:var(--muted)">Spread Used</span><span id="ptSpread" style="color:var(--muted)"></span></div>
-  </div>
-</div>
-<div id="preTradePanelTab" onclick="document.getElementById('preTradePanelFull').classList.toggle('open')">Pre-Trade XVA</div>
+</div><!-- /.page-shell -->
 
 <script>
 // ============================================================
@@ -775,6 +522,46 @@ const CP_DISPLAY = {
   "AGR_HSBC":     "HSBC",
 };
 
+const CP_RATINGS = {
+  "AGR_GOLDMAN":  { label: "A+",  cls: "rating-a" },
+  "AGR_JPMORGAN": { label: "AA-", cls: "rating-a" },
+  "AGR_DEUTSCHE": { label: "BBB", cls: "rating-b" },
+  "AGR_BNP":      { label: "A",   cls: "rating-a" },
+  "AGR_HSBC":     { label: "A+",  cls: "rating-a" },
+};
+
+const CP_UTIL_PCTS = {
+  "AGR_GOLDMAN":  56,
+  "AGR_JPMORGAN": 72,
+  "AGR_DEUTSCHE": 81,
+  "AGR_BNP":      44,
+  "AGR_HSBC":     33,
+};
+
+const CP_NETTING_IDS = {
+  "AGR_GOLDMAN":  "ISDA-GS-001",
+  "AGR_JPMORGAN": "ISDA-JPM-001",
+  "AGR_DEUTSCHE": "ISDA-DB-001",
+  "AGR_BNP":      "ISDA-BNP-001",
+  "AGR_HSBC":     "ISDA-HSBC-001",
+};
+
+const CP_MPOR = {
+  "AGR_GOLDMAN":  10,
+  "AGR_JPMORGAN": 10,
+  "AGR_DEUTSCHE": 20,
+  "AGR_BNP":      10,
+  "AGR_HSBC":     10,
+};
+
+const CP_LIMITS = {
+  "AGR_GOLDMAN":  50,
+  "AGR_JPMORGAN": 45,
+  "AGR_DEUTSCHE": 25,
+  "AGR_BNP":      30,
+  "AGR_HSBC":     35,
+};
+
 // Backtest mock data (static)
 const BACKTEST_DATA = [
   { horizon: "1 Month",  exceptions: 3,  n_obs: 250, kupiec: 0.312 },
@@ -784,8 +571,8 @@ const BACKTEST_DATA = [
 ];
 
 // Heatmap tenors and their approximate time-grid index mapping
-const HEATMAP_TENORS  = ["3M", "6M", "1Y", "2Y", "5Y"];
-const HEATMAP_TIMES   = [0.25, 0.5, 1.0, 2.0, 5.0];
+const HEATMAP_TENORS = ["3M", "6M", "1Y", "2Y", "5Y"];
+const HEATMAP_TIMES  = [0.25, 0.5, 1.0, 2.0, 5.0];
 
 // ============================================================
 // Utilities
@@ -793,16 +580,13 @@ const HEATMAP_TIMES   = [0.25, 0.5, 1.0, 2.0, 5.0];
 
 function fmt(v, decimals = 2) {
   if (v == null || isNaN(v)) return "—";
-  const abs = Math.abs(v);
-  const s   = abs.toFixed(decimals);
-  return v < 0 ? `-${s}` : s;
+  return Math.abs(v).toFixed(decimals);
 }
 
-function fmtSigned(v, decimals = 2) {
+function fmtM(v, decimals = 2) {
   if (v == null || isNaN(v)) return "—";
-  const abs = Math.abs(v);
-  const s   = abs.toFixed(decimals);
-  return (v < 0 ? "-" : "+") + s;
+  const sign = v < 0 ? "-" : "";
+  return `${sign}$${Math.abs(v).toFixed(decimals)}M`;
 }
 
 function valClass(v) {
@@ -816,15 +600,14 @@ function utilColor(pct) {
   return "var(--negative)";
 }
 
-// Interpolate a profile at a given time t using the time_grid
 function interpProfile(timeGrid, profile, t) {
   if (!timeGrid || !profile) return 0;
   const n = timeGrid.length;
-  if (t <= timeGrid[0]) return profile[0];
+  if (t <= timeGrid[0])   return profile[0];
   if (t >= timeGrid[n-1]) return profile[n-1];
   for (let i = 1; i < n; i++) {
     if (timeGrid[i] >= t) {
-      const dt = timeGrid[i] - timeGrid[i-1];
+      const dt    = timeGrid[i] - timeGrid[i-1];
       const alpha = dt > 0 ? (t - timeGrid[i-1]) / dt : 0;
       return profile[i-1] * (1 - alpha) + profile[i] * alpha;
     }
@@ -855,36 +638,46 @@ async function fetchJSON(url, options = {}) {
   return res.json();
 }
 
-async function runDemo() {
-  showSpinner("Running XVA demo pipeline...");
+async function loadXVA() {
   try {
-    _stressData = null;
-    clearStressButtons();
-    const data = await fetchJSON("/api/xva/demo");
-    _data = data;
-    renderAll(data);
-  } catch (e) {
-    console.error("Demo failed:", e);
-    alert("API unavailable — rendering mock data.");
-    _data = getMockData();
-    renderAll(_data);
-  } finally {
-    hideSpinner();
+    // Primary: try to load counterparties from dedicated endpoint
+    const cptyData = await fetchJSON("/api/xva/counterparties");
+    if (cptyData && (cptyData.agreements || cptyData.source)) {
+      updateFromXVAData(cptyData);
+      return;
+    }
+  } catch (_) { /* fall through */ }
+
+  try {
+    const d = await fetchJSON("/api/xva/live");
+    updateFromXVAData(d);
+  } catch (_) {
+    try {
+      const d = await fetchJSON("/api/xva/demo");
+      updateFromXVAData(d);
+    } catch (_2) {
+      updateFromXVAData(getMockData());
+    }
   }
+}
+
+function updateFromXVAData(d) {
+  _data = d;
+  renderAll(d);
 }
 
 async function runStress(btn) {
   const scenario = btn.dataset.scenario;
   showSpinner(`Stressing: ${scenario}...`);
-  // Toggle active button
   document.querySelectorAll(".stress-btn[data-scenario]").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
+  document.getElementById("stress-status").textContent = "Stressed: " + btn.textContent;
 
   try {
     const result = await fetchJSON("/api/xva/stress", {
-      method: "POST",
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scenario }),
+      body:    JSON.stringify({ scenario }),
     });
     _stressData = result.stressed;
     if (!_data) {
@@ -894,7 +687,6 @@ async function runStress(btn) {
     updateExposureChart(_activeCP || CP_IDS[0]);
   } catch (e) {
     console.error("Stress failed:", e);
-    // Apply mock stress locally
     _stressData = applyMockStress(_data, scenario);
     updateExposureChart(_activeCP || CP_IDS[0]);
   } finally {
@@ -904,16 +696,13 @@ async function runStress(btn) {
 
 function clearStress() {
   _stressData = null;
-  clearStressButtons();
+  document.querySelectorAll(".stress-btn[data-scenario]").forEach(b => b.classList.remove("active"));
+  document.getElementById("stress-status").textContent = "Baseline";
   if (_data) updateExposureChart(_activeCP || CP_IDS[0]);
 }
 
-function clearStressButtons() {
-  document.querySelectorAll(".stress-btn[data-scenario]").forEach(b => b.classList.remove("active"));
-}
-
 // ============================================================
-// Mock data (used when API is unavailable)
+// Mock data (fallback when API is unavailable)
 // ============================================================
 
 function getMockData() {
@@ -952,8 +741,8 @@ function getMockData() {
   const peakPfe = Math.max(...Object.values(agreements).flatMap(a => a.pfe_profile));
 
   return {
-    source: "mock",
-    time_grid: BASE_TIME_GRID,
+    source:     "mock",
+    time_grid:  BASE_TIME_GRID,
     total_cva:  +allCva.toFixed(4),
     total_fva:  +allFva.toFixed(4),
     peak_pfe:   +peakPfe.toFixed(4),
@@ -970,12 +759,12 @@ const STRESS_MULTIPLIERS = {
 };
 
 function applyMockStress(data, scenario) {
-  const mult = STRESS_MULTIPLIERS[scenario] || { cva: 1.5, pfe: 1.4, ee: 1.3 };
+  const mult    = STRESS_MULTIPLIERS[scenario] || { cva: 1.5, pfe: 1.4, ee: 1.3 };
   const stressed = JSON.parse(JSON.stringify(data));
   stressed.source = "mock_stress";
   for (const agr of Object.values(stressed.agreements)) {
-    agr.pfe_profile     = agr.pfe_profile.map(v => +(v * mult.pfe).toFixed(4));
-    agr.ee_profile      = agr.ee_profile.map(v  => +(v * mult.ee).toFixed(4));
+    agr.pfe_profile     = agr.pfe_profile.map(v     => +(v * mult.pfe).toFixed(4));
+    agr.ee_profile      = agr.ee_profile.map(v      => +(v * mult.ee).toFixed(4));
     agr.ee_mpor_profile = agr.ee_mpor_profile.map(v => +(v * mult.ee).toFixed(4));
     agr.cva             = +(agr.cva * mult.cva).toFixed(4);
   }
@@ -987,62 +776,70 @@ function applyMockStress(data, scenario) {
 // ============================================================
 
 function renderAll(data) {
-  updateSourceTag(data.source);
+  updateSourceChip(data.source);
   updateKPIs(data);
-  renderSidebar(data);
+  updateAlertRail(data);
+  renderCounterpartyTable(data);
   const firstCp = CP_IDS.find(id => data.agreements[id]) || Object.keys(data.agreements)[0];
   _activeCP = firstCp;
   renderExposureChart(data, firstCp);
-  renderXVATable(data);
   renderHeatmap(data);
   renderBacktest();
-  highlightSidebarItem(firstCp);
-  highlightTableRow(firstCp);
+  updateAdvancedTotals(data);
+  renderNettingTable(data);
+  document.getElementById("xva-refresh").textContent = new Date().toLocaleTimeString();
 }
 
 // ============================================================
-// Source tag
+// Source chip + provenance
 // ============================================================
 
-function updateSourceTag(source) {
-  const tag = document.getElementById("source-tag");
+function updateSourceChip(source) {
+  const chip = document.getElementById("xva-source-chip");
+  if (!chip) return;
   if (source === "pyxva") {
-    tag.textContent = "PYXVA ENGINE";
-    tag.className   = "source-tag pyxva";
-  } else if (source === "mock_fallback") {
-    tag.textContent = "MOCK FALLBACK";
-    tag.className   = "source-tag mock";
-  } else if (source === "mock_stress") {
-    tag.textContent = "MOCK STRESS";
-    tag.className   = "source-tag mock";
+    chip.setAttribute("data-source", "LIVE");
+    chip.textContent = "LIVE";
   } else {
-    tag.textContent = "MOCK DATA";
-    tag.className   = "source-tag mock";
+    chip.setAttribute("data-source", "DEMO");
+    chip.textContent = "DEMO";
   }
-  updateProvenanceBanner(source);
 }
 
-function updateProvenanceBanner(source) {
-  const banner = document.getElementById("provenance-banner");
-  const detail = document.getElementById("provenance-detail");
-  if (!banner || !detail) return;
+// ============================================================
+// Alert rail
+// ============================================================
 
-  if (source === "pyxva") {
-    banner.className = "provenance-banner pyxva";
-    banner.firstElementChild.innerHTML = "<strong>Live pyxva analytics.</strong> CVA, PFE, and EEPE are being rendered from the pyxva engine output.";
-    detail.textContent = "Source: pyxva";
-  } else if (source === "mock_fallback") {
-    banner.className = "provenance-banner mock";
-    banner.firstElementChild.innerHTML = "<strong>Fallback data active.</strong> A live pyxva run failed, so the page fell back to mock analytics to keep the UI responsive.";
-    detail.textContent = "Source: mock fallback";
-  } else if (source === "mock_stress") {
-    banner.className = "provenance-banner mock";
-    banner.firstElementChild.innerHTML = "<strong>Mock stress view.</strong> Stress impacts are being applied to the mock XVA baseline rather than a fresh pyxva scenario run.";
-    detail.textContent = "Source: mock stress";
+function updateAlertRail(data) {
+  const rail = document.getElementById("xva-alerts");
+  rail.querySelectorAll(".alert-item").forEach(el => el.remove());
+
+  const alerts = [];
+
+  // Show demo fallback warning when source is mock (not live pyxva)
+  if (data.source === "mock") {
+    alerts.push({ cls: "warning", text: "XVA source: demo fallback" });
+  }
+
+  // High CCR concentration: any counterparty with util > 90%
+  const highConc = Object.keys(data.agreements || {}).some(id => {
+    const util = (CP_UTIL_PCTS[id] || 0) / 100;
+    return util > 0.90;
+  });
+  if (highConc) {
+    alerts.push({ cls: "warning", text: "High CCR concentration" });
+  }
+
+  if (alerts.length === 0) {
+    rail.setAttribute("data-empty", "true");
   } else {
-    banner.className = "provenance-banner mock";
-    banner.firstElementChild.innerHTML = "<strong>Fallback data active.</strong> The XVA view is currently showing mock analytics until a live pyxva run succeeds.";
-    detail.textContent = "Source: mock";
+    rail.removeAttribute("data-empty");
+    for (const a of alerts) {
+      const item = document.createElement("div");
+      item.className = `alert-item ${a.cls}`;
+      item.innerHTML = `<span class="alert-item-dot"></span>${a.text}`;
+      rail.appendChild(item);
+    }
   }
 }
 
@@ -1051,62 +848,148 @@ function updateProvenanceBanner(source) {
 // ============================================================
 
 function updateKPIs(data) {
-  document.getElementById("kpi-cva").textContent  = fmt(data.total_cva,  2);
-  document.getElementById("kpi-fva").textContent  = fmt(data.total_fva,  2);
-  document.getElementById("kpi-pfe").textContent  = fmt(data.peak_pfe,   2);
-  document.getElementById("kpi-eepe").textContent = fmt(data.total_eepe, 2);
+  document.getElementById("kpi-cva").textContent = fmtM(data.total_cva);
+  document.getElementById("kpi-fva").textContent = fmtM(data.total_fva);
+  document.getElementById("kpi-pfe").textContent = fmtM(data.peak_pfe);
 }
 
 // ============================================================
-// Sidebar
+// Counterparty table
 // ============================================================
 
-function renderSidebar(data) {
-  const container = document.getElementById("cp-list");
-  container.innerHTML = "";
+function renderCounterpartyTable(data) {
+  const tbody = document.getElementById("cp-tbody");
+  tbody.innerHTML = "";
 
-  for (const cpId of CP_IDS) {
-    const agr = data.agreements[cpId];
-    if (!agr) continue;
+  // Sort by |CVA| descending
+  const sorted = CP_IDS
+    .filter(id => data.agreements[id])
+    .sort((a, b) => Math.abs(data.agreements[b].cva) - Math.abs(data.agreements[a].cva));
 
-    const cpName = CP_DISPLAY[cpId] || cpId;
-    const cvaVal = fmt(agr.cva, 2);
+  for (const cpId of sorted) {
+    const agr     = data.agreements[cpId];
+    const cpName  = CP_DISPLAY[cpId] || cpId;
+    const utilPct = CP_UTIL_PCTS[cpId] || 50;
+    const color   = utilColor(utilPct);
 
-    // Mock utilization data
-    const utilPcts = { AGR_GOLDMAN: 56, AGR_JPMORGAN: 72, AGR_DEUTSCHE: 81, AGR_BNP: 44, AGR_HSBC: 33 };
-    const utilPct  = utilPcts[cpId] || 50;
-    const color    = utilColor(utilPct);
-
-    const item = document.createElement("div");
-    item.className = "cp-item";
-    item.id = `cp-item-${cpId}`;
-    item.innerHTML = `
-      <div class="cp-left">
-        <span class="cp-name">${cpName}</span>
-        <span class="cp-cva">CVA ${cvaVal} MM</span>
-      </div>
-      <div class="cp-util-wrap">
-        <span class="cp-util-pct">${utilPct}%</span>
-        <div class="cp-util-bar">
-          <div class="cp-util-fill" style="width:${utilPct}%;background:${color}"></div>
+    const tr = document.createElement("tr");
+    tr.id = `cp-row-${cpId}`;
+    tr.style.cursor = "pointer";
+    tr.innerHTML = `
+      <td>${cpName}</td>
+      <td class="${valClass(agr.cva)}">${fmt(agr.cva)}</td>
+      <td class="${valClass(agr.dva)}">${fmt(agr.dva)}</td>
+      <td class="${valClass(agr.fva)}">${fmt(agr.fva)}</td>
+      <td style="color:var(--accent)">${fmt(agr.eepe)}</td>
+      <td>
+        <div class="util-wrap">
+          <span style="font-size:10px;color:${color}">${utilPct}%</span>
+          <div class="util-bar">
+            <div class="util-fill" style="width:${utilPct}%;background:${color}"></div>
+          </div>
         </div>
-      </div>`;
-    item.addEventListener("click", () => selectCounterparty(cpId));
-    container.appendChild(item);
+      </td>`;
+    tr.addEventListener("click", () => selectCounterparty(cpId));
+    tbody.appendChild(tr);
   }
 }
 
 function selectCounterparty(cpId) {
   _activeCP = cpId;
   updateExposureChart(cpId);
-  highlightSidebarItem(cpId);
   highlightTableRow(cpId);
+  renderDrawer(cpId);
 }
 
-function highlightSidebarItem(cpId) {
-  document.querySelectorAll(".cp-item").forEach(el => el.classList.remove("active"));
-  const el = document.getElementById(`cp-item-${cpId}`);
-  if (el) el.classList.add("active");
+function highlightTableRow(cpId) {
+  document.querySelectorAll("#cp-tbody tr").forEach(tr => tr.classList.remove("active"));
+  const row = document.getElementById(`cp-row-${cpId}`);
+  if (row) row.classList.add("active");
+}
+
+// ============================================================
+// Detail drawer
+// ============================================================
+
+function renderDrawer(cpId) {
+  const agr = _data && _data.agreements[cpId];
+  if (!agr) return;
+
+  const cpName    = CP_DISPLAY[cpId] || cpId;
+  const rating    = CP_RATINGS[cpId] || { label: "N/A", cls: "rating-b" };
+  const utilPct   = CP_UTIL_PCTS[cpId] || 50;
+  const color     = utilColor(utilPct);
+  const limit     = CP_LIMITS[cpId] || 50;
+  const ead       = (agr.eepe * 1.4).toFixed(2);
+  const nettingId = CP_NETTING_IDS[cpId] || cpId;
+  const mpor      = CP_MPOR[cpId] || 10;
+
+  const drawerContent = document.getElementById("cpty-drawer-content");
+  drawerContent.innerHTML = `
+    <div class="drawer-title-row">
+      <span class="drawer-cpty-name">${cpName}</span>
+      <span class="rating-badge ${rating.cls}">${rating.label}</span>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-label">Exposure</div>
+      <div class="detail-row">
+        <span class="detail-row-label">MTM ($M)</span>
+        <span class="detail-row-value">${fmt(agr.eepe * 0.6)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">EAD ($M)</span>
+        <span class="detail-row-value">${ead}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">Limit ($M)</span>
+        <span class="detail-row-value">${limit}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">Utilization</span>
+        <span class="detail-row-value" style="color:${color}">${utilPct}%</span>
+      </div>
+      <div class="gauge-row" style="margin-top:6px;">
+        <div class="gauge-bar" style="flex:1;">
+          <div class="gauge-fill${utilPct >= 85 ? ' danger' : utilPct >= 60 ? ' warning' : ''}"
+               style="width:${utilPct}%"></div>
+        </div>
+        <span class="gauge-value">${utilPct}%</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-label">XVA</div>
+      <div class="detail-row">
+        <span class="detail-row-label">CVA ($M)</span>
+        <span class="detail-row-value val-neg">${fmt(agr.cva)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">DVA ($M)</span>
+        <span class="detail-row-value val-pos">${fmt(agr.dva)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">FVA ($M)</span>
+        <span class="detail-row-value val-neg">${fmt(agr.fva)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">BCVA ($M)</span>
+        <span class="detail-row-value val-neg">${fmt(agr.bcva)}</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-label">Netting</div>
+      <div class="detail-row">
+        <span class="detail-row-label">Agreement ID</span>
+        <span class="detail-row-value" style="font-size:10px;">${nettingId}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-row-label">MPoR (days)</span>
+        <span class="detail-row-value">${mpor}</span>
+      </div>
+    </div>
+  `;
 }
 
 // ============================================================
@@ -1114,40 +997,42 @@ function highlightSidebarItem(cpId) {
 // ============================================================
 
 const PLOTLY_LAYOUT_BASE = {
-  template: "plotly_dark",
+  template:      "plotly_dark",
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor:  "rgba(0,0,0,0)",
-  margin:        { t: 40, l: 52, r: 16, b: 44 },
+  margin:        { t: 10, l: 52, r: 16, b: 44 },
   font:          { family: "'SF Mono','Menlo','Monaco',monospace", size: 11, color: "#8b949e" },
   xaxis: {
-    title: { text: "Horizon (Years)", font: { size: 10 } },
-    gridcolor: "#21262d", zerolinecolor: "#30363d",
-    tickfont: { size: 10 },
+    title:       { text: "Horizon (Years)", font: { size: 10 } },
+    gridcolor:   "#21262d",
+    zerolinecolor: "#30363d",
+    tickfont:    { size: 10 },
   },
   yaxis: {
-    title: { text: "Exposure (MM USD)", font: { size: 10 } },
-    gridcolor: "#21262d", zerolinecolor: "#30363d",
-    tickfont: { size: 10 },
-    rangemode: "tozero",
+    title:       { text: "Exposure ($M)", font: { size: 10 } },
+    gridcolor:   "#21262d",
+    zerolinecolor: "#30363d",
+    tickfont:    { size: 10 },
+    rangemode:   "tozero",
   },
   legend: {
     orientation: "h",
-    x: 0, y: 1.0,
-    bgcolor: "rgba(0,0,0,0)",
-    font: { size: 10 },
+    x: 0, y: 1.06,
+    bgcolor:     "rgba(0,0,0,0)",
+    font:        { size: 10 },
   },
-  hovermode: "x unified",
+  hovermode:   "x unified",
   hoverlabel: {
-    bgcolor: "#161b22",
+    bgcolor:    "#161b22",
     bordercolor: "#30363d",
-    font: { family: "'SF Mono','Menlo','Monaco',monospace", size: 11 },
+    font:       { family: "'SF Mono','Menlo','Monaco',monospace", size: 11 },
   },
 };
 
 const PLOTLY_CONFIG = { responsive: true, displayModeBar: false };
 
 function buildExposureTraces(agr, stressAgr) {
-  const tg  = agr.time_grid;
+  const tg = agr.time_grid;
   const traces = [
     {
       x: tg, y: agr.ee_profile,
@@ -1194,15 +1079,10 @@ function renderExposureChart(data, cpId) {
   if (!agr) return;
 
   const cpName = CP_DISPLAY[cpId] || cpId;
+  document.getElementById("chart-title").textContent = `Exposure Profile — ${cpName}`;
+
   const traces = buildExposureTraces(agr, stressAgr);
-  const layout = {
-    ...PLOTLY_LAYOUT_BASE,
-    title: {
-      text: `Exposure Profile — ${cpName}`,
-      font: { size: 12, color: "#c9d1d9" },
-      x: 0.01,
-    },
-  };
+  const layout = { ...PLOTLY_LAYOUT_BASE };
 
   if (_exposureInitialised) {
     Plotly.react("exposure-chart", traces, layout, PLOTLY_CONFIG);
@@ -1218,63 +1098,6 @@ function updateExposureChart(cpId) {
 }
 
 // ============================================================
-// XVA Breakdown Table
-// ============================================================
-
-function renderXVATable(data) {
-  const tbody = document.getElementById("xva-tbody");
-  const tfoot = document.getElementById("xva-tfoot");
-  tbody.innerHTML = "";
-
-  let totCva = 0, totDva = 0, totBcva = 0, totFva = 0, totMva = 0, totKva = 0, totXva = 0;
-
-  for (const cpId of CP_IDS) {
-    const agr = data.agreements[cpId];
-    if (!agr) continue;
-
-    totCva  += agr.cva   || 0;
-    totDva  += agr.dva   || 0;
-    totBcva += agr.bcva  || 0;
-    totFva  += agr.fva   || 0;
-    totMva  += agr.mva   || 0;
-    totKva  += agr.kva   || 0;
-    totXva  += agr.total_xva || 0;
-
-    const cpName = CP_DISPLAY[cpId] || cpId;
-    const tr = document.createElement("tr");
-    tr.id = `xva-row-${cpId}`;
-    tr.innerHTML = `
-      <td>${cpName}</td>
-      <td class="${valClass(agr.cva)}">${fmt(agr.cva)}</td>
-      <td class="${valClass(agr.dva)}">${fmt(agr.dva)}</td>
-      <td class="${valClass(agr.bcva)}">${fmt(agr.bcva)}</td>
-      <td class="${valClass(agr.fva)}">${fmt(agr.fva)}</td>
-      <td class="${valClass(agr.mva)}">${fmt(agr.mva)}</td>
-      <td class="${valClass(agr.kva)}">${fmt(agr.kva)}</td>
-      <td class="${valClass(agr.total_xva)}" style="font-weight:bold">${fmt(agr.total_xva)}</td>`;
-    tr.addEventListener("click", () => selectCounterparty(cpId));
-    tbody.appendChild(tr);
-  }
-
-  tfoot.innerHTML = `<tr>
-    <td>TOTAL</td>
-    <td class="${valClass(totCva)}">${fmt(totCva)}</td>
-    <td class="${valClass(totDva)}">${fmt(totDva)}</td>
-    <td class="${valClass(totBcva)}">${fmt(totBcva)}</td>
-    <td class="${valClass(totFva)}">${fmt(totFva)}</td>
-    <td class="${valClass(totMva)}">${fmt(totMva)}</td>
-    <td class="${valClass(totKva)}">${fmt(totKva)}</td>
-    <td class="${valClass(totXva)}">${fmt(totXva)}</td>
-  </tr>`;
-}
-
-function highlightTableRow(cpId) {
-  document.querySelectorAll("#xva-tbody tr").forEach(tr => tr.classList.remove("active"));
-  const row = document.getElementById(`xva-row-${cpId}`);
-  if (row) row.classList.add("active");
-}
-
-// ============================================================
 // PFE Heatmap
 // ============================================================
 
@@ -1287,18 +1110,17 @@ function renderHeatmap(data) {
   for (const cpId of CP_IDS) {
     const agr = data.agreements[cpId];
     if (!agr) continue;
-
     cpLabels.push(CP_DISPLAY[cpId] || cpId);
-    const tg = agr.time_grid;
+    const tg  = agr.time_grid;
     const row = HEATMAP_TIMES.map(t => interpProfile(tg, agr.pfe_profile, t));
     zValues.push(row);
   }
 
   const trace = {
-    type: "heatmap",
-    z: zValues,
-    x: HEATMAP_TENORS,
-    y: cpLabels,
+    type:  "heatmap",
+    z:     zValues,
+    x:     HEATMAP_TENORS,
+    y:     cpLabels,
     colorscale: [
       [0.0, "#238636"],
       [0.4, "#e3b341"],
@@ -1306,23 +1128,23 @@ function renderHeatmap(data) {
       [1.0, "#f85149"],
     ],
     reversescale: false,
-    showscale: true,
+    showscale:    true,
     colorbar: {
       thickness: 10,
-      len: 0.8,
-      tickfont: { size: 9, color: "#8b949e" },
-      title: { text: "MM", font: { size: 9, color: "#8b949e" } },
+      len:       0.8,
+      tickfont:  { size: 9, color: "#8b949e" },
+      title:     { text: "MM", font: { size: 9, color: "#8b949e" } },
     },
     hovertemplate: "%{y}<br>%{x}: %{z:.3f} MM<extra></extra>",
-    texttemplate: "%{z:.2f}",
-    textfont: { size: 9, color: "#0d1117" },
+    texttemplate:  "%{z:.2f}",
+    textfont:      { size: 9, color: "#0d1117" },
   };
 
   const layout = {
     ...PLOTLY_LAYOUT_BASE,
-    margin:  { t: 10, l: 100, r: 40, b: 40 },
-    xaxis: { ...PLOTLY_LAYOUT_BASE.xaxis, title: null, tickfont: { size: 10 } },
-    yaxis: { ...PLOTLY_LAYOUT_BASE.yaxis, title: null, tickfont: { size: 10 }, automargin: true, rangemode: "normal" },
+    margin: { t: 10, l: 100, r: 40, b: 40 },
+    xaxis:  { ...PLOTLY_LAYOUT_BASE.xaxis, title: null, tickfont: { size: 10 } },
+    yaxis:  { ...PLOTLY_LAYOUT_BASE.yaxis, title: null, tickfont: { size: 10 }, automargin: true, rangemode: "normal" },
     legend: null,
     hovermode: "closest",
   };
@@ -1366,33 +1188,82 @@ function renderBacktest() {
 }
 
 // ============================================================
+// Advanced Analytics totals
+// ============================================================
+
+function updateAdvancedTotals(data) {
+  let totDva = 0, totMva = 0, totKva = 0, totBcva = 0, totEepe = 0;
+  for (const agr of Object.values(data.agreements || {})) {
+    totDva  += agr.dva  || 0;
+    totMva  += agr.mva  || 0;
+    totKva  += agr.kva  || 0;
+    totBcva += agr.bcva || 0;
+    totEepe += agr.eepe || 0;
+  }
+  document.getElementById("adv-dva").textContent  = fmtM(totDva);
+  document.getElementById("adv-mva").textContent  = fmtM(totMva);
+  document.getElementById("adv-kva").textContent  = fmtM(totKva);
+  document.getElementById("adv-bcva").textContent = fmtM(totBcva);
+  document.getElementById("adv-eepe").textContent = fmtM(totEepe);
+}
+
+// ============================================================
+// Netting set table
+// ============================================================
+
+function renderNettingTable(data) {
+  const tbody = document.getElementById("netting-tbody");
+  tbody.innerHTML = "";
+  for (const cpId of CP_IDS) {
+    const agr = data.agreements[cpId];
+    if (!agr) continue;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-size:10px;color:var(--muted)">${CP_NETTING_IDS[cpId] || cpId}</td>
+      <td>${CP_DISPLAY[cpId] || cpId}</td>
+      <td style="text-align:right">${CP_MPOR[cpId] || 10}</td>
+      <td style="text-align:right;color:var(--accent)">${fmt(agr.eepe)}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ============================================================
 // Pre-trade XVA estimator
 // ============================================================
 
 async function estimatePreTrade() {
-  const counterparty = document.getElementById('ptCounterparty').value;
-  const product      = document.getElementById('ptProduct').value;
-  const notional     = parseFloat(document.getElementById('ptNotional').value) || 0;
-  const tenor        = parseFloat(document.getElementById('ptTenor').value) || 1;
+  const counterparty = document.getElementById("ptCounterparty").value;
+  const product      = document.getElementById("ptProduct").value;
+  const notional     = parseFloat(document.getElementById("ptNotional").value) || 0;
+  const tenor        = parseFloat(document.getElementById("ptTenor").value) || 1;
 
   try {
-    const resp = await fetch('/api/xva/pre-trade', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({counterparty, product, notional, tenor}),
+    const resp = await fetch("/api/xva/pre-trade", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ counterparty, product, notional, tenor }),
     });
-    if (!resp.ok) throw new Error('API error');
-    const d = await resp.json();
-    const fmt = v => '$' + v.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-    document.getElementById('ptCVA').textContent   = fmt(d.cva);
-    document.getElementById('ptFVA').textContent   = fmt(d.fva);
-    document.getElementById('ptTotal').textContent = fmt(d.total_xva);
-    document.getElementById('ptSpread').textContent = (d.spread_used * 10000).toFixed(0) + 'bps';
-    document.getElementById('ptResults').style.display = 'block';
+    if (!resp.ok) throw new Error("API error");
+    const d   = await resp.json();
+    const fmtUSD = v => "$" + v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    document.getElementById("ptCVA").textContent    = fmtUSD(d.cva);
+    document.getElementById("ptFVA").textContent    = fmtUSD(d.fva);
+    document.getElementById("ptTotal").textContent  = fmtUSD(d.total_xva);
+    document.getElementById("ptSpread").textContent = (d.spread_used * 10000).toFixed(0) + "bps";
+    document.getElementById("ptResults").style.display = "block";
   } catch (e) {
-    console.warn('pre-trade estimate failed', e);
+    console.warn("pre-trade estimate failed", e);
   }
 }
+
+// ============================================================
+// Expander toggle
+// ============================================================
+
+document.querySelectorAll('.expander-header').forEach(h => h.addEventListener('click', () => {
+  h.classList.toggle('open');
+  h.nextElementSibling.classList.toggle('open');
+}));
 
 // ============================================================
 // WebSocket — live XVA updates
@@ -1403,26 +1274,25 @@ async function estimatePreTrade() {
     const wsXva = new WebSocket(`ws://${location.host}/ws/xva`);
     wsXva.onmessage = (e) => {
       const msg = JSON.parse(e.data);
-      if (msg.type === 'xva_refresh') {
+      if (msg.type === "xva_refresh") {
         updateXVAFromWebSocket(msg.data);
       }
     };
   } catch (e) {
-    console.debug('xva ws unavailable', e);
+    console.debug("xva ws unavailable", e);
   }
 })();
 
 function updateXVAFromWebSocket(data) {
-  // Update source badge
-  const badge = document.getElementById('xvaBadge');
-  if (badge) {
-    badge.textContent = data.source === 'live' ? '● LIVE (pyxva)' : '● DEMO';
-    badge.className = 'badge ' + (data.source === 'live' ? 'badge-live' : 'badge-demo');
+  const chip = document.getElementById("xva-source-chip");
+  if (chip) {
+    const isLive = data.source === "live";
+    chip.setAttribute("data-source", isLive ? "LIVE" : "DEMO");
+    chip.textContent = isLive ? "LIVE" : "DEMO";
   }
-  // Update CVA KPI tile if present
   if (data.total_cva !== undefined) {
-    const cvaEl = document.getElementById('kvCVA');
-    if (cvaEl) cvaEl.textContent = '$' + (data.total_cva / 1e6).toFixed(2) + 'M';
+    const cvaEl = document.getElementById("kpi-cva");
+    if (cvaEl) cvaEl.textContent = fmtM(data.total_cva / 1e6);
   }
 }
 
@@ -1431,16 +1301,14 @@ function updateXVAFromWebSocket(data) {
 // ============================================================
 
 (function init() {
-  // Load mock data immediately so UI is not blank
+  // Render mock data immediately so UI is not blank
   _data = getMockData();
   renderAll(_data);
 
-  // Try to hit the health endpoint — if server is live, auto-run demo
+  // Try to hit the health endpoint; if server is live, load real data
   fetch("/api/xva/health")
     .then(r => r.json())
-    .then(h => {
-      if (h.status === "ok") runDemo();
-    })
+    .then(h => { if (h.status === "ok") loadXVA(); })
     .catch(() => {/* server not running – stay on mock */});
 })();
 </script>

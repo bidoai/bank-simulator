@@ -8,123 +8,11 @@
   <style>
     body { max-width: 1480px; margin: 0 auto; padding: 20px 24px; }
 
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .page-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-
-    .page-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 760px;
-      line-height: 1.7;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .live-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 12px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--card);
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--positive);
-      box-shadow: 0 0 8px rgba(63, 185, 80, 0.55);
-    }
-
-    .refresh-btn {
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--text);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-family: inherit;
-      font-size: 12px;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-    }
-
-    .refresh-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-
-    .card-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .card-title h2 {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-    }
-
-    .card-title .meta {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .top-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-
-    .full-row {
-      margin-bottom: 16px;
-    }
-
-    .bottom-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    /* Ratio gauge */
+    /* Local ratio gauge (large number display) */
     .ratio-gauge {
       display: flex;
       align-items: center;
       gap: 20px;
-      margin-bottom: 16px;
       padding: 14px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -139,9 +27,9 @@
       text-align: center;
     }
 
-    .ratio-number.green  { color: var(--positive); }
-    .ratio-number.amber  { color: var(--warning); }
-    .ratio-number.red    { color: var(--negative); }
+    .ratio-number.green { color: var(--positive); }
+    .ratio-number.amber { color: var(--warning); }
+    .ratio-number.red   { color: var(--negative); }
 
     .ratio-meta { flex: 1; }
 
@@ -176,11 +64,24 @@
     .ratio-fill.amber { background: var(--warning); }
     .ratio-fill.red   { background: var(--negative); }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
+    /* Card used inside tab panels */
+    .inner-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
     }
+
+    .inner-card-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* Table overrides for denser spacing */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
 
     th {
       text-align: left;
@@ -203,33 +104,90 @@
 
     td.right, th.right { text-align: right; }
 
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
+    /* Intraday */
+    .bar-track {
+      height: 6px;
+      background: rgba(99, 110, 123, 0.25);
       border-radius: 999px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+
+    .bar-fill.accent   { background: var(--accent); }
+    .bar-fill.warning  { background: var(--warning); }
+    .bar-fill.negative { background: var(--negative); }
+
+    .peak-row { background: rgba(227, 179, 65, 0.07); }
+    .peak-row td { color: var(--warning); }
+
+    /* Stress scenario 2x2 grid */
+    .stress-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+    }
+
+    .stress-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stress-card-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .stress-card-compliance {
       font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .stress-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stress-metric {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stress-metric-label {
+      font-size: 9px;
       text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
     }
 
-    .status-pill.COMPLIANT {
-      color: var(--positive);
-      background: rgba(63, 185, 80, 0.12);
+    .stress-metric-value {
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
     }
 
-    .status-pill.MARGINAL {
-      color: var(--warning);
-      background: rgba(227, 179, 65, 0.14);
-    }
+    .survival-red   { color: var(--negative); }
+    .survival-amber { color: var(--warning); }
+    .survival-green { color: var(--positive); }
 
-    .status-pill.BREACH {
-      color: var(--negative);
-      background: rgba(248, 81, 73, 0.14);
-    }
+    /* Severity helpers reused from original */
+    .severity-low  { color: var(--positive); }
+    .severity-mid  { color: var(--warning); }
+    .severity-high { color: var(--negative); }
 
-    /* Liquidity Ladder chart */
+    /* Ladder chart */
     .ladder-chart {
       display: flex;
       align-items: flex-end;
@@ -260,8 +218,8 @@
       min-height: 2px;
     }
 
-    .ladder-bar.asset  { background: var(--positive); opacity: 0.8; }
-    .ladder-bar.liab   { background: var(--negative); opacity: 0.8; }
+    .ladder-bar.asset { background: var(--positive); opacity: 0.8; }
+    .ladder-bar.liab  { background: var(--negative); opacity: 0.8; }
 
     .ladder-label {
       font-size: 9px;
@@ -308,479 +266,837 @@
     .cum-value.pos { color: var(--positive); }
     .cum-value.neg { color: var(--negative); }
 
-    /* Intraday */
-    .bar-track {
-      height: 6px;
-      background: rgba(99, 110, 123, 0.25);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 5px;
+    /* Detail drawer sections */
+    .drawer-section { display: flex; flex-direction: column; gap: 6px; }
+
+    .drawer-section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 2px;
     }
 
-    .bar-fill {
-      height: 100%;
-      border-radius: 999px;
-    }
-
-    .bar-fill.accent   { background: var(--accent); }
-    .bar-fill.warning  { background: var(--warning); }
-    .bar-fill.negative { background: var(--negative); }
-
-    .peak-row { background: rgba(227, 179, 65, 0.07); }
-    .peak-row td { color: var(--warning); }
-
-    /* Stress table severity */
-    .severity-low  { color: var(--positive); }
-    .severity-mid  { color: var(--warning); }
-    .severity-high { color: var(--negative); }
-
-    .error-banner {
-      display: none;
-      margin-bottom: 16px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      border: 1px solid rgba(248, 81, 73, 0.45);
-      background: rgba(248, 81, 73, 0.08);
-      color: #ffb3ad;
+    .drawer-row {
+      display: flex;
+      justify-content: space-between;
       font-size: 12px;
+      padding: 3px 0;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .error-banner.visible { display: block; }
+    .drawer-row:last-child { border-bottom: none; }
+    .drawer-row-label { color: var(--muted); }
+    .drawer-row-value { font-weight: 500; }
 
     @media (max-width: 1100px) {
-      .top-grid, .bottom-grid { grid-template-columns: 1fr; }
+      .stress-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      .stress-metrics { grid-template-columns: 1fr 1fr; }
     }
   </style>
   <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
 
+<div class="page-shell">
+
+  <!-- ── Page Header ──────────────────────────────────────────────── -->
   <div class="page-header">
-    <div>
+    <div class="page-header-left">
       <div class="page-title">Liquidity Risk</div>
-      <div class="page-subtitle">
-        Basel III LCR and NSFR metrics, maturity ladder, intraday cash flow profile, and stress scenario analysis.
-        Regulatory minimums: LCR &ge; 100%, NSFR &ge; 100%. Monitored daily; intraday positions refreshed continuously.
-      </div>
+      <div class="page-subtitle">Supervisory liquidity and survival horizon</div>
     </div>
-    <div class="header-actions">
-      <div class="live-indicator">
-        <span class="live-dot"></span>
-        <span id="live-text">Live snapshot</span>
-      </div>
-      <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
+    <div class="page-header-right">
+      <span class="source-chip" data-source="LIVE">LIVE</span>
+      <span class="last-refresh" id="last-refresh">—</span>
     </div>
   </div>
 
-  <div class="error-banner" id="error-banner"></div>
+  <!-- ── Alert Rail ───────────────────────────────────────────────── -->
+  <div class="alert-rail" id="liq-alerts" data-empty="true">
+    <span class="alert-rail-label">Alerts</span>
+  </div>
 
-  <!-- Top row: LCR + NSFR -->
-  <div class="top-grid">
+  <!-- ── KPI Strip ────────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">LCR</div>
+      <div class="kpi-value" id="kpi-lcr">—</div>
+      <div class="kpi-sub" id="kpi-lcr-sub">30-day stress · min 100%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">NSFR</div>
+      <div class="kpi-value" id="kpi-nsfr">—</div>
+      <div class="kpi-sub" id="kpi-nsfr-sub">1-year horizon · min 100%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Survival Days (Worst Case)</div>
+      <div class="kpi-value" id="kpi-survival">—</div>
+      <div class="kpi-sub" id="kpi-survival-sub">Combined stress scenario</div>
+    </div>
+  </div>
 
-    <section class="card">
-      <div class="card-title">
-        <h2>Liquidity Coverage Ratio (LCR)</h2>
-        <span class="meta" id="lcr-updated">30-day stress</span>
-      </div>
-      <div class="ratio-gauge">
-        <div class="ratio-number" id="lcr-ratio-num">—</div>
-        <div class="ratio-meta">
-          <div class="ratio-label">LCR Ratio</div>
-          <div class="ratio-status" id="lcr-status">Loading…</div>
-          <div class="ratio-track">
-            <div class="ratio-fill" id="lcr-bar" style="width:0%"></div>
+  <!-- ── Tab Bar ──────────────────────────────────────────────────── -->
+  <div class="tab-bar" id="liq-tab-bar">
+    <button class="tab-btn active" data-tab="tab-lcr"     onclick="switchLiqTab('tab-lcr')">LCR</button>
+    <button class="tab-btn"        data-tab="tab-nsfr"    onclick="switchLiqTab('tab-nsfr')">NSFR</button>
+    <button class="tab-btn"        data-tab="tab-intraday" onclick="switchLiqTab('tab-intraday')">Intraday</button>
+    <button class="tab-btn"        data-tab="tab-stress"  onclick="switchLiqTab('tab-stress')">Stress</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB: LCR
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel liq-tab-panel active" id="tab-lcr">
+
+    <div class="main-panel">
+
+      <!-- Left: main content -->
+      <div class="main-content">
+
+        <!-- Large ratio display -->
+        <div class="inner-card">
+          <div class="inner-card-title">Liquidity Coverage Ratio (LCR) — 30-day stress</div>
+          <div class="ratio-gauge">
+            <div class="ratio-number" id="lcr-ratio-num">—</div>
+            <div class="ratio-meta">
+              <div class="ratio-label">LCR Ratio</div>
+              <div class="ratio-status" id="lcr-status">Loading…</div>
+              <div class="ratio-track">
+                <div class="ratio-fill" id="lcr-bar" style="width:0%"></div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>HQLA Component</th>
-            <th class="right">Raw ($B)</th>
-            <th class="right">Haircut</th>
-            <th class="right">Adjusted ($B)</th>
-            <th class="right">Cap %</th>
-          </tr>
-        </thead>
-        <tbody id="lcr-hqla-body"></tbody>
-        <tfoot id="lcr-hqla-foot"></tfoot>
-      </table>
-      <div style="margin-top:12px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Flow</th>
-              <th class="right">$B</th>
-            </tr>
-          </thead>
-          <tbody id="lcr-flows-body"></tbody>
-        </table>
-      </div>
-    </section>
 
-    <section class="card">
-      <div class="card-title">
-        <h2>Net Stable Funding Ratio (NSFR)</h2>
-        <span class="meta" id="nsfr-updated">1-year horizon</span>
-      </div>
-      <div class="ratio-gauge">
-        <div class="ratio-number" id="nsfr-ratio-num">—</div>
-        <div class="ratio-meta">
-          <div class="ratio-label">NSFR Ratio</div>
-          <div class="ratio-status" id="nsfr-status">Loading…</div>
-          <div class="ratio-track">
-            <div class="ratio-fill" id="nsfr-bar" style="width:0%"></div>
+        <!-- HQLA composition -->
+        <div class="inner-card">
+          <div class="inner-card-title">HQLA Composition</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th class="right">Raw ($B)</th>
+                <th class="right">Haircut</th>
+                <th class="right">Adjusted ($B)</th>
+                <th class="right">Cap %</th>
+              </tr>
+            </thead>
+            <tbody id="lcr-hqla-body"></tbody>
+            <tfoot id="lcr-hqla-foot"></tfoot>
+          </table>
+        </div>
+
+        <!-- Outflow / inflow breakdown -->
+        <div class="inner-card">
+          <div class="inner-card-title">Outflow / Inflow Summary</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Flow</th>
+                <th class="right">$B</th>
+              </tr>
+            </thead>
+            <tbody id="lcr-flows-body"></tbody>
+          </table>
+        </div>
+
+      </div><!-- /.main-content -->
+
+      <!-- Right: detail drawer -->
+      <div class="detail-drawer">
+        <div class="detail-drawer-title">LCR Assumptions</div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-label">Regulatory Thresholds</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Minimum (binding)</span>
+            <span class="drawer-row-value positive">100%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Management buffer</span>
+            <span class="drawer-row-value warning">110%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Inflow cap</span>
+            <span class="drawer-row-value">75% of outflows</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Stress horizon</span>
+            <span class="drawer-row-value">30 calendar days</span>
           </div>
         </div>
-      </div>
-      <div style="margin-bottom:12px;">
-        <table>
-          <thead>
-            <tr><th>Metric</th><th class="right">$B</th></tr>
-          </thead>
-          <tbody id="nsfr-summary-body"></tbody>
-        </table>
-      </div>
-      <div class="card-title" style="margin-top:12px;">
-        <h2>Top RSF Contributors</h2>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Asset Category</th>
-            <th class="right">RSF Required ($B)</th>
-          </tr>
-        </thead>
-        <tbody id="nsfr-rsf-body"></tbody>
-      </table>
-    </section>
 
+        <div class="drawer-section">
+          <div class="drawer-section-label">HQLA Haircuts (Basel III)</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Level 1 (Sovereign)</span>
+            <span class="drawer-row-value">0%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Level 2A (Agency)</span>
+            <span class="drawer-row-value">15%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Level 2B (Corp BBB)</span>
+            <span class="drawer-row-value">50%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">L2A cap</span>
+            <span class="drawer-row-value">40% of HQLA</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">L2B cap</span>
+            <span class="drawer-row-value">15% of HQLA</span>
+          </div>
+        </div>
+
+        <div class="drawer-section" id="lcr-outflow-drivers">
+          <div class="drawer-section-label">Top Outflow Drivers</div>
+          <div class="detail-drawer-empty" id="lcr-drivers-empty">Load data to see drivers</div>
+        </div>
+
+      </div><!-- /.detail-drawer -->
+
+    </div><!-- /.main-panel -->
+
+  </div><!-- /#tab-lcr -->
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB: NSFR
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel liq-tab-panel" id="tab-nsfr">
+
+    <div class="main-panel">
+
+      <div class="main-content">
+
+        <!-- Large ratio display -->
+        <div class="inner-card">
+          <div class="inner-card-title">Net Stable Funding Ratio (NSFR) — 1-year horizon</div>
+          <div class="ratio-gauge">
+            <div class="ratio-number" id="nsfr-ratio-num">—</div>
+            <div class="ratio-meta">
+              <div class="ratio-label">NSFR Ratio</div>
+              <div class="ratio-status" id="nsfr-status">Loading…</div>
+              <div class="ratio-track">
+                <div class="ratio-fill" id="nsfr-bar" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ASF vs RSF summary -->
+        <div class="inner-card">
+          <div class="inner-card-title">ASF / RSF Summary</div>
+          <table>
+            <thead>
+              <tr><th>Metric</th><th class="right">$B</th></tr>
+            </thead>
+            <tbody id="nsfr-summary-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Top RSF contributors -->
+        <div class="inner-card">
+          <div class="inner-card-title">Top RSF Contributors</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Asset Category</th>
+                <th class="right">RSF Required ($B)</th>
+              </tr>
+            </thead>
+            <tbody id="nsfr-rsf-body"></tbody>
+          </table>
+        </div>
+
+      </div><!-- /.main-content -->
+
+      <div class="detail-drawer">
+        <div class="detail-drawer-title">NSFR Assumptions</div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-label">Regulatory Thresholds</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Minimum (binding)</span>
+            <span class="drawer-row-value positive">100%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Management buffer</span>
+            <span class="drawer-row-value warning">110%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Horizon</span>
+            <span class="drawer-row-value">1 year</span>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-label">Key ASF Factors</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Retail deposits (&lt;1yr)</span>
+            <span class="drawer-row-value">90–95%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Wholesale (&lt;6m)</span>
+            <span class="drawer-row-value">0%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Wholesale (&ge;1yr)</span>
+            <span class="drawer-row-value">100%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Tier 1 capital</span>
+            <span class="drawer-row-value">100%</span>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-label">Key RSF Factors</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Level 1 HQLA</span>
+            <span class="drawer-row-value">5%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Level 2A HQLA</span>
+            <span class="drawer-row-value">15%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Loans &lt;1yr (retail)</span>
+            <span class="drawer-row-value">50%</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Loans &ge;1yr (retail)</span>
+            <span class="drawer-row-value">65–85%</span>
+          </div>
+        </div>
+
+      </div><!-- /.detail-drawer -->
+
+    </div><!-- /.main-panel -->
+
+  </div><!-- /#tab-nsfr -->
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB: Intraday
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel liq-tab-panel" id="tab-intraday">
+
+    <div class="main-panel">
+
+      <div class="main-content">
+
+        <!-- Credit line utilization gauge -->
+        <div class="inner-card">
+          <div class="inner-card-title">Central Bank Credit Line Utilization</div>
+          <div id="intraday-credit-wrap"></div>
+        </div>
+
+        <!-- Hourly cash flow table -->
+        <div class="inner-card">
+          <div class="inner-card-title">Intraday Cash Flow Profile</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th class="right">Payments ($B)</th>
+                <th class="right">Receipts ($B)</th>
+                <th class="right">Net ($B)</th>
+                <th class="right">Balance ($B)</th>
+              </tr>
+            </thead>
+            <tbody id="intraday-body"></tbody>
+          </table>
+        </div>
+
+      </div><!-- /.main-content -->
+
+      <div class="detail-drawer">
+        <div class="detail-drawer-title">Intraday Summary</div>
+
+        <div class="drawer-section" id="intraday-summary-section">
+          <div class="drawer-section-label">Balance Sheet</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Opening balance</span>
+            <span class="drawer-row-value" id="intra-open">—</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">End-of-day balance</span>
+            <span class="drawer-row-value" id="intra-eod">—</span>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-label">Peak / Trough</div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Peak draw time</span>
+            <span class="drawer-row-value" id="intra-peak-time">—</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Peak draw ($B)</span>
+            <span class="drawer-row-value negative" id="intra-peak-draw">—</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Headroom ($B)</span>
+            <span class="drawer-row-value positive" id="intra-headroom">—</span>
+          </div>
+          <div class="drawer-row">
+            <span class="drawer-row-label">Utilization</span>
+            <span class="drawer-row-value" id="intra-util">—</span>
+          </div>
+        </div>
+
+      </div><!-- /.detail-drawer -->
+
+    </div><!-- /.main-panel -->
+
+  </div><!-- /#tab-intraday -->
+
+  <!-- ══════════════════════════════════════════════════════════════
+       TAB: Stress
+       ══════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel liq-tab-panel" id="tab-stress">
+
+    <div class="inner-card">
+      <div class="inner-card-title">Stress Scenario Analysis — Basel III primary scenarios</div>
+      <div class="stress-grid" id="stress-grid">
+        <div class="detail-drawer-empty">Loading scenarios…</div>
+      </div>
+    </div>
+
+  </div><!-- /#tab-stress -->
+
+  <!-- ── Advanced / Maturity Ladder (expander) ────────────────────── -->
+  <div class="secondary-expander">
+    <div class="expander-header" id="ladder-expander-header">
+      Advanced / Maturity Ladder
+      <span class="expander-caret">&#9660;</span>
+    </div>
+    <div class="expander-body" id="ladder-expander-body">
+      <div class="inner-card" style="border:none;padding:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">
+            Liquidity Ladder — Maturity Profile
+          </span>
+          <span style="font-size:11px;color:var(--muted);" id="ladder-survival">—</span>
+        </div>
+        <div class="ladder-chart" id="ladder-chart"></div>
+        <div class="ladder-cumgap-row" id="ladder-cumgap-row"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- Liquidity Ladder (full width) -->
-  <div class="full-row">
-    <section class="card">
-      <div class="card-title">
-        <h2>Liquidity Ladder — Maturity Profile</h2>
-        <span class="meta" id="ladder-survival">Loading…</span>
-      </div>
-      <div class="ladder-chart" id="ladder-chart"></div>
-      <div class="ladder-cumgap-row" id="ladder-cumgap-row"></div>
-    </section>
-  </div>
+</div><!-- /.page-shell -->
 
-  <!-- Bottom row: Intraday + Stress -->
-  <div class="bottom-grid">
-
-    <section class="card">
-      <div class="card-title">
-        <h2>Intraday Cash Flow Profile</h2>
-        <span class="meta" id="intraday-meta">central bank account</span>
-      </div>
-      <div id="intraday-credit-wrap" style="margin-bottom:12px;"></div>
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th class="right">Payments ($B)</th>
-            <th class="right">Receipts ($B)</th>
-            <th class="right">Net ($B)</th>
-            <th class="right">Balance ($B)</th>
-          </tr>
-        </thead>
-        <tbody id="intraday-body"></tbody>
-      </table>
-    </section>
-
-    <section class="card">
-      <div class="card-title">
-        <h2>Stress Scenario Analysis</h2>
-        <span class="meta">Basel III primary scenarios</span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Scenario</th>
-            <th class="right">LCR Impact</th>
-            <th class="right">NSFR Impact</th>
-            <th class="right">Shortfall ($B)</th>
-            <th class="right">Survival (days)</th>
-          </tr>
-        </thead>
-        <tbody id="stress-body"></tbody>
-      </table>
-    </section>
-
-  </div>
-
-  <script>
-    /* ── Utilities ─────────────────────────────────────────────────── */
-    function esc(v) {
-      return String(v ?? "").replace(/[&<>"']/g, function(c) {
-        return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
-      });
-    }
-
-    function fmt(v, decimals) {
-      return Number(v || 0).toFixed(decimals === undefined ? 2 : decimals);
-    }
-
-    function ratioColor(r) {
-      if (r >= 110) return "green";
-      if (r >= 100) return "amber";
-      return "red";
-    }
-
-    function ratioBarWidth(r) {
-      // 0%→0, 100%→60%, 150%→90%, cap at 100%
-      return Math.min(100, (r / 150) * 100).toFixed(1);
-    }
-
-    function setText(id, v) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = v;
-    }
-
-    function showError(msg) {
-      var el = document.getElementById("error-banner");
-      el.textContent = msg;
-      el.classList.add("visible");
-    }
-
-    function clearError() {
-      var el = document.getElementById("error-banner");
-      el.textContent = "";
-      el.classList.remove("visible");
-    }
-
-    function fmtLabel(key) {
-      return key.replace(/_/g, " ").replace(/\b\w/g, function(c){ return c.toUpperCase(); });
-    }
-
-    /* ── LCR ───────────────────────────────────────────────────────── */
-    function renderLCR(data) {
-      var r = data.lcr_ratio;
-      var cls = ratioColor(r);
-      var numEl = document.getElementById("lcr-ratio-num");
-      numEl.textContent = fmt(r, 1) + "%";
-      numEl.className = "ratio-number " + cls;
-
-      var statusEl = document.getElementById("lcr-status");
-      statusEl.textContent = data.compliance_status + " — min 100%";
-      statusEl.style.color = cls === "green" ? "var(--positive)" : cls === "amber" ? "var(--warning)" : "var(--negative)";
-
-      var bar = document.getElementById("lcr-bar");
-      bar.style.width = ratioBarWidth(r) + "%";
-      bar.className = "ratio-fill " + cls;
-
-      // HQLA table
-      var hc = data.hqla_components;
-      var rows = [
-        ["Level 1 — Sovereign",    hc.l1_sovereign.raw_amount_bn,   hc.l1_sovereign.haircut_pct + "%",   hc.l1_sovereign.adjusted_amount_bn,   "—"],
-        ["Level 2A — Agency",      hc.l2a_agency.raw_amount_bn,     hc.l2a_agency.haircut_pct + "%",     hc.l2a_agency.adjusted_amount_bn,     fmt(hc.l2a_agency.cap_utilization_pct, 1) + "%"],
-        ["Level 2B — Corp BBB",    hc.l2b_corp_bbb.raw_amount_bn,   hc.l2b_corp_bbb.haircut_pct + "%",  hc.l2b_corp_bbb.adjusted_amount_bn,   fmt(hc.l2b_corp_bbb.cap_utilization_pct, 1) + "%"],
-      ];
-      document.getElementById("lcr-hqla-body").innerHTML = rows.map(function(r) {
-        return '<tr><td>' + esc(r[0]) + '</td><td class="right">' + esc(r[1]) + '</td><td class="right">' + esc(r[2]) + '</td><td class="right">' + esc(r[3]) + '</td><td class="right">' + esc(r[4]) + '</td></tr>';
-      }).join("");
-      document.getElementById("lcr-hqla-foot").innerHTML =
-        '<tr style="border-top:1px solid var(--border);"><td><strong>Total HQLA</strong></td><td class="right"></td><td class="right"></td><td class="right"><strong>' + fmt(hc.total_hqla_bn) + '</strong></td><td class="right"></td></tr>';
-
-      // Outflow/inflow summary
-      var out = data.outflows;
-      var inf = data.inflows;
-      var flowRows = [
-        ["Total Outflows (30-day)",      out.total_outflows_bn],
-        ["Total Inflows (uncapped)",     inf.total_inflows_bn],
-        ["Capped Inflows (75% cap)",     inf.capped_inflows_bn],
-        ["Net Cash Outflows (NCOF)",     data.ncof_bn],
-      ];
-      document.getElementById("lcr-flows-body").innerHTML = flowRows.map(function(r) {
-        var bold = r[0].indexOf("NCOF") >= 0 ? " style=\"font-weight:700;\"" : "";
-        return '<tr' + bold + '><td>' + esc(r[0]) + '</td><td class="right">' + fmt(r[1]) + '</td></tr>';
-      }).join("");
-    }
-
-    /* ── NSFR ──────────────────────────────────────────────────────── */
-    function renderNSFR(data) {
-      var r = data.nsfr_ratio;
-      var cls = ratioColor(r);
-
-      var numEl = document.getElementById("nsfr-ratio-num");
-      numEl.textContent = fmt(r, 1) + "%";
-      numEl.className = "ratio-number " + cls;
-
-      var statusEl = document.getElementById("nsfr-status");
-      statusEl.textContent = data.compliance_status + " — min 100%";
-      statusEl.style.color = cls === "green" ? "var(--positive)" : cls === "amber" ? "var(--warning)" : "var(--negative)";
-
-      var bar = document.getElementById("nsfr-bar");
-      bar.style.width = ratioBarWidth(r) + "%";
-      bar.className = "ratio-fill " + cls;
-
-      // Summary table
-      var summaryRows = [
-        ["Available Stable Funding (ASF)", data.total_asf_bn],
-        ["Required Stable Funding (RSF)",  data.total_rsf_bn],
-        ["Surplus / (Deficit)",            data.surplus_deficit_bn],
-      ];
-      document.getElementById("nsfr-summary-body").innerHTML = summaryRows.map(function(r) {
-        var color = r[0].indexOf("Surplus") >= 0
-          ? (r[1] >= 0 ? " style=\"color:var(--positive);font-weight:700;\"" : " style=\"color:var(--negative);font-weight:700;\"")
-          : "";
-        return '<tr><td>' + esc(r[0]) + '</td><td class="right"' + color + '>' + fmt(r[1]) + '</td></tr>';
-      }).join("");
-
-      // RSF contributors
-      document.getElementById("nsfr-rsf-body").innerHTML = (data.top_rsf_contributors || []).map(function(row) {
-        return '<tr><td>' + esc(fmtLabel(row.item)) + '</td><td class="right">' + fmt(row.requirement_bn) + '</td></tr>';
-      }).join("");
-    }
-
-    /* ── Ladder ────────────────────────────────────────────────────── */
-    function renderLadder(data) {
-      var ladder = data.ladder || [];
-      var survival = data.survival_horizon || {};
-
-      // Survival horizon label
-      var survivalText = survival.first_surplus_bucket
-        ? "Cumulative surplus from " + survival.first_surplus_bucket
-        : "No surplus bucket";
-      setText("ladder-survival", survivalText);
-
-      if (!ladder.length) return;
-
-      // Find max absolute value for scaling bars
-      var maxAbs = 0;
-      ladder.forEach(function(row) {
-        maxAbs = Math.max(maxAbs, Math.abs(row.assets_bn), Math.abs(row.liabilities_bn));
-      });
-      var CHART_HEIGHT = 140; // px for bars
-
-      // Build bars
-      var chartHtml = ladder.map(function(row) {
-        var aH = Math.max(2, Math.round(Math.abs(row.assets_bn) / maxAbs * CHART_HEIGHT));
-        var lH = Math.max(2, Math.round(Math.abs(row.liabilities_bn) / maxAbs * CHART_HEIGHT));
-        var netColor = row.net_bn >= 0 ? "var(--positive)" : "var(--negative)";
-        var netSign = row.net_bn >= 0 ? "+" : "";
-        return [
-          '<div class="ladder-bucket">',
-          '  <div class="ladder-bars">',
-          '    <div class="ladder-bar asset" style="height:' + aH + 'px;" title="Assets $' + row.assets_bn + 'B"></div>',
-          '    <div class="ladder-bar liab" style="height:' + lH + 'px;" title="Liabilities $' + Math.abs(row.liabilities_bn) + 'B"></div>',
-          '  </div>',
-          '  <div class="ladder-label">' + esc(row.bucket) + '</div>',
-          '  <div class="ladder-net" style="color:' + netColor + '">' + netSign + fmt(row.net_bn, 0) + '</div>',
-          '</div>',
-        ].join("");
-      }).join("");
-
-      document.getElementById("ladder-chart").innerHTML = chartHtml;
-
-      // Cumulative gap row
-      var cumHtml = ladder.map(function(row) {
-        var cls = row.cumulative_gap_bn >= 0 ? "pos" : "neg";
-        var sign = row.cumulative_gap_bn >= 0 ? "+" : "";
-        return [
-          '<div class="ladder-cumgap-cell">',
-          '  <div class="cum-label">' + esc(row.bucket) + '</div>',
-          '  <div class="cum-value ' + cls + '">' + sign + fmt(row.cumulative_gap_bn, 0) + '</div>',
-          '</div>',
-        ].join("");
-      }).join("");
-
-      document.getElementById("ladder-cumgap-row").innerHTML = cumHtml;
-    }
-
-    /* ── Intraday ──────────────────────────────────────────────────── */
-    function renderIntraday(data) {
-      var profile = data.cashflow_profile || [];
-      var creditLine = data.credit_line || {};
-      var peak = data.peak_exposure || {};
-
-      // Credit line utilization bar
-      var utilPct = creditLine.utilization_pct || 0;
-      var utilCls = utilPct > 80 ? "negative" : utilPct > 50 ? "warning" : "accent";
-      document.getElementById("intraday-credit-wrap").innerHTML = [
-        '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Central Bank Credit Line: $' + fmt(creditLine.credit_line_total_bn) + 'B &nbsp;|&nbsp; Peak draw $' + fmt(creditLine.peak_draw_bn) + 'B at ' + esc(creditLine.peak_time || "—") + ' &nbsp;|&nbsp; Headroom $' + fmt(creditLine.headroom_bn) + 'B</div>',
-        '<div class="bar-track"><div class="bar-fill ' + utilCls + '" style="width:' + Math.min(100, utilPct).toFixed(1) + '%;"></div></div>',
-        '<div style="font-size:10px;color:var(--muted);margin-top:3px;">' + fmt(utilPct, 1) + '% utilized</div>',
-      ].join("");
-
-      // Cash flow table
-      var peakTime = peak.peak_time;
-      document.getElementById("intraday-body").innerHTML = profile.map(function(row) {
-        var isPeak = row.time === peakTime;
-        var rowClass = isPeak ? ' class="peak-row"' : "";
-        var balColor = row.running_balance_bn < 0 ? " style=\"color:var(--negative);\"" : "";
-        return [
-          '<tr' + rowClass + '>',
-          '<td>' + esc(row.time) + (isPeak ? ' <span style="font-size:9px;color:var(--warning);">[PEAK]</span>' : "") + '</td>',
-          '<td class="right">' + fmt(row.payments_bn, 1) + '</td>',
-          '<td class="right">' + fmt(row.receipts_bn, 1) + '</td>',
-          '<td class="right"' + (row.net_bn < 0 ? ' style="color:var(--negative);"' : ' style="color:var(--positive);"') + '>' + (row.net_bn >= 0 ? "+" : "") + fmt(row.net_bn, 1) + '</td>',
-          '<td class="right"' + balColor + '>' + fmt(row.running_balance_bn, 1) + '</td>',
-          '</tr>',
-        ].join("");
-      }).join("");
-
-      setText("intraday-meta", "Opening $" + fmt(data.opening_balance_bn) + "B · EOD $" + fmt(data.end_of_day_balance_bn) + "B");
-    }
-
-    /* ── Stress ────────────────────────────────────────────────────── */
-    function renderStress(data) {
-      var scenarios = data.scenarios || [];
-      document.getElementById("stress-body").innerHTML = scenarios.map(function(s) {
-        var lcr = s.lcr_impact_pp;
-        var nsfr = s.nsfr_impact_pp;
-        var shortfall = s.shortfall_bn;
-        var days = s.survival_period_days;
-
-        var severity = s.scenario === "combined" ? "high" : s.scenario === "idiosyncratic" ? "mid" : "low";
-        var lcrText = (lcr >= 0 ? "+" : "") + fmt(lcr, 1) + "pp → " + fmt(s.stressed_lcr, 1) + "%";
-        var nsfrText = (nsfr >= 0 ? "+" : "") + fmt(nsfr, 1) + "pp → " + fmt(s.stressed_nsfr, 1) + "%";
-
-        return [
-          '<tr>',
-          '<td><strong>' + esc(s.scenario.replace(/_/g," ").replace(/\b\w/g, function(c){return c.toUpperCase();})) + '</strong><br><span style="font-size:10px;color:var(--muted);">' + esc(s.lcr_compliance) + '</span></td>',
-          '<td class="right severity-' + severity + '">' + esc(lcrText) + '</td>',
-          '<td class="right severity-' + severity + '">' + esc(nsfrText) + '</td>',
-          '<td class="right ' + (shortfall > 0 ? "severity-high" : "severity-low") + '">' + (shortfall > 0 ? "$" + fmt(shortfall) + "B" : "None") + '</td>',
-          '<td class="right severity-' + severity + '">' + esc(days) + '</td>',
-          '</tr>',
-        ].join("");
-      }).join("");
-    }
-
-    /* ── Load all ──────────────────────────────────────────────────── */
-    function loadAll() {
-      clearError();
-      var now = new Date().toLocaleTimeString();
-      setText("live-text", "Updated " + now);
-
-      Promise.all([
-        fetch("/api/liquidity/lcr").then(function(r){ return r.json(); }),
-        fetch("/api/liquidity/nsfr").then(function(r){ return r.json(); }),
-        fetch("/api/liquidity/stress").then(function(r){ return r.json(); }),
-        fetch("/api/liquidity/intraday").then(function(r){ return r.json(); }),
-        fetch("/api/liquidity/ladder").then(function(r){ return r.json(); }),
-      ]).then(function(results) {
-        renderLCR(results[0]);
-        renderNSFR(results[1]);
-        renderStress(results[2]);
-        renderIntraday(results[3]);
-        renderLadder(results[4]);
-      }).catch(function(err) {
-        showError("Failed to load liquidity data: " + err.message);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", function() {
-      loadAll();
-      document.getElementById("refresh-btn").addEventListener("click", loadAll);
-      setInterval(loadAll, 30000);
+<script>
+  /* ── Utilities ───────────────────────────────────────────────────── */
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, function(c) {
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c];
     });
-  </script>
+  }
+
+  function fmt(v, decimals) {
+    return Number(v || 0).toFixed(decimals === undefined ? 2 : decimals);
+  }
+
+  function ratioColor(r) {
+    if (r >= 110) return "green";
+    if (r >= 100) return "amber";
+    return "red";
+  }
+
+  function ratioKpiClass(r) {
+    if (r >= 110) return "positive";
+    if (r >= 100) return "warning";
+    return "negative";
+  }
+
+  function ratioBarWidth(r) {
+    return Math.min(100, (r / 150) * 100).toFixed(1);
+  }
+
+  function setText(id, v) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = v;
+  }
+
+  function fmtLabel(key) {
+    return key.replace(/_/g, " ").replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+  }
+
+  function survivalColorClass(days) {
+    if (days < 5)  return "survival-red";
+    if (days < 10) return "survival-amber";
+    return "survival-green";
+  }
+
+  /* ── Tab switching ───────────────────────────────────────────────── */
+  function switchLiqTab(tabId) {
+    document.querySelectorAll('#liq-tab-bar .tab-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    document.querySelectorAll('.liq-tab-panel').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  /* ── Alert Rail ──────────────────────────────────────────────────── */
+  function updateAlerts(lcrRatio, nsfrRatio) {
+    var rail = document.getElementById('liq-alerts');
+    // Remove any existing dynamic alert items (leave the label)
+    rail.querySelectorAll('.alert-item').forEach(function(el){ el.remove(); });
+
+    var alerts = [];
+    if (lcrRatio < 100) {
+      alerts.push({ cls: 'critical', msg: 'LCR below 100% regulatory minimum' });
+    }
+    if (nsfrRatio < 100) {
+      alerts.push({ cls: 'critical', msg: 'NSFR below 100% minimum' });
+    }
+    if (alerts.length === 0 && lcrRatio < 110) {
+      alerts.push({ cls: 'warning', msg: 'LCR in warning band (100–110%)' });
+    }
+
+    if (alerts.length === 0) {
+      rail.setAttribute('data-empty', 'true');
+    } else {
+      rail.setAttribute('data-empty', 'false');
+      alerts.forEach(function(a) {
+        var item = document.createElement('span');
+        item.className = 'alert-item ' + a.cls;
+        item.innerHTML = '<span class="alert-item-dot"></span>' + esc(a.msg);
+        rail.appendChild(item);
+      });
+    }
+  }
+
+  /* ── LCR ─────────────────────────────────────────────────────────── */
+  function renderLCR(data) {
+    var r = data.lcr_ratio;
+    var cls = ratioColor(r);
+
+    // KPI strip
+    var kpiEl = document.getElementById('kpi-lcr');
+    kpiEl.textContent = fmt(r, 1) + "%";
+    kpiEl.className = 'kpi-value ' + ratioKpiClass(r);
+
+    // Large ratio gauge
+    var numEl = document.getElementById('lcr-ratio-num');
+    numEl.textContent = fmt(r, 1) + "%";
+    numEl.className = 'ratio-number ' + cls;
+
+    var statusEl = document.getElementById('lcr-status');
+    statusEl.textContent = data.compliance_status + " — min 100%";
+    statusEl.style.color = cls === "green" ? "var(--positive)" : cls === "amber" ? "var(--warning)" : "var(--negative)";
+
+    var bar = document.getElementById('lcr-bar');
+    bar.style.width = ratioBarWidth(r) + "%";
+    bar.className = 'ratio-fill ' + cls;
+
+    // HQLA table
+    var hc = data.hqla_components;
+    var rows = [
+      ["Level 1 — Sovereign",  hc.l1_sovereign.raw_amount_bn,  hc.l1_sovereign.haircut_pct + "%",  hc.l1_sovereign.adjusted_amount_bn,  "—"],
+      ["Level 2A — Agency",    hc.l2a_agency.raw_amount_bn,    hc.l2a_agency.haircut_pct + "%",    hc.l2a_agency.adjusted_amount_bn,    fmt(hc.l2a_agency.cap_utilization_pct, 1) + "%"],
+      ["Level 2B — Corp BBB",  hc.l2b_corp_bbb.raw_amount_bn,  hc.l2b_corp_bbb.haircut_pct + "%", hc.l2b_corp_bbb.adjusted_amount_bn,  fmt(hc.l2b_corp_bbb.cap_utilization_pct, 1) + "%"],
+    ];
+    document.getElementById('lcr-hqla-body').innerHTML = rows.map(function(row) {
+      return '<tr><td>' + esc(row[0]) + '</td><td class="right">' + esc(row[1]) + '</td><td class="right">' + esc(row[2]) + '</td><td class="right">' + esc(row[3]) + '</td><td class="right">' + esc(row[4]) + '</td></tr>';
+    }).join("");
+    document.getElementById('lcr-hqla-foot').innerHTML =
+      '<tr style="border-top:1px solid var(--border);"><td><strong>Total HQLA</strong></td><td class="right"></td><td class="right"></td><td class="right"><strong>' + fmt(hc.total_hqla_bn) + '</strong></td><td class="right"></td></tr>';
+
+    // Flow summary
+    var out = data.outflows;
+    var inf = data.inflows;
+    var flowRows = [
+      ["Total Outflows (30-day)",    out.total_outflows_bn],
+      ["Total Inflows (uncapped)",   inf.total_inflows_bn],
+      ["Capped Inflows (75% cap)",   inf.capped_inflows_bn],
+      ["Net Cash Outflows (NCOF)",   data.ncof_bn],
+    ];
+    document.getElementById('lcr-flows-body').innerHTML = flowRows.map(function(row) {
+      var bold = row[0].indexOf("NCOF") >= 0 ? " style=\"font-weight:700;\"" : "";
+      return '<tr' + bold + '><td>' + esc(row[0]) + '</td><td class="right">' + fmt(row[1]) + '</td></tr>';
+    }).join("");
+
+    // Top outflow drivers in drawer
+    var driversEl = document.getElementById('lcr-outflow-drivers');
+    var emptyEl = document.getElementById('lcr-drivers-empty');
+    var outflowCats = data.outflows ? Object.keys(data.outflows).filter(function(k){ return k !== 'total_outflows_bn'; }) : [];
+    if (outflowCats.length) {
+      emptyEl.style.display = 'none';
+      // Show top 3 by value
+      var sorted = outflowCats.map(function(k){ return {k: k, v: data.outflows[k]}; })
+        .filter(function(x){ return typeof x.v === 'number'; })
+        .sort(function(a,b){ return b.v - a.v; })
+        .slice(0, 3);
+      var existing = driversEl.querySelectorAll('.drawer-row');
+      existing.forEach(function(el){ el.remove(); });
+      sorted.forEach(function(item) {
+        var row = document.createElement('div');
+        row.className = 'drawer-row';
+        row.innerHTML = '<span class="drawer-row-label">' + esc(fmtLabel(item.k)) + '</span><span class="drawer-row-value">' + fmt(item.v) + 'B</span>';
+        driversEl.appendChild(row);
+      });
+    } else {
+      emptyEl.style.display = '';
+    }
+  }
+
+  /* ── NSFR ────────────────────────────────────────────────────────── */
+  function renderNSFR(data) {
+    var r = data.nsfr_ratio;
+    var cls = ratioColor(r);
+
+    // KPI strip
+    var kpiEl = document.getElementById('kpi-nsfr');
+    kpiEl.textContent = fmt(r, 1) + "%";
+    kpiEl.className = 'kpi-value ' + ratioKpiClass(r);
+
+    // Large ratio gauge
+    var numEl = document.getElementById('nsfr-ratio-num');
+    numEl.textContent = fmt(r, 1) + "%";
+    numEl.className = 'ratio-number ' + cls;
+
+    var statusEl = document.getElementById('nsfr-status');
+    statusEl.textContent = data.compliance_status + " — min 100%";
+    statusEl.style.color = cls === "green" ? "var(--positive)" : cls === "amber" ? "var(--warning)" : "var(--negative)";
+
+    var bar = document.getElementById('nsfr-bar');
+    bar.style.width = ratioBarWidth(r) + "%";
+    bar.className = 'ratio-fill ' + cls;
+
+    // ASF/RSF summary
+    var summaryRows = [
+      ["Available Stable Funding (ASF)", data.total_asf_bn],
+      ["Required Stable Funding (RSF)",  data.total_rsf_bn],
+      ["Surplus / (Deficit)",            data.surplus_deficit_bn],
+    ];
+    document.getElementById('nsfr-summary-body').innerHTML = summaryRows.map(function(row) {
+      var color = row[0].indexOf("Surplus") >= 0
+        ? (row[1] >= 0 ? " style=\"color:var(--positive);font-weight:700;\"" : " style=\"color:var(--negative);font-weight:700;\"")
+        : "";
+      return '<tr><td>' + esc(row[0]) + '</td><td class="right"' + color + '>' + fmt(row[1]) + '</td></tr>';
+    }).join("");
+
+    // RSF contributors
+    document.getElementById('nsfr-rsf-body').innerHTML = (data.top_rsf_contributors || []).map(function(row) {
+      return '<tr><td>' + esc(fmtLabel(row.item)) + '</td><td class="right">' + fmt(row.requirement_bn) + '</td></tr>';
+    }).join("");
+  }
+
+  /* ── Ladder ──────────────────────────────────────────────────────── */
+  function renderLadder(data) {
+    var ladder = data.ladder || [];
+    var survival = data.survival_horizon || {};
+
+    var survivalText = survival.first_surplus_bucket
+      ? "Cumulative surplus from " + survival.first_surplus_bucket
+      : "No surplus bucket";
+    setText("ladder-survival", survivalText);
+
+    if (!ladder.length) return;
+
+    var maxAbs = 0;
+    ladder.forEach(function(row) {
+      maxAbs = Math.max(maxAbs, Math.abs(row.assets_bn), Math.abs(row.liabilities_bn));
+    });
+    var CHART_HEIGHT = 140;
+
+    var chartHtml = ladder.map(function(row) {
+      var aH = Math.max(2, Math.round(Math.abs(row.assets_bn) / maxAbs * CHART_HEIGHT));
+      var lH = Math.max(2, Math.round(Math.abs(row.liabilities_bn) / maxAbs * CHART_HEIGHT));
+      var netColor = row.net_bn >= 0 ? "var(--positive)" : "var(--negative)";
+      var netSign = row.net_bn >= 0 ? "+" : "";
+      return [
+        '<div class="ladder-bucket">',
+        '  <div class="ladder-bars">',
+        '    <div class="ladder-bar asset" style="height:' + aH + 'px;" title="Assets $' + row.assets_bn + 'B"></div>',
+        '    <div class="ladder-bar liab" style="height:' + lH + 'px;" title="Liabilities $' + Math.abs(row.liabilities_bn) + 'B"></div>',
+        '  </div>',
+        '  <div class="ladder-label">' + esc(row.bucket) + '</div>',
+        '  <div class="ladder-net" style="color:' + netColor + '">' + netSign + fmt(row.net_bn, 0) + '</div>',
+        '</div>',
+      ].join("");
+    }).join("");
+
+    document.getElementById('ladder-chart').innerHTML = chartHtml;
+
+    var cumHtml = ladder.map(function(row) {
+      var cls = row.cumulative_gap_bn >= 0 ? "pos" : "neg";
+      var sign = row.cumulative_gap_bn >= 0 ? "+" : "";
+      return [
+        '<div class="ladder-cumgap-cell">',
+        '  <div class="cum-label">' + esc(row.bucket) + '</div>',
+        '  <div class="cum-value ' + cls + '">' + sign + fmt(row.cumulative_gap_bn, 0) + '</div>',
+        '</div>',
+      ].join("");
+    }).join("");
+
+    document.getElementById('ladder-cumgap-row').innerHTML = cumHtml;
+  }
+
+  /* ── Intraday ────────────────────────────────────────────────────── */
+  function renderIntraday(data) {
+    var profile = data.cashflow_profile || [];
+    var creditLine = data.credit_line || {};
+    var peak = data.peak_exposure || {};
+
+    // Credit line utilization
+    var utilPct = creditLine.utilization_pct || 0;
+    var utilCls = utilPct > 80 ? "negative" : utilPct > 50 ? "warning" : "accent";
+    document.getElementById('intraday-credit-wrap').innerHTML = [
+      '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Total: $' + fmt(creditLine.credit_line_total_bn) + 'B &nbsp;|&nbsp; Peak draw $' + fmt(creditLine.peak_draw_bn) + 'B at ' + esc(creditLine.peak_time || "—") + ' &nbsp;|&nbsp; Headroom $' + fmt(creditLine.headroom_bn) + 'B</div>',
+      '<div class="bar-track"><div class="bar-fill ' + utilCls + '" style="width:' + Math.min(100, utilPct).toFixed(1) + '%;"></div></div>',
+      '<div style="font-size:10px;color:var(--muted);margin-top:3px;">' + fmt(utilPct, 1) + '% utilized</div>',
+    ].join("");
+
+    // Drawer summary fields
+    setText('intra-open',      '$' + fmt(data.opening_balance_bn) + 'B');
+    setText('intra-eod',       '$' + fmt(data.end_of_day_balance_bn) + 'B');
+    setText('intra-peak-time', creditLine.peak_time || '—');
+    setText('intra-peak-draw', '$' + fmt(creditLine.peak_draw_bn) + 'B');
+    setText('intra-headroom',  '$' + fmt(creditLine.headroom_bn) + 'B');
+    setText('intra-util',      fmt(utilPct, 1) + '%');
+
+    // Cash flow table
+    var peakTime = peak.peak_time;
+    document.getElementById('intraday-body').innerHTML = profile.map(function(row) {
+      var isPeak = row.time === peakTime;
+      var rowClass = isPeak ? ' class="peak-row"' : "";
+      var balColor = row.running_balance_bn < 0 ? " style=\"color:var(--negative);\"" : "";
+      return [
+        '<tr' + rowClass + '>',
+        '<td>' + esc(row.time) + (isPeak ? ' <span style="font-size:9px;color:var(--warning);">[PEAK]</span>' : "") + '</td>',
+        '<td class="right">' + fmt(row.payments_bn, 1) + '</td>',
+        '<td class="right">' + fmt(row.receipts_bn, 1) + '</td>',
+        '<td class="right"' + (row.net_bn < 0 ? ' style="color:var(--negative);"' : ' style="color:var(--positive);"') + '>' + (row.net_bn >= 0 ? "+" : "") + fmt(row.net_bn, 1) + '</td>',
+        '<td class="right"' + balColor + '>' + fmt(row.running_balance_bn, 1) + '</td>',
+        '</tr>',
+      ].join("");
+    }).join("");
+  }
+
+  /* ── Stress ──────────────────────────────────────────────────────── */
+  function renderStress(data) {
+    var scenarios = data.scenarios || [];
+
+    // Update worst-case survival KPI
+    var worstDays = null;
+    scenarios.forEach(function(s) {
+      if (worstDays === null || s.survival_period_days < worstDays) {
+        worstDays = s.survival_period_days;
+      }
+    });
+    if (worstDays !== null) {
+      var kpiSurv = document.getElementById('kpi-survival');
+      kpiSurv.textContent = worstDays + ' days';
+      kpiSurv.className = 'kpi-value ' + (worstDays < 5 ? 'negative' : worstDays < 10 ? 'warning' : 'positive');
+    }
+
+    // 2x2 stress card grid
+    var grid = document.getElementById('stress-grid');
+    if (!scenarios.length) {
+      grid.innerHTML = '<div class="detail-drawer-empty">No scenario data</div>';
+      return;
+    }
+
+    grid.innerHTML = scenarios.map(function(s) {
+      var lcr = s.lcr_impact_pp;
+      var nsfr = s.nsfr_impact_pp;
+      var shortfall = s.shortfall_bn;
+      var days = s.survival_period_days;
+      var severity = s.scenario === "combined" ? "high" : s.scenario === "idiosyncratic" ? "mid" : "low";
+      var lcrText = (lcr >= 0 ? "+" : "") + fmt(lcr, 1) + "pp → " + fmt(s.stressed_lcr, 1) + "%";
+      var nsfrText = (nsfr >= 0 ? "+" : "") + fmt(nsfr, 1) + "pp → " + fmt(s.stressed_nsfr, 1) + "%";
+      var shortfallText = shortfall > 0 ? "$" + fmt(shortfall) + "B" : "None";
+      var shortfallCls = shortfall > 0 ? "severity-high" : "severity-low";
+      var name = s.scenario.replace(/_/g," ").replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+      var survCls = survivalColorClass(days);
+
+      return [
+        '<div class="stress-card">',
+        '  <div>',
+        '    <div class="stress-card-name">' + esc(name) + '</div>',
+        '    <div class="stress-card-compliance">' + esc(s.lcr_compliance) + '</div>',
+        '  </div>',
+        '  <div class="stress-metrics">',
+        '    <div class="stress-metric">',
+        '      <div class="stress-metric-label">LCR Impact</div>',
+        '      <div class="stress-metric-value severity-' + severity + '">' + esc(lcrText) + '</div>',
+        '    </div>',
+        '    <div class="stress-metric">',
+        '      <div class="stress-metric-label">NSFR Impact</div>',
+        '      <div class="stress-metric-value severity-' + severity + '">' + esc(nsfrText) + '</div>',
+        '    </div>',
+        '    <div class="stress-metric">',
+        '      <div class="stress-metric-label">Shortfall</div>',
+        '      <div class="stress-metric-value ' + shortfallCls + '">' + esc(shortfallText) + '</div>',
+        '    </div>',
+        '    <div class="stress-metric">',
+        '      <div class="stress-metric-label">Survival Days</div>',
+        '      <div class="stress-metric-value ' + survCls + '">' + esc(String(days)) + '</div>',
+        '    </div>',
+        '  </div>',
+        '</div>',
+      ].join("");
+    }).join("");
+  }
+
+  /* ── Load all ────────────────────────────────────────────────────── */
+  function loadAll() {
+    var now = new Date().toLocaleTimeString();
+    setText('last-refresh', now);
+
+    Promise.all([
+      fetch("/api/liquidity/lcr").then(function(r){ return r.json(); }),
+      fetch("/api/liquidity/nsfr").then(function(r){ return r.json(); }),
+      fetch("/api/liquidity/stress").then(function(r){ return r.json(); }),
+      fetch("/api/liquidity/intraday").then(function(r){ return r.json(); }),
+      fetch("/api/liquidity/ladder").then(function(r){ return r.json(); }),
+    ]).then(function(results) {
+      var lcrData    = results[0];
+      var nsfrData   = results[1];
+      var stressData = results[2];
+      var intradayData = results[3];
+      var ladderData = results[4];
+
+      renderLCR(lcrData);
+      renderNSFR(nsfrData);
+      renderStress(stressData);
+      renderIntraday(intradayData);
+      renderLadder(ladderData);
+
+      updateAlerts(lcrData.lcr_ratio, nsfrData.nsfr_ratio);
+    }).catch(function(err) {
+      console.error("Failed to load liquidity data:", err);
+    });
+  }
+
+  /* ── Expander toggle ─────────────────────────────────────────────── */
+  document.querySelectorAll('.expander-header').forEach(function(h) {
+    h.addEventListener('click', function() {
+      h.classList.toggle('open');
+      h.nextElementSibling.classList.toggle('open');
+    });
+  });
+
+  /* ── Boot ────────────────────────────────────────────────────────── */
+  document.addEventListener("DOMContentLoaded", function() {
+    loadAll();
+    setInterval(loadAll, 30000);
+  });
+</script>
 
 </body>
 </html>

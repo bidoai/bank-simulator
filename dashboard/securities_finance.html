@@ -7,126 +7,246 @@
   <link rel="stylesheet" href="/static/shared.css">
   <style>
     body { max-width: 1480px; margin: 0 auto; padding: 20px 24px; }
-    .page-header, .card-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-    .page-header { margin-bottom: 20px; }
-    .page-title { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    .page-subtitle { font-size: 12px; color: var(--muted); max-width: 780px; line-height: 1.7; }
-    .header-actions { display: flex; align-items: center; gap: 10px; }
-    .live-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); font-size: 11px; color: var(--muted); }
-    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--positive); box-shadow: 0 0 8px rgba(63,185,80,.55); }
-    .refresh-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 6px; padding: 8px 12px; font-family: inherit; font-size: 12px; cursor: pointer; }
-    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .kpi-grid, .watchlist, .split-grid { display: grid; gap: 12px; }
-    .kpi-grid { grid-template-columns: repeat(5, minmax(0,1fr)); margin-bottom: 18px; }
-    .watchlist { grid-template-columns: repeat(3, minmax(0,1fr)); }
-    .split-grid { grid-template-columns: 1.1fr 1fr; align-items: start; }
-    .stack { display: flex; flex-direction: column; gap: 16px; }
-    .kpi-card, .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
-    .kpi-card { padding: 14px 16px; }
-    .card { padding: 16px; }
-    .kpi-label, th { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-    .kpi-label { margin-bottom: 6px; }
-    .kpi-value { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
-    .kpi-value.accent { color: var(--accent); }
-    .kpi-value.warn { color: var(--warning); }
-    .kpi-sub, .meta, .watch-text, .insight p { font-size: 11px; color: var(--muted); }
-    .card-title { margin-bottom: 12px; align-items: center; }
-    .card-title h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-    .watch-item { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: rgba(255,255,255,.01); }
-    .watch-item.RED { border-color: rgba(248,81,73,.45); background: rgba(248,81,73,.06); }
-    .watch-item.YELLOW { border-color: rgba(227,179,65,.45); background: rgba(227,179,65,.06); }
-    .watch-item.GREEN { border-color: rgba(63,185,80,.35); background: rgba(63,185,80,.05); }
-    .watch-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 5px; }
-    .watch-value { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-weight: 500; }
-    td { padding: 9px 10px; border-bottom: 1px solid rgba(48,54,61,.5); color: var(--text); font-variant-numeric: tabular-nums; vertical-align: top; }
-    td.right, th.right { text-align: right; }
-    .status-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-    .status-pill.GREEN { color: var(--positive); background: rgba(63,185,80,.12); }
-    .status-pill.YELLOW { color: var(--warning); background: rgba(227,179,65,.14); }
-    .status-pill.RED { color: var(--negative); background: rgba(248,81,73,.14); }
-    .insight-list { display: flex; flex-direction: column; gap: 10px; }
-    .insight { border-left: 3px solid var(--accent); padding-left: 10px; }
-    .insight h3 { font-size: 12px; color: var(--text); margin-bottom: 4px; }
-    .error-banner { display:none; margin-bottom:16px; padding:12px 14px; border-radius:8px; border:1px solid rgba(248,81,73,.45); background:rgba(248,81,73,.08); color:#ffb3ad; font-size:12px; }
-    .error-banner.visible { display:block; }
-    @media (max-width: 1180px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .split-grid, .watchlist { grid-template-columns: 1fr; } }
+    .status-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+    .status-pill.GREEN { color:var(--positive); background:rgba(63,185,80,.12); }
+    .status-pill.YELLOW { color:var(--warning); background:rgba(227,179,65,.14); }
+    .status-pill.RED { color:var(--negative); background:rgba(248,81,73,.14); }
+    .watch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .watch-item { border:1px solid var(--border); border-radius:6px; padding:12px; background:rgba(255,255,255,.01); }
+    .watch-item.RED { border-color:rgba(248,81,73,.45); background:rgba(248,81,73,.06); }
+    .watch-item.YELLOW { border-color:rgba(227,179,65,.45); background:rgba(227,179,65,.06); }
+    .watch-item.GREEN { border-color:rgba(63,185,80,.35); background:rgba(63,185,80,.05); }
+    .watch-label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:5px; }
+    .watch-value { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .watch-text { font-size:11px; color:var(--muted); }
+    td.right, th.right { text-align:right; }
+    tr[data-clickable] { cursor:pointer; }
+    tr[data-clickable]:hover td { background:rgba(88,166,255,.05); }
+    .insight-list { display:flex; flex-direction:column; gap:10px; }
+    .insight { border-left:3px solid var(--accent); padding-left:10px; }
+    .insight h3 { font-size:12px; color:var(--text); margin-bottom:4px; }
+    .insight p { font-size:11px; color:var(--muted); }
   </style>
   <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
-  <div class="page-header">
-    <div>
-      <div class="page-title">Securities Finance</div>
-      <div class="page-subtitle">
-        Repo, stock borrow-loan, and prime financing are the balance-sheet bridge between markets inventory and client demand.
-        This page surfaces funding mix, margin pressure, and client financing terms so Apex can manage securities finance like a real dealer rather than a hidden treasury utility.
+  <div class="page-shell">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-title">Securities Finance</div>
+        <div class="page-subtitle">Repo, stock borrow-loan, and prime financing</div>
+      </div>
+      <div class="page-header-right">
+        <span class="last-refresh" id="last-refresh">—</span>
+        <span class="source-chip" data-source="LIVE">LIVE</span>
+        <button class="btn" id="refresh-btn" type="button" style="padding:3px 10px;">Refresh</button>
       </div>
     </div>
-    <div class="header-actions">
-      <div class="live-indicator"><span class="live-dot"></span><span>Live desk view</span></div>
-      <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
+
+    <!-- Alert rail -->
+    <div class="alert-rail" id="sf-alerts" data-empty="true"></div>
+
+    <!-- KPI strip (3 cards) -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">Secured Funding</div>
+        <div class="kpi-value accent" id="kpi-secured">—</div>
+        <div class="kpi-sub">gross funded footprint</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Matched Spread</div>
+        <div class="kpi-value" id="kpi-spread">—</div>
+        <div class="kpi-sub">blended carry</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Utilization</div>
+        <div class="kpi-value" id="kpi-utilization">—</div>
+        <div class="kpi-sub">book capacity used</div>
+      </div>
     </div>
-  </div>
-  <div class="error-banner" id="error-banner"></div>
-  <section class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-label">Secured Funding</div><div class="kpi-value accent" id="kpi-secured">—</div><div class="kpi-sub">gross funded footprint</div></div>
-    <div class="kpi-card"><div class="kpi-label">Matched Spread</div><div class="kpi-value" id="kpi-spread">—</div><div class="kpi-sub">blended carry</div></div>
-    <div class="kpi-card"><div class="kpi-label">Utilization</div><div class="kpi-value warn" id="kpi-utilization">—</div><div class="kpi-sub">book capacity used</div></div>
-    <div class="kpi-card"><div class="kpi-label">Warnings</div><div class="kpi-value" id="kpi-warnings">—</div><div class="kpi-sub">books requiring attention</div></div>
-    <div class="kpi-card"><div class="kpi-label">Top Special</div><div class="kpi-value" id="kpi-special">—</div><div class="kpi-sub">highest borrow scarcity</div></div>
-  </section>
-  <div class="split-grid">
-    <div class="stack">
-      <section class="card">
-        <div class="card-title"><h2>Desk Watchlist</h2><span class="meta">balance-sheet and margin signals</span></div>
-        <div class="watchlist" id="watchlist"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Funding Books</h2><span class="meta">matched book view</span></div>
-        <div id="books-table"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Inventory and Specials</h2><span class="meta">lendable assets and scarcity</span></div>
-        <div id="inventory-table"></div>
-      </section>
-    </div>
-    <div class="stack">
-      <section class="card">
-        <div class="card-title"><h2>Client Financing</h2><span class="meta">prime and stock-loan relationships</span></div>
-        <div id="clients-table"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Why This Business Matters</h2><span class="meta">global-bank realism</span></div>
-        <div class="insight-list">
-          <div class="insight"><h3>Securities finance is hidden infrastructure</h3><p>Repo and stock loan are the financing rails underneath rates, credit, equities, and hedge-fund flow. Without them, a dealer balance sheet is incomplete.</p></div>
-          <div class="insight"><h3>Funding and margin are product features</h3><p>The edge is not just inventory. It is term, haircuts, specials pricing, and how quickly the firm can reprice financing when risk changes.</p></div>
-          <div class="insight"><h3>Prime brokerage ties the bank together</h3><p>Prime financing links markets, treasury, counterparty risk, collateral, and compliance. It is one of the fastest ways to make Apex feel like a global house.</p></div>
+
+    <!-- Main panel -->
+    <div class="main-panel">
+      <div class="main-content">
+
+        <!-- Watchlist -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Desk Watchlist</h2>
+            <span style="font-size:11px;color:var(--muted);">balance-sheet and margin signals</span>
+          </div>
+          <div class="watch-grid" id="watchlist"></div>
         </div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Stress View</h2><span class="meta" id="stress-scenario">repo / specials shock</span></div>
-        <div id="stress-wrap"></div>
-      </section>
+
+        <!-- Funding Books -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Funding Books</h2>
+            <span style="font-size:11px;color:var(--muted);">matched book view — click row for detail</span>
+          </div>
+          <div id="books-table"></div>
+        </div>
+
+        <!-- Inventory -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Inventory and Specials</h2>
+            <span style="font-size:11px;color:var(--muted);">lendable assets and scarcity</span>
+          </div>
+          <div id="inventory-table"></div>
+        </div>
+
+      </div>
+
+      <!-- Detail drawer -->
+      <div class="detail-drawer" id="book-drawer">
+        <div class="detail-drawer-title">Book Detail</div>
+        <div id="book-drawer-content">
+          <div class="detail-drawer-empty">Select a funding book to view details</div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- Secondary expander: Client Financing + Stress -->
+    <div class="secondary-expander">
+      <div class="expander-header">
+        <span>Client Financing &amp; Stress View</span>
+        <span class="expander-caret">▾</span>
+      </div>
+      <div class="expander-body">
+        <div class="grid-2" style="gap:16px;">
+          <div>
+            <h2 style="margin-bottom:10px;">Client Financing</h2>
+            <div id="clients-table"></div>
+          </div>
+          <div>
+            <h2 style="margin-bottom:10px;">Stress View — <span id="stress-scenario" style="text-transform:none;font-size:11px;">repo / specials shock</span></h2>
+            <div id="stress-wrap"></div>
+            <div style="margin-top:20px;" class="insight-list">
+              <div class="insight"><h3>Securities finance is hidden infrastructure</h3><p>Repo and stock loan are the financing rails underneath rates, credit, equities, and hedge-fund flow.</p></div>
+              <div class="insight"><h3>Funding and margin are product features</h3><p>The edge is not just inventory. It is term, haircuts, specials pricing, and how quickly the firm can reprice financing when risk changes.</p></div>
+              <div class="insight"><h3>Prime brokerage ties the bank together</h3><p>Prime financing links markets, treasury, counterparty risk, collateral, and compliance.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .page-shell -->
+
   <script>
     const fmtUsd = v => { const n = Number(v||0), a = Math.abs(n); if (a >= 1e9) return `$${(n/1e9).toFixed(2)}B`; if (a >= 1e6) return `$${(n/1e6).toFixed(2)}M`; if (a >= 1e3) return `$${(n/1e3).toFixed(1)}K`; return `$${n.toFixed(0)}`; };
     const fmtPct = v => `${Number(v||0).toFixed(1)}%`;
     const fmtBps = v => `${Number(v||0).toFixed(1)}bp`;
     const esc = v => String(v ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[ch]));
     const statusPill = s => `<span class="status-pill ${esc(s)}">${esc(s)}</span>`;
-    function showError(message) { const el = document.getElementById("error-banner"); el.textContent = message; el.classList.add("visible"); }
-    function clearError() { const el = document.getElementById("error-banner"); el.textContent = ""; el.classList.remove("visible"); }
-    async function fetchJSON(url) { const res = await fetch(url); if (!res.ok) throw new Error(`${url} failed (${res.status})`); return res.json(); }
-    function renderWatchlist(items) { document.getElementById("watchlist").innerHTML = items.map(item => `<div class="watch-item ${esc(item.status)}"><div class="watch-label">${esc(item.label)}</div><div class="watch-value">${esc(item.value)}</div><div class="watch-text">${esc(item.detail)}</div></div>`).join(""); }
-    function renderBooks(rows) { document.getElementById("books-table").innerHTML = `<table><thead><tr><th>Book</th><th>Business</th><th class="right">Funding</th><th class="right">Spread</th><th class="right">Tenor</th><th class="right">Utilization</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.business)}</td><td class="right">${fmtUsd(r.secured_funding_usd)}</td><td class="right">${fmtBps(r.matched_book_spread_bps)}</td><td class="right">${esc(r.avg_tenor_days)}d</td><td class="right">${fmtPct(r.utilization_pct)}</td><td>${statusPill(r.status)}</td></tr>`).join("")}</tbody></table>`; }
-    function renderInventory(rows) { document.getElementById("inventory-table").innerHTML = `<table><thead><tr><th>Asset</th><th>Class</th><th class="right">Inventory</th><th class="right">Lendable</th><th class="right">Haircut</th><th class="right">IFR</th><th class="right">Specials</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.asset)}</td><td>${esc(r.asset_class)}</td><td class="right">${fmtUsd(r.long_inventory_usd)}</td><td class="right">${fmtPct(r.lendable_pct * 100)}</td><td class="right">${fmtPct(r.haircut_pct)}</td><td class="right">${fmtPct(r.internal_funding_rate_pct)}</td><td class="right">${fmtBps(r.specials_bps)}</td></tr>`).join("")}</tbody></table>`; }
-    function renderClients(rows) { document.getElementById("clients-table").innerHTML = `<table><thead><tr><th>Client</th><th>Segment</th><th class="right">Gross</th><th class="right">Net</th><th class="right">Margin</th><th class="right">Spread</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.client)}</td><td>${esc(r.segment)}</td><td class="right">${fmtUsd(r.gross_exposure_usd)}</td><td class="right">${fmtUsd(r.net_exposure_usd)}</td><td class="right">${fmtPct(r.margin_utilization_pct)}</td><td class="right">${fmtBps(r.financing_spread_bps)}</td><td>${statusPill(r.status)}</td></tr>`).join("")}</tbody></table>`; }
-    function renderStress(stress) { document.getElementById("stress-scenario").textContent = stress.scenario; document.getElementById("stress-wrap").innerHTML = `<table><tbody><tr><td>Funding outflow</td><td class="right">${fmtUsd(stress.secured_funding_outflow_usd)}</td></tr><tr><td>Additional margin</td><td class="right">${fmtUsd(stress.additional_margin_required_usd)}</td></tr><tr><td>Specials uplift</td><td class="right">${fmtUsd(stress.specials_revenue_uplift_usd)}</td></tr><tr><td>Net liquidity impact</td><td class="right">${fmtUsd(stress.net_liquidity_impact_usd)}</td></tr></tbody></table>`; }
+
+    let _books = [];
+
+    function pushAlert(level, text) {
+      const rail = document.getElementById('sf-alerts');
+      rail.removeAttribute('data-empty');
+      const item = document.createElement('div');
+      item.className = `alert-item ${level}`;
+      item.innerHTML = `<span class="alert-item-dot"></span>${esc(text)}`;
+      rail.appendChild(item);
+    }
+
+    function renderWatchlist(items) {
+      document.getElementById("watchlist").innerHTML = items.map(item =>
+        `<div class="watch-item ${esc(item.status)}">
+          <div class="watch-label">${esc(item.label)}</div>
+          <div class="watch-value">${esc(item.value)}</div>
+          <div class="watch-text">${esc(item.detail)}</div>
+        </div>`
+      ).join("");
+    }
+
+    function renderBooks(rows) {
+      _books = rows;
+      document.getElementById("books-table").innerHTML =
+        `<table><thead><tr><th>Book</th><th>Business</th><th class="right">Funding</th><th class="right">Spread</th><th class="right">Tenor</th><th class="right">Util%</th><th>Status</th></tr></thead>
+        <tbody>${rows.map((r, i) =>
+          `<tr data-clickable data-idx="${i}" onclick="selectBook(${i})">
+            <td>${esc(r.name)}</td><td>${esc(r.business)}</td>
+            <td class="right">${fmtUsd(r.secured_funding_usd)}</td>
+            <td class="right">${fmtBps(r.matched_book_spread_bps)}</td>
+            <td class="right">${esc(r.avg_tenor_days)}d</td>
+            <td class="right">${fmtPct(r.utilization_pct)}</td>
+            <td>${statusPill(r.status)}</td>
+          </tr>`
+        ).join("")}</tbody></table>`;
+    }
+
+    function selectBook(idx) {
+      const r = _books[idx];
+      if (!r) return;
+      document.getElementById('book-drawer-content').innerHTML = `
+        <div class="detail-section">
+          <div class="detail-section-label">${esc(r.name)}</div>
+          <div class="detail-row"><span class="detail-row-label">Business</span><span class="detail-row-value">${esc(r.business)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Secured Funding</span><span class="detail-row-value">${fmtUsd(r.secured_funding_usd)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Matched Spread</span><span class="detail-row-value">${fmtBps(r.matched_book_spread_bps)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Avg Tenor</span><span class="detail-row-value">${esc(r.avg_tenor_days)} days</span></div>
+          <div class="detail-row"><span class="detail-row-label">Utilization</span><span class="detail-row-value">${fmtPct(r.utilization_pct)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Status</span><span class="detail-row-value">${statusPill(r.status)}</span></div>
+        </div>
+        ${r.counterparty ? `<div class="detail-section"><div class="detail-section-label">Counterparty</div><div class="detail-row"><span class="detail-row-label">Name</span><span class="detail-row-value">${esc(r.counterparty)}</span></div></div>` : ''}
+      `;
+    }
+
+    function renderInventory(rows) {
+      document.getElementById("inventory-table").innerHTML =
+        `<table><thead><tr><th>Asset</th><th>Class</th><th class="right">Inventory</th><th class="right">Lendable</th><th class="right">Haircut</th><th class="right">IFR</th><th class="right">Specials</th></tr></thead>
+        <tbody>${rows.map(r =>
+          `<tr><td>${esc(r.asset)}</td><td>${esc(r.asset_class)}</td>
+          <td class="right">${fmtUsd(r.long_inventory_usd)}</td>
+          <td class="right">${fmtPct(r.lendable_pct * 100)}</td>
+          <td class="right">${fmtPct(r.haircut_pct)}</td>
+          <td class="right">${fmtPct(r.internal_funding_rate_pct)}</td>
+          <td class="right">${fmtBps(r.specials_bps)}</td>
+          </tr>`
+        ).join("")}</tbody></table>`;
+    }
+
+    function renderClients(rows) {
+      document.getElementById("clients-table").innerHTML =
+        `<table><thead><tr><th>Client</th><th>Segment</th><th class="right">Gross</th><th class="right">Net</th><th class="right">Margin</th><th class="right">Spread</th><th>Status</th></tr></thead>
+        <tbody>${rows.map(r =>
+          `<tr><td>${esc(r.client)}</td><td>${esc(r.segment)}</td>
+          <td class="right">${fmtUsd(r.gross_exposure_usd)}</td>
+          <td class="right">${fmtUsd(r.net_exposure_usd)}</td>
+          <td class="right">${fmtPct(r.margin_utilization_pct)}</td>
+          <td class="right">${fmtBps(r.financing_spread_bps)}</td>
+          <td>${statusPill(r.status)}</td>
+          </tr>`
+        ).join("")}</tbody></table>`;
+    }
+
+    function renderStress(stress) {
+      document.getElementById("stress-scenario").textContent = stress.scenario;
+      document.getElementById("stress-wrap").innerHTML =
+        `<table><tbody>
+          <tr><td>Funding outflow</td><td class="right">${fmtUsd(stress.secured_funding_outflow_usd)}</td></tr>
+          <tr><td>Additional margin</td><td class="right">${fmtUsd(stress.additional_margin_required_usd)}</td></tr>
+          <tr><td>Specials uplift</td><td class="right">${fmtUsd(stress.specials_revenue_uplift_usd)}</td></tr>
+          <tr><td>Net liquidity impact</td><td class="right">${fmtUsd(stress.net_liquidity_impact_usd)}</td></tr>
+        </tbody></table>`;
+    }
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} failed (${res.status})`);
+      return res.json();
+    }
+
     async function load() {
-      clearError();
+      const rail = document.getElementById('sf-alerts');
+      rail.innerHTML = '';
+      rail.dataset.empty = 'true';
       try {
         const [overview, books, inventory, clients, stress] = await Promise.all([
           fetchJSON("/api/securities-finance/overview"),
@@ -138,18 +258,27 @@
         document.getElementById("kpi-secured").textContent = fmtUsd(overview.total_secured_funding_usd);
         document.getElementById("kpi-spread").textContent = fmtBps(overview.blended_matched_book_spread_bps);
         document.getElementById("kpi-utilization").textContent = fmtPct(overview.avg_utilization_pct);
-        document.getElementById("kpi-warnings").textContent = String(overview.warning_count || 0);
-        document.getElementById("kpi-special").textContent = overview.top_special || "—";
+        document.getElementById("last-refresh").textContent = new Date().toLocaleTimeString();
+        if (overview.warning_count > 0) pushAlert('warning', `${overview.warning_count} book(s) require attention`);
         renderWatchlist(overview.watchlist || []);
         renderBooks(books);
         renderInventory(inventory);
         renderClients(clients);
         renderStress(stress);
       } catch (err) {
-        showError(err.message || "Unable to load securities finance dashboard.");
+        pushAlert('critical', err.message || "Unable to load securities finance data");
       }
     }
+
     document.getElementById("refresh-btn").addEventListener("click", load);
+
+    document.querySelectorAll('.expander-header').forEach(h => {
+      h.addEventListener('click', () => {
+        h.classList.toggle('open');
+        h.nextElementSibling.classList.toggle('open');
+      });
+    });
+
     load();
   </script>
 </body>

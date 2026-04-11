@@ -3,202 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Model Governance Portal — Apex Global Bank</title>
+  <title>Model Governance — Apex Global Bank</title>
+  <link rel="stylesheet" href="/static/shared.css">
   <style>
-    /* ── Reset & base ──────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #0d1117;
-      --card:     #161b22;
-      --card2:    #1c2128;
-      --border:   #30363d;
-      --border2:  #21262d;
-      --text:     #c9d1d9;
-      --muted:    #8b949e;
-      --positive: #3fb950;
-      --negative: #f85149;
-      --accent:   #58a6ff;
-      --warning:  #e3b341;
-      --orange:   #d18616;
-      --purple:   #bc8cff;
-    }
-
-    body {
-      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 12px;
-      line-height: 1.5;
-      padding: 0;
-      min-height: 100vh;
-    }
-
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .page-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
-    }
-    .page-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 760px;
-      line-height: 1.7;
-    }
-    .page-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .page-chip {
-      font-size: 10px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--muted);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .page-chip.framework { border-color: var(--accent); color: var(--accent); }
-    .page-chip.restricted { border-color: var(--negative); color: var(--negative); }
-    #api-status {
-      font-size: 10px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      background: var(--card);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    #api-status.ok { border-color: var(--positive); color: var(--positive); }
-    #api-status.err { border-color: var(--negative); color: var(--negative); }
-
-    /* ── Page wrapper ──────────────────────────────────────────────────────── */
-    .page { max-width: 1440px; margin: 0 auto; padding: 20px 24px 40px; }
-
-    /* ── Section headings ──────────────────────────────────────────────────── */
-    .section-heading {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .section-heading::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border2);
-    }
-
-    /* ── KPI bar ───────────────────────────────────────────────────────────── */
-    .kpi-bar {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .kpi-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 14px 16px;
-    }
-    .kpi-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .kpi-value {
-      font-size: 28px;
-      font-weight: 700;
-      line-height: 1;
-      color: var(--text);
-      letter-spacing: -0.02em;
-    }
-    .kpi-sub {
-      font-size: 10px;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-    .kpi-value.yellow { color: var(--warning); }
-    .kpi-value.red    { color: var(--negative); }
-    .kpi-value.green  { color: var(--positive); }
-    .kpi-value.blue   { color: var(--accent); }
+    body { max-width: 1520px; margin: 0 auto; padding: 20px 24px 40px; }
 
     /* ── Skeleton loader ───────────────────────────────────────────────────── */
     .skeleton {
-      background: linear-gradient(90deg, var(--border2) 25%, var(--border) 50%, var(--border2) 75%);
+      background: linear-gradient(90deg, #21262d 25%, #30363d 50%, #21262d 75%);
       background-size: 200% 100%;
       animation: shimmer 1.4s infinite;
       border-radius: 3px;
       height: 1em;
+      display: inline-block;
     }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    /* ── Main content grid ─────────────────────────────────────────────────── */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
+    /* ── KPI strip override — 3 cols ───────────────────────────────────────── */
+    .kpi-strip { grid-template-columns: repeat(3, 1fr); }
 
-    /* ── Card ──────────────────────────────────────────────────────────────── */
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .card-header {
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border2);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--card2);
-    }
-    .card-header-title {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-    .card-body { padding: 0; }
-
-    /* ── Search / filter ───────────────────────────────────────────────────── */
+    /* ── Search / filter bar ───────────────────────────────────────────────── */
     .table-toolbar {
-      padding: 10px 16px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
       gap: 10px;
-      border-bottom: 1px solid var(--border2);
-      background: var(--card2);
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(28,33,40,0.6);
+      flex-wrap: wrap;
     }
     .search-input {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 4px;
       color: var(--text);
-      font-family: inherit;
+      font-family: var(--font);
       font-size: 11px;
       padding: 4px 10px;
-      width: 240px;
+      width: 200px;
       outline: none;
     }
     .search-input:focus { border-color: var(--accent); }
@@ -208,7 +50,7 @@
       border: 1px solid var(--border);
       border-radius: 4px;
       color: var(--text);
-      font-family: inherit;
+      font-family: var(--font);
       font-size: 11px;
       padding: 4px 8px;
       outline: none;
@@ -217,7 +59,7 @@
     .filter-select:focus { border-color: var(--accent); }
     .table-count { font-size: 10px; color: var(--muted); margin-left: auto; }
 
-    /* ── Table ─────────────────────────────────────────────────────────────── */
+    /* ── Model registry table ──────────────────────────────────────────────── */
     .data-table { width: 100%; border-collapse: collapse; }
     .data-table th {
       text-align: left;
@@ -226,7 +68,7 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--muted);
-      padding: 8px 16px;
+      padding: 8px 14px;
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
       cursor: pointer;
@@ -234,448 +76,375 @@
     }
     .data-table th:hover { color: var(--text); }
     .data-table td {
-      padding: 9px 16px;
-      border-bottom: 1px solid var(--border2);
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-subtle);
       vertical-align: middle;
       white-space: nowrap;
+      font-size: 12px;
     }
     .data-table tbody tr { cursor: pointer; transition: background 0.1s; }
     .data-table tbody tr:hover td { background: rgba(88,166,255,0.04); }
-    .data-table tbody tr.selected td { background: rgba(88,166,255,0.08); border-left: 2px solid var(--accent); }
-    .data-table tbody tr.selected td:first-child { padding-left: 14px; }
+    .data-table tbody tr.selected td { background: rgba(88,166,255,0.08); }
+    .data-table tbody tr.selected td:first-child { border-left: 2px solid var(--accent); padding-left: 12px; }
     .data-table tbody tr:last-child td { border-bottom: none; }
 
-    /* ── Status badges ─────────────────────────────────────────────────────── */
-    .badge {
-      display: inline-block;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      padding: 2px 7px;
-      border-radius: 3px;
-      text-transform: uppercase;
-    }
-    .badge-production  { background: rgba(63,185,80,0.15);  color: var(--positive); border: 1px solid rgba(63,185,80,0.3); }
-    .badge-validation  { background: rgba(227,179,65,0.15); color: var(--warning);  border: 1px solid rgba(227,179,65,0.3); }
-    .badge-draft       { background: rgba(139,148,158,0.12); color: var(--muted);   border: 1px solid rgba(139,148,158,0.25); }
-    .badge-suspended   { background: rgba(248,81,73,0.15);  color: var(--negative); border: 1px solid rgba(248,81,73,0.3); }
-    .badge-mro-review  { background: rgba(188,140,255,0.15); color: var(--purple);  border: 1px solid rgba(188,140,255,0.3); }
-    .badge-critical    { background: rgba(248,81,73,0.15);  color: var(--negative); border: 1px solid rgba(248,81,73,0.3); }
-    .badge-major       { background: rgba(209,134,22,0.15); color: var(--orange);   border: 1px solid rgba(209,134,22,0.3); }
-    .badge-minor       { background: rgba(227,179,65,0.15); color: var(--warning);  border: 1px solid rgba(227,179,65,0.3); }
-    .badge-framework   { background: rgba(88,166,255,0.1);  color: var(--accent);   border: 1px solid rgba(88,166,255,0.2); font-size: 9px; padding: 1px 6px; margin: 1px 2px; }
-    .badge-tier1       { background: rgba(188,140,255,0.15); color: var(--purple);  border: 1px solid rgba(188,140,255,0.3); }
+    /* ── Status / severity badges ───────────────────────────────────────────── */
+    .badge-production  { background: rgba(63,185,80,0.15);  color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+    .badge-validation  { background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.3); }
+    .badge-draft       { background: rgba(139,148,158,0.12); color: #8b949e; border: 1px solid rgba(139,148,158,0.25); }
+    .badge-suspended   { background: rgba(248,81,73,0.15);  color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+    .badge-mro-review  { background: rgba(188,140,255,0.15); color: #bc8cff; border: 1px solid rgba(188,140,255,0.3); }
+    .badge-critical    { background: rgba(248,81,73,0.15);  color: #f85149; border: 1px solid rgba(248,81,73,0.3); }
+    .badge-major       { background: rgba(209,134,22,0.15); color: #d18616; border: 1px solid rgba(209,134,22,0.3); }
+    .badge-minor       { background: rgba(227,179,65,0.15); color: #e3b341; border: 1px solid rgba(227,179,65,0.3); }
+    .badge-framework   { background: rgba(88,166,255,0.1);  color: #58a6ff; border: 1px solid rgba(88,166,255,0.2); font-size: 9px; padding: 1px 6px; margin: 1px 2px; }
+    .badge-tier1       { background: rgba(188,140,255,0.15); color: #bc8cff; border: 1px solid rgba(188,140,255,0.3); }
 
-    /* ── Findings count pill ───────────────────────────────────────────────── */
-    .findings-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .findings-pill.none { color: var(--positive); }
-    .findings-pill.low  { color: var(--warning); }
-    .findings-pill.high { color: var(--negative); }
+    /* ── Findings pill ─────────────────────────────────────────────────────── */
+    .findings-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; }
+    .findings-pill.none { color: #3fb950; }
+    .findings-pill.low  { color: #e3b341; }
+    .findings-pill.high { color: #f85149; }
 
-    /* ── Button ────────────────────────────────────────────────────────────── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: inherit;
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      padding: 3px 10px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background: var(--card2);
-      color: var(--text);
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      text-decoration: none;
+    /* ── Drawer detail styles ──────────────────────────────────────────────── */
+    .drawer-model-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .drawer-model-id   { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+    .drawer-badges     { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+    .drawer-section    { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
+    .drawer-section-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px;
     }
-    .btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,0.06); }
-    .btn-docs { border-color: rgba(88,166,255,0.3); color: var(--accent); }
-    .btn-docs:hover { border-color: var(--accent); background: rgba(88,166,255,0.1); }
+    .drawer-row { display: flex; justify-content: space-between; align-items: flex-start; font-size: 11px; margin-bottom: 5px; gap: 8px; }
+    .drawer-row-label { color: var(--muted); white-space: nowrap; }
+    .drawer-row-value { color: var(--text); text-align: right; font-weight: 500; }
+    .drawer-desc { font-size: 11px; color: var(--muted); line-height: 1.6; }
+    .flow-list   { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+    .flow-item   { font-size: 10px; padding: 1px 7px; border-radius: 3px; background: rgba(139,148,158,0.1); border: 1px solid var(--border); color: var(--muted); }
+    .flow-item.upstream   { border-color: rgba(88,166,255,0.3); color: var(--accent); background: rgba(88,166,255,0.06); }
+    .flow-item.downstream { border-color: rgba(63,185,80,0.3); color: #3fb950; background: rgba(63,185,80,0.06); }
 
-    /* ── Detail panel ──────────────────────────────────────────────────────── */
-    #detail-panel {
-      display: none;
-      border-top: 2px solid var(--accent);
-    }
-    #detail-panel.visible { display: block; }
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 340px 1fr;
-      gap: 0;
-    }
-    .detail-meta {
-      padding: 16px;
-      border-right: 1px solid var(--border2);
-    }
-    .detail-findings { padding: 16px; }
-    .meta-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-      align-items: flex-start;
-    }
-    .meta-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      min-width: 100px;
-      padding-top: 1px;
-    }
-    .meta-value { font-size: 11px; color: var(--text); flex: 1; }
-    .meta-desc {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 14px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border2);
-    }
-    .flow-list { display: flex; flex-wrap: wrap; gap: 4px; }
-    .flow-item {
-      font-size: 10px;
-      padding: 1px 7px;
-      border-radius: 3px;
-      background: rgba(139,148,158,0.1);
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .flow-item.upstream { border-color: rgba(88,166,255,0.3); color: var(--accent); background: rgba(88,166,255,0.06); }
-    .flow-item.downstream { border-color: rgba(63,185,80,0.3); color: var(--positive); background: rgba(63,185,80,0.06); }
-
-    /* ── Findings table in detail ──────────────────────────────────────────── */
-    .findings-table { width: 100%; border-collapse: collapse; }
-    .findings-table th {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--muted);
-      padding: 5px 10px;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-    }
-    .findings-table td {
-      padding: 7px 10px;
-      border-bottom: 1px solid var(--border2);
-      font-size: 11px;
-      vertical-align: middle;
-    }
-    .findings-table tr:last-child td { border-bottom: none; }
-    .findings-table .finding-id { font-family: inherit; font-weight: 600; color: var(--muted); font-size: 10px; }
-
-    .status-icon { font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
+    /* ── Findings in drawer ────────────────────────────────────────────────── */
+    .finding-row { padding: 6px 0; border-bottom: 1px solid var(--border-subtle); font-size: 11px; line-height: 1.5; }
+    .finding-row:last-child { border-bottom: none; }
+    .finding-header { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .finding-desc   { color: var(--muted); }
+    .status-icon         { font-size: 10px; }
     .status-icon.remediated { color: var(--positive); }
     .status-icon.open       { color: var(--negative); }
     .status-icon.in_progress{ color: var(--warning); }
+    .no-findings { color: var(--muted); font-size: 11px; text-align: center; padding: 16px 0; }
 
-    .no-findings { color: var(--muted); font-size: 11px; text-align: center; padding: 20px; }
+    /* ── Drawer PDF button ─────────────────────────────────────────────────── */
+    .drawer-pdf-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--font); font-size: 10px; font-weight: 600;
+      padding: 4px 10px; border-radius: 4px;
+      border: 1px solid rgba(88,166,255,0.4); background: rgba(88,166,255,0.06);
+      color: var(--accent); cursor: pointer; text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+      margin-top: 8px;
+    }
+    .drawer-pdf-btn:hover { border-color: var(--accent); background: rgba(88,166,255,0.12); text-decoration: none; }
 
-    /* ── Detail close button ───────────────────────────────────────────────── */
-    .detail-close-row {
-      padding: 10px 16px;
-      border-top: 1px solid var(--border2);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--card2);
+    /* ── Btn small ─────────────────────────────────────────────────────────── */
+    .btn-sm {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--font); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.04em; padding: 3px 9px;
+      border-radius: 4px; border: 1px solid var(--border);
+      background: rgba(28,33,40,0.6); color: var(--text);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      text-decoration: none;
     }
-    .detail-model-id { font-size: 11px; font-weight: 600; color: var(--accent); }
-    .detail-model-name { font-size: 11px; color: var(--muted); }
-    .detail-close {
-      margin-left: auto;
-      font-size: 10px;
-      cursor: pointer;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 2px 8px;
-      font-family: inherit;
-    }
-    .detail-close:hover { color: var(--text); border-color: var(--text); }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,0.06); }
+    .btn-sm.docs  { border-color: rgba(88,166,255,0.3); color: var(--accent); }
 
     /* ── Validation pipeline ───────────────────────────────────────────────── */
-    .pipeline-card { margin-top: 16px; }
     .pipeline-flow {
-      display: flex;
-      align-items: stretch;
-      padding: 20px 24px;
-      gap: 0;
-      overflow-x: auto;
+      display: flex; align-items: stretch;
+      padding: 20px 24px; gap: 0; overflow-x: auto;
     }
     .pipeline-stage {
-      flex: 1;
-      min-width: 140px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
+      flex: 1; min-width: 130px; display: flex;
+      flex-direction: column; align-items: center; position: relative;
     }
     .pipeline-stage::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 22px;
-      width: 100%;
-      height: 2px;
-      background: var(--border);
-      z-index: 0;
+      content: ''; position: absolute; right: 0; top: 18px;
+      width: 100%; height: 2px; background: var(--border); z-index: 0;
     }
     .pipeline-stage:last-child::after { display: none; }
     .pipeline-dot-wrap { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
     .pipeline-dot {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: var(--card2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      margin-bottom: 8px;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 2px solid var(--border); background: rgba(28,33,40,0.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; margin-bottom: 8px;
     }
     .pipeline-dot.active { border-color: var(--accent); background: rgba(88,166,255,0.1); }
     .pipeline-dot.done   { border-color: var(--positive); background: rgba(63,185,80,0.1); }
     .pipeline-dot.warn   { border-color: var(--warning); background: rgba(227,179,65,0.1); }
     .pipeline-stage-label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 10px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--muted); text-align: center; margin-bottom: 10px;
     }
     .pipeline-stage-label.active { color: var(--accent); }
     .pipeline-stage-label.done   { color: var(--positive); }
     .pipeline-models { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 24px; }
     .pipeline-model-tag {
-      font-size: 9px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 3px;
-      background: rgba(88,166,255,0.1);
-      border: 1px solid rgba(88,166,255,0.2);
-      color: var(--accent);
+      font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px;
+      background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.2); color: var(--accent);
     }
-    .pipeline-model-tag.done   { background: rgba(63,185,80,0.08); border-color: rgba(63,185,80,0.2); color: var(--positive); }
-    .pipeline-model-tag.warn   { background: rgba(227,179,65,0.1); border-color: rgba(227,179,65,0.25); color: var(--warning); }
+    .pipeline-model-tag.done { background: rgba(63,185,80,0.08); border-color: rgba(63,185,80,0.2); color: var(--positive); }
+    .pipeline-model-tag.warn { background: rgba(227,179,65,0.1); border-color: rgba(227,179,65,0.25); color: var(--warning); }
+
+    /* ── Capital-approved list ─────────────────────────────────────────────── */
+    .cap-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+    .cap-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 12px; background: rgba(63,185,80,0.04);
+      border: 1px solid rgba(63,185,80,0.15); border-radius: 4px; font-size: 11px;
+    }
+    .cap-item-id { font-weight: 600; color: var(--accent); }
+    .cap-item-name { color: var(--text); flex: 1; margin: 0 10px; }
+
+    /* ── AI chat inside expander ───────────────────────────────────────────── */
+    .chat-container { display: flex; flex-direction: column; gap: 10px; }
+    .chat-messages {
+      min-height: 120px; max-height: 320px; overflow-y: auto;
+      font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 8px;
+    }
+    .chat-msg-user strong   { color: var(--accent); }
+    .chat-msg-answer strong { color: var(--positive); }
+    .chat-input-row { display: flex; gap: 8px; }
+    .chat-text-input {
+      flex: 1; padding: 7px 10px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); font-family: var(--font); font-size: 12px; outline: none;
+    }
+    .chat-text-input:focus { border-color: var(--accent); }
+    .chat-submit {
+      padding: 7px 14px; background: rgba(35,134,54,0.8); border: 1px solid rgba(63,185,80,0.4);
+      border-radius: 4px; color: #fff; font-family: var(--font); font-size: 12px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .chat-submit:hover { background: rgba(35,134,54,1); }
 
     /* ── Modal ─────────────────────────────────────────────────────────────── */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(1,4,9,0.75);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; inset: 0;
+      background: rgba(1,4,9,0.75); z-index: 200;
+      align-items: center; justify-content: center;
     }
     .modal-overlay.open { display: flex; }
     .modal {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      width: 520px;
-      max-width: 90vw;
-      overflow: hidden;
-      box-shadow: 0 16px 64px rgba(0,0,0,0.6);
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; width: 520px; max-width: 90vw;
+      overflow: hidden; box-shadow: 0 16px 64px rgba(0,0,0,0.6);
     }
     .modal-header {
-      padding: 14px 18px;
-      border-bottom: 1px solid var(--border2);
-      background: var(--card2);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid var(--border-subtle);
+      background: rgba(28,33,40,0.6); display: flex;
+      align-items: center; justify-content: space-between;
     }
-    .modal-title { font-size: 11px; font-weight: 600; color: var(--text); }
+    .modal-title    { font-size: 11px; font-weight: 600; color: var(--text); }
     .modal-subtitle { font-size: 10px; color: var(--muted); margin-top: 2px; }
     .modal-close {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      color: var(--muted);
-      font-family: inherit;
-      font-size: 14px;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: none; border: 1px solid var(--border); border-radius: 3px;
+      color: var(--muted); font-family: var(--font); font-size: 14px;
+      width: 24px; height: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
     }
     .modal-close:hover { color: var(--text); border-color: var(--text); }
-    .modal-body { padding: 16px 18px; }
-    .doc-list { list-style: none; }
-    .doc-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 9px 12px;
-      border: 1px solid var(--border2);
-      border-radius: 4px;
-      margin-bottom: 6px;
-      background: var(--card2);
+    .modal-body  { padding: 16px 18px; }
+    .doc-list    { list-style: none; }
+    .doc-item    {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; border: 1px solid var(--border-subtle);
+      border-radius: 4px; margin-bottom: 6px; background: rgba(28,33,40,0.6);
     }
-    .doc-item:last-child { margin-bottom: 0; }
+    .doc-item:last-child  { margin-bottom: 0; }
     .doc-filename { font-size: 11px; color: var(--text); font-weight: 500; }
-    .doc-type { font-size: 10px; color: var(--muted); }
-    .doc-actions { display: flex; gap: 6px; }
+    .doc-type     { font-size: 10px; color: var(--muted); }
+    .doc-actions  { display: flex; gap: 6px; }
 
-    /* ── Scrollbar ─────────────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-    /* ── Responsive adjustments ────────────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .kpi-bar { grid-template-columns: repeat(3, 1fr); }
-      .detail-grid { grid-template-columns: 1fr; }
-      .detail-meta { border-right: none; border-bottom: 1px solid var(--border2); }
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .main-panel { grid-template-columns: 1fr; }
+      .detail-drawer { position: static; }
+    }
+    @media (max-width: 700px) {
+      .kpi-strip { grid-template-columns: 1fr 1fr; }
     }
   </style>
   <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
+<div class="page-shell">
 
-<!-- ── Page body ──────────────────────────────────────────────────────────── -->
-<div class="page">
-
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
   <div class="page-header">
-    <div>
-      <div class="page-title">Model Governance Portal</div>
-      <div class="page-subtitle">
-        Inventory, findings, and model lifecycle controls in one place.
-        This page should answer what is in production, what is under pressure, and where governance attention is required now.
+    <div class="page-header-left">
+      <div class="page-title">Model Governance</div>
+      <div class="page-subtitle">Registry, restrictions, and review workflow</div>
+    </div>
+    <div class="page-header-right">
+      <span id="model-count-chip" style="font-size:11px;color:var(--muted);">— models | — open</span>
+      <span class="source-chip" data-source="SIMULATED">SIMULATED</span>
+    </div>
+  </div>
+
+  <!-- ── Alert Rail ──────────────────────────────────────────────────────── -->
+  <div class="alert-rail" id="model-alerts" data-empty="true">
+    <span class="alert-rail-label">Alerts</span>
+  </div>
+
+  <!-- ── KPI Strip ───────────────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Models</div>
+      <div class="kpi-value accent" id="kpi-total"><span class="skeleton" style="width:48px;height:20px;"></span></div>
+      <div class="kpi-sub">Inventory</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Tier 1 Models</div>
+      <div class="kpi-value" id="kpi-tier1"><span class="skeleton" style="width:36px;height:20px;"></span></div>
+      <div class="kpi-sub">Material / high risk</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Critical Open</div>
+      <div class="kpi-value" id="kpi-critical"><span class="skeleton" style="width:36px;height:20px;"></span></div>
+      <div class="kpi-sub">Require immediate action</div>
+    </div>
+  </div>
+
+  <!-- ── Main Panel (table + detail drawer) ──────────────────────────────── -->
+  <div class="main-panel">
+
+    <!-- Left: registry table -->
+    <div class="main-content">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="card-header" style="padding:10px 14px;border-bottom:1px solid var(--border-subtle);">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">Model Inventory</span>
+        </div>
+        <!-- Toolbar -->
+        <div class="table-toolbar">
+          <input type="text" class="search-input" id="search-input"
+                 placeholder="Search by ID, name, owner..." oninput="filterTable()">
+          <select class="filter-select" id="filter-status" onchange="filterTable()">
+            <option value="">All Status</option>
+            <option value="production">Production</option>
+            <option value="in_validation">In Validation</option>
+            <option value="draft">Draft</option>
+            <option value="suspended">Suspended</option>
+          </select>
+          <select class="filter-select" id="filter-tier" onchange="filterTable()">
+            <option value="">All Tiers</option>
+            <option value="1">Tier 1</option>
+            <option value="2">Tier 2</option>
+            <option value="3">Tier 3</option>
+          </select>
+          <span class="table-count" id="table-count"></span>
+        </div>
+        <!-- Table -->
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="model-table">
+            <thead>
+              <tr>
+                <th>Model ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Framework</th>
+                <th>Status</th>
+                <th>Tier</th>
+                <th>Open Findings</th>
+              </tr>
+            </thead>
+            <tbody id="model-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">
+                <span class="skeleton" style="width:200px;height:12px;display:inline-block;"></span>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div class="page-actions">
-      <span class="page-chip framework">SR 11-7</span>
-      <span class="page-chip restricted">Model Risk Sensitive</span>
-      <span id="api-status">● API</span>
-    </div>
-  </div>
 
-  <!-- ── KPI bar ──────────────────────────────────────────────────────────── -->
-  <div class="section-heading">Portfolio Overview</div>
-  <div class="kpi-bar" id="kpi-bar">
-    <!-- Skeleton -->
-    <div class="kpi-card"><div class="kpi-label">Total Models</div><div class="skeleton" style="width:60px;height:28px;margin-bottom:4px"></div></div>
-    <div class="kpi-card"><div class="kpi-label">Tier-1 Models</div><div class="skeleton" style="width:40px;height:28px;margin-bottom:4px"></div></div>
-    <div class="kpi-card"><div class="kpi-label">In Production</div><div class="skeleton" style="width:40px;height:28px;margin-bottom:4px"></div></div>
-    <div class="kpi-card"><div class="kpi-label">Open Findings</div><div class="skeleton" style="width:40px;height:28px;margin-bottom:4px"></div></div>
-    <div class="kpi-card"><div class="kpi-label">Critical Open</div><div class="skeleton" style="width:40px;height:28px;margin-bottom:4px"></div></div>
-  </div>
-
-  <!-- ── Model inventory ──────────────────────────────────────────────────── -->
-  <div class="section-heading">Model Inventory</div>
-  <div style="margin-bottom: 12px;">
-    <input type="text" id="mddSearch" placeholder="Search models (name, ID, owner, regulatory)..."
-           style="width: 100%; padding: 8px 12px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 13px;">
-  </div>
-  <div class="card">
-    <div class="table-toolbar">
-      <input type="text" class="search-input" id="search-input" placeholder="Search by ID, name, owner..." oninput="filterTable()">
-      <select class="filter-select" id="filter-status" onchange="filterTable()">
-        <option value="">All Status</option>
-        <option value="production">Production</option>
-        <option value="in_validation">In Validation</option>
-        <option value="draft">Draft</option>
-        <option value="suspended">Suspended</option>
-      </select>
-      <select class="filter-select" id="filter-tier" onchange="filterTable()">
-        <option value="">All Tiers</option>
-        <option value="1">Tier 1</option>
-        <option value="2">Tier 2</option>
-        <option value="3">Tier 3</option>
-      </select>
-      <span class="table-count" id="table-count"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table class="data-table" id="model-table">
-        <thead>
-          <tr>
-            <th>Model ID</th>
-            <th>Name</th>
-            <th>Tier</th>
-            <th>Ver</th>
-            <th>Status</th>
-            <th>Owner</th>
-            <th>Validator</th>
-            <th>Findings</th>
-            <th>Last Review</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="model-tbody">
-          <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted);">
-            <span class="skeleton" style="width:200px;height:12px;display:inline-block"></span>
-          </td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ── Detail panel ─────────────────────────────────────────────────── -->
-    <div id="detail-panel">
-      <div class="detail-close-row">
-        <span class="detail-model-id" id="detail-model-id"></span>
-        <span class="detail-model-name" id="detail-model-name"></span>
-        <a id="detail-pdf-btn" class="btn btn-docs" href="#" target="_blank" rel="noopener" style="display:none;margin-left:auto;margin-right:8px;font-size:11px;padding:4px 10px;">&#x21E9; Download MDD PDF</a>
-        <button class="detail-close" onclick="closeDetail()">Close</button>
+    <!-- Right: detail drawer -->
+    <div class="detail-drawer" id="model-drawer">
+      <div class="detail-drawer-title">Model Detail</div>
+      <div id="model-drawer-content">
+        <div class="detail-drawer-empty">Select a model to view details</div>
       </div>
-      <div class="detail-grid">
-        <div class="detail-meta" id="detail-meta"><!-- filled by JS --></div>
-        <div class="detail-findings" id="detail-findings"><!-- filled by JS --></div>
+    </div>
+
+  </div><!-- /.main-panel -->
+
+  <!-- ── AI Q&A Expander ─────────────────────────────────────────────────── -->
+  <div class="secondary-expander">
+    <div class="expander-header" id="ai-expander-header">
+      Model Advisor — AI Q&amp;A
+      <span class="expander-caret">&#9660;</span>
+    </div>
+    <div class="expander-body" id="ai-expander-body">
+      <div class="chat-container">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">
+          Ask a question about any model in the registry. Answers are generated by the Model Risk Officer agent.
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <input type="text" class="chat-text-input" id="chat-input"
+                 placeholder="Ask about a model (e.g. What are the CVA open findings?)..."
+                 onkeydown="if(event.key==='Enter') sendModelQuestion()">
+          <button class="chat-submit" onclick="sendModelQuestion()">Ask</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);" id="chat-model-ctx"></div>
       </div>
     </div>
   </div>
 
-  <!-- ── Validation pipeline ──────────────────────────────────────────────── -->
-  <div class="section-heading" style="margin-top:20px;">Model Lifecycle — Validation Pipeline</div>
-  <div class="card pipeline-card">
-    <div class="card-header">
-      <span class="card-header-title">SR 11-7 Model Lifecycle Stages</span>
-      <span class="badge badge-framework">SR 11-7 §IV.A</span>
+  <!-- ── Advanced / Validation Pipeline Expander ─────────────────────────── -->
+  <div class="secondary-expander">
+    <div class="expander-header" id="adv-expander-header">
+      Advanced / Validation Pipeline
+      <span class="expander-caret">&#9660;</span>
     </div>
-    <div class="pipeline-flow" id="pipeline-flow">
-      <!-- filled by JS -->
+    <div class="expander-body" id="adv-expander-body">
+
+      <!-- Pipeline flow -->
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;">
+        SR 11-7 Model Lifecycle Stages
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;">
+        <div style="padding:8px 14px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">SR 11-7 Model Lifecycle</span>
+          <span class="badge blue" style="font-size:9px;">SR 11-7 §IV.A</span>
+        </div>
+        <div class="pipeline-flow" id="pipeline-flow">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <!-- Capital-approved models -->
+      <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;">
+        Capital-Approved Models
+      </div>
+      <ul class="cap-list" id="cap-list">
+        <li style="font-size:11px;color:var(--muted);padding:8px 0;">Loading...</li>
+      </ul>
+
     </div>
   </div>
 
-</div>
+</div><!-- /.page-shell -->
 
-<!-- ── Model chat sidebar ─────────────────────────────────────────────────── -->
-<div id="modelChatPanel" style="display:none; position:fixed; right:0; top:0; width:380px; height:100vh; background:#161b22; border-left:1px solid #30363d; padding:16px; overflow-y:auto; z-index:1000;">
-  <button onclick="closeModelChat()" style="float:right; background:none; border:none; color:#8b949e; cursor:pointer; font-size:18px;">&#x2715;</button>
-  <h3 id="chatModelTitle" style="color:#e6edf3; margin:0 0 4px 0; font-size:14px;"></h3>
-  <p id="chatPersonaName" style="color:#8b949e; font-size:11px; margin:0 0 12px 0;"></p>
-  <div id="chatMessages" style="min-height:200px; max-height:60vh; overflow-y:auto; margin-bottom:12px; font-size:13px; color:#e6edf3;"></div>
-  <div style="display:flex; gap:8px;">
-    <input type="text" id="chatInput" placeholder="Ask about this model..."
-           style="flex:1; padding:8px; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#e6edf3; font-size:13px;"
-           onkeydown="if(event.key==='Enter') sendModelQuestion()">
-    <button onclick="sendModelQuestion()" style="padding:8px 12px; background:#238636; border:none; border-radius:6px; color:#fff; cursor:pointer; font-size:13px;">Ask</button>
-  </div>
-</div>
-
-<!-- ── Document modal ─────────────────────────────────────────────────────── -->
+<!-- ── Document modal (global overlay) ─────────────────────────────────────── -->
 <div class="modal-overlay" id="doc-modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title" id="modal-title">Model Documents</div>
+        <div class="modal-title"  id="modal-title">Model Documents</div>
         <div class="modal-subtitle" id="modal-subtitle"></div>
       </div>
       <button class="modal-close" onclick="closeDocModal()">&#x2715;</button>
@@ -690,10 +459,10 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // State
 // ──────────────────────────────────────────────────────────────────────────────
-let allModels = [];
+let allModels      = [];
 let filteredModels = [];
 let selectedModelId = null;
-const API_BASE = '';  // same origin; adjust if running separately
+const API_BASE = '';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Boot
@@ -704,79 +473,71 @@ async function init() {
       fetch(`${API_BASE}/api/models/registry`),
       fetch(`${API_BASE}/api/models/stats`)
     ]);
-
     if (!registryRes.ok || !statsRes.ok) throw new Error('API error');
-
     const registry = await registryRes.json();
     const stats    = await statsRes.json();
-
     allModels      = registry.models || [];
     filteredModels = [...allModels];
-
-    setApiStatus('ok');
     renderKPI(stats);
+    renderAlerts(stats);
     renderTable(filteredModels);
     renderPipeline(allModels);
-
+    loadCapitalApproved();
   } catch (err) {
-    setApiStatus('err');
     console.warn('API unavailable — using embedded registry data', err);
-
-    // Fallback: render directly from embedded data
     allModels      = EMBEDDED_REGISTRY.models;
     filteredModels = [...allModels];
-
-    const stats = computeStatsLocal(allModels, EMBEDDED_REGISTRY.metadata);
+    const stats    = computeStatsLocal(allModels, EMBEDDED_REGISTRY.metadata);
     renderKPI(stats);
+    renderAlerts(stats);
     renderTable(filteredModels);
     renderPipeline(allModels);
+    loadCapitalApproved();
   }
-}
-
-function setApiStatus(state) {
-  const el = document.getElementById('api-status');
-  if (state === 'ok') { el.textContent = '● API Connected'; el.className = 'ok'; }
-  else { el.textContent = '● API Offline — Local Data'; el.className = 'err'; }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // KPI rendering
 // ──────────────────────────────────────────────────────────────────────────────
 function renderKPI(stats) {
-  const inProd = stats.by_status?.production || 0;
-  const openF  = stats.open_findings_total || 0;
+  const total  = stats.total_models || 0;
+  const tier1  = stats.tier1_count  || 0;
   const critO  = stats.critical_open || 0;
+  const openF  = stats.open_findings_total || 0;
 
-  const findingsClass = openF > 10 ? 'red' : openF > 5 ? 'yellow' : 'green';
-  const critClass     = critO  > 0  ? 'red' : 'green';
+  document.getElementById('kpi-total').textContent    = total.toLocaleString();
+  document.getElementById('kpi-tier1').textContent    = tier1;
+  const critEl = document.getElementById('kpi-critical');
+  critEl.textContent = critO;
+  critEl.className   = critO > 0 ? 'kpi-value negative' : 'kpi-value';
 
-  document.getElementById('kpi-bar').innerHTML = `
-    <div class="kpi-card">
-      <div class="kpi-label">Total Models</div>
-      <div class="kpi-value blue">${stats.total_models.toLocaleString()}</div>
-      <div class="kpi-sub">Inventory</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Tier-1 Models</div>
-      <div class="kpi-value">${stats.tier1_count}</div>
-      <div class="kpi-sub">Material / high risk</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">In Production</div>
-      <div class="kpi-value ${inProd > 0 ? 'green' : ''}">${inProd}</div>
-      <div class="kpi-sub">Active production models</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Open Findings</div>
-      <div class="kpi-value ${findingsClass}">${openF}</div>
-      <div class="kpi-sub">Across Tier-1 suite</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Critical Open</div>
-      <div class="kpi-value ${critClass}">${critO}</div>
-      <div class="kpi-sub">Require immediate action</div>
-    </div>
-  `;
+  document.getElementById('model-count-chip').textContent =
+    `${total.toLocaleString()} models | ${openF} open`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Alert rail
+// ──────────────────────────────────────────────────────────────────────────────
+function renderAlerts(stats) {
+  const rail    = document.getElementById('model-alerts');
+  const critO   = stats.critical_open || 0;
+  const items   = [];
+
+  if (critO > 0) {
+    items.push(`<span class="alert-item critical"><span class="alert-item-dot"></span>${critO} critical finding(s) open</span>`);
+  }
+
+  const restrictedCount = allModels.filter(m => m.status === 'restricted' || m.status === 'suspended').length;
+  if (restrictedCount > 0) {
+    items.push(`<span class="alert-item warning"><span class="alert-item-dot"></span>Capital use restriction active on ${restrictedCount} model(s)</span>`);
+  }
+
+  if (items.length === 0) {
+    rail.setAttribute('data-empty', 'true');
+  } else {
+    rail.removeAttribute('data-empty');
+    rail.innerHTML = `<span class="alert-rail-label">Alerts</span>` + items.join('');
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -788,11 +549,12 @@ const STATUS_MAP = {
   draft:         { label: 'DRAFT',         cls: 'badge-draft'      },
   suspended:     { label: 'SUSPENDED',     cls: 'badge-suspended'  },
   mro_review:    { label: 'MRO REVIEW',    cls: 'badge-mro-review' },
+  restricted:    { label: 'RESTRICTED',    cls: 'badge-suspended'  },
 };
 
 function statusBadge(s) {
-  const m = STATUS_MAP[s] || { label: s.toUpperCase(), cls: 'badge-draft' };
-  return `<span class="badge ${m.cls}">${m.label}</span>`;
+  const m = STATUS_MAP[s] || { label: (s||'').toUpperCase(), cls: 'badge-draft' };
+  return `<span class="badge ${m.cls}" style="font-size:9px;padding:2px 7px;border-radius:3px;">${m.label}</span>`;
 }
 
 function findingsPill(n) {
@@ -803,49 +565,35 @@ function findingsPill(n) {
 
 function renderTable(models) {
   const tbody = document.getElementById('model-tbody');
-  document.getElementById('table-count').textContent = `${models.length} model${models.length !== 1 ? 's' : ''}`;
+  document.getElementById('table-count').textContent =
+    `${models.length} model${models.length !== 1 ? 's' : ''}`;
 
   if (!models.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted);">No models match current filters</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No models match current filters</td></tr>`;
     return;
   }
 
   tbody.innerHTML = models.map(m => {
-    const tier = m.tier === 1 ? `<span class="badge badge-tier1">T${m.tier}</span>` : `T${m.tier}`;
-    const validator = m.validator === 'Pending'
-      ? `<span style="color:var(--muted)">Pending</span>`
-      : m.validator;
-    const escapedName = m.name.replace(/'/g, "\\'");
+    const tier = m.tier === 1
+      ? `<span class="badge badge-tier1" style="font-size:9px;padding:2px 7px;border-radius:3px;">T${m.tier}</span>`
+      : `<span style="color:var(--muted);">T${m.tier}</span>`;
+    const frameworks = (m.regulatory_framework || []).slice(0, 2).join(', ');
+    const riskType   = (m.risk_type || '').replace(/_/g,' ');
     return `
-    <tr data-id="${m.id}" onclick="selectModel('${m.id}')" class="model-row ${selectedModelId === m.id ? 'selected' : ''}">
+    <tr data-id="${m.id}" onclick="selectModel('${m.id}')"
+        class="model-row${selectedModelId === m.id ? ' selected' : ''}">
       <td style="font-weight:600;color:var(--accent);font-size:11px;">${m.id}</td>
       <td>
-        <span style="font-weight:600">${m.name}</span>
+        <span style="font-weight:600;">${m.name}</span>
         <span style="color:var(--muted);margin-left:6px;">(${m.short_name})</span>
       </td>
-      <td>${tier}</td>
-      <td style="color:var(--muted)">${m.version}</td>
+      <td style="color:var(--muted);text-transform:capitalize;">${riskType}</td>
+      <td style="color:var(--muted);font-size:10px;">${frameworks}</td>
       <td>${statusBadge(m.status)}</td>
-      <td style="color:var(--muted)">${shortName(m.owner)}</td>
-      <td>${validator}</td>
+      <td>${tier}</td>
       <td>${findingsPill(m.open_findings)}</td>
-      <td style="color:var(--muted)">${m.last_review_date}</td>
-      <td>
-        <button class="btn btn-docs" onclick="openDocs(event, '${m.id}')">
-          &#x1F4C4; Docs (${normalizeDocEntries(m).length})
-        </button>
-        <button class="btn btn-docs" style="margin-left:4px;background:rgba(35,134,54,0.15);border-color:rgba(35,134,54,0.4);color:#3fb950;" onclick="event.stopPropagation(); openModelChat('${m.id}', '${escapedName}')">
-          &#x1F4AC; Ask
-        </button>
-      </td>
     </tr>`;
   }).join('');
-}
-
-function shortName(full) {
-  // "Dr. Yuki Tanaka" -> "Tanaka"
-  const parts = full.split(' ');
-  return parts[parts.length - 1];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -860,7 +608,7 @@ function filterTable() {
     const matchQ = !q ||
       m.id.toLowerCase().includes(q) ||
       m.name.toLowerCase().includes(q) ||
-      m.short_name.toLowerCase().includes(q) ||
+      (m.short_name || '').toLowerCase().includes(q) ||
       (m.owner || '').toLowerCase().includes(q) ||
       (m.risk_type || '').toLowerCase().includes(q);
     const matchStatus = !status || m.status === status;
@@ -870,162 +618,138 @@ function filterTable() {
 
   renderTable(filteredModels);
   if (selectedModelId && !filteredModels.find(m => m.id === selectedModelId)) {
-    closeDetail();
+    clearDrawer();
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Detail panel
+// Detail drawer
 // ──────────────────────────────────────────────────────────────────────────────
 function selectModel(id) {
-  if (selectedModelId === id) { closeDetail(); return; }
+  if (selectedModelId === id) {
+    selectedModelId = null;
+    clearDrawer();
+    renderTable(filteredModels);
+    return;
+  }
   selectedModelId = id;
-
-  // Re-render to update selected row highlight
   renderTable(filteredModels);
 
   const model = allModels.find(m => m.id === id);
   if (!model) return;
 
-  document.getElementById('detail-model-id').textContent   = model.id;
-  document.getElementById('detail-model-name').textContent = `— ${model.name} v${model.version}`;
+  const chatCtx = document.getElementById('chat-model-ctx');
+  if (chatCtx) chatCtx.textContent = `Context: ${model.id} — ${model.name}`;
 
-  // Meta panel
   const frameworks = (model.regulatory_framework || [])
-    .map(f => `<span class="badge badge-framework">${f}</span>`).join('');
+    .map(f => `<span class="badge-framework badge">${f}</span>`).join('');
 
   const upstream = model.upstream_models?.length
-    ? model.upstream_models.map(u => `<span class="flow-item upstream">&#8593; ${u}</span>`).join(' ')
+    ? model.upstream_models.map(u => `<span class="flow-item upstream">&#8593; ${u}</span>`).join('')
     : `<span class="flow-item">None (foundational)</span>`;
 
   const downstream = model.downstream_systems?.length
-    ? model.downstream_systems.map(d => `<span class="flow-item downstream">&#8595; ${d}</span>`).join(' ')
+    ? model.downstream_systems.map(d => `<span class="flow-item downstream">&#8595; ${d}</span>`).join('')
     : `<span class="flow-item">None</span>`;
 
-  document.getElementById('detail-meta').innerHTML = `
-    <div class="meta-desc">${model.description}</div>
-    <div class="meta-row">
-      <span class="meta-label">Status</span>
-      <span class="meta-value">${statusBadge(model.status)}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">Owner</span>
-      <span class="meta-value">${model.owner}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">Validator</span>
-      <span class="meta-value">${model.validator}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">Risk Type</span>
-      <span class="meta-value" style="text-transform:capitalize">${(model.risk_type || '').replace(/_/g, ' ')}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">Last Review</span>
-      <span class="meta-value">${model.last_review_date}</span>
-    </div>
-    <div class="meta-row">
-      <span class="meta-label">Next Review</span>
-      <span class="meta-value">${model.next_review_date}</span>
-    </div>
-    <div class="meta-row" style="align-items:flex-start">
-      <span class="meta-label">Frameworks</span>
-      <span class="meta-value"><div class="flow-list">${frameworks}</div></span>
-    </div>
-    <div class="meta-row" style="align-items:flex-start;margin-top:6px">
-      <span class="meta-label">Upstream</span>
-      <span class="meta-value"><div class="flow-list">${upstream}</div></span>
-    </div>
-    <div class="meta-row" style="align-items:flex-start">
-      <span class="meta-label">Downstream</span>
-      <span class="meta-value"><div class="flow-list">${downstream}</div></span>
-    </div>
-  `;
+  const findings    = model.findings || [];
+  const openCount   = findings.filter(f => f.status === 'open').length;
+  const remCount    = findings.filter(f => f.status === 'remediated').length;
 
-  // Findings panel
-  const findings = model.findings || [];
   const findingsHTML = findings.length === 0
-    ? `<div class="no-findings">&#x2714;&#xFE0E; No findings recorded for this model</div>`
-    : `
-    <table class="findings-table">
-      <thead>
-        <tr>
-          <th>Finding ID</th>
-          <th>Severity</th>
-          <th>Description</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${findings.map(f => `
-        <tr>
-          <td><span class="finding-id">${f.id}</span></td>
-          <td>${severityBadge(f.severity)}</td>
-          <td style="white-space:normal;max-width:340px;line-height:1.5">${f.description}</td>
-          <td>${statusIcon(f.status)}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>`;
+    ? `<div class="no-findings">&#x2714;&#xFE0E; No findings recorded</div>`
+    : findings.map(f => `
+      <div class="finding-row">
+        <div class="finding-header">
+          <span class="badge ${severityBadgeCls(f.severity)}" style="font-size:9px;padding:1px 6px;border-radius:3px;">${(f.severity||'').toUpperCase()}</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:600;">${f.id}</span>
+          <span class="${statusIconCls(f.status)}" style="font-size:10px;margin-left:auto;">${statusIconLabel(f.status)}</span>
+        </div>
+        <div class="finding-desc">${f.description}</div>
+      </div>`).join('');
 
-  const openCount      = findings.filter(f => f.status === 'open').length;
-  const remediatedCount = findings.filter(f => f.status === 'remediated').length;
+  document.getElementById('model-drawer-content').innerHTML = `
+    <div class="drawer-model-name">${model.name}</div>
+    <div class="drawer-model-id">${model.id} &nbsp;·&nbsp; v${model.version}</div>
 
-  document.getElementById('detail-findings').innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">
-        Findings Tracker
-      </span>
-      <div style="display:flex;gap:10px;font-size:10px">
-        <span style="color:var(--negative)">&#9650; ${openCount} Open</span>
-        <span style="color:var(--positive)">&#x2713; ${remediatedCount} Remediated</span>
-        <span style="color:var(--muted)">${findings.length} Total</span>
+    <div class="drawer-badges">
+      ${statusBadge(model.status)}
+      ${model.tier === 1 ? `<span class="badge badge-tier1" style="font-size:9px;padding:2px 7px;border-radius:3px;">Tier 1</span>` : `<span style="font-size:10px;color:var(--muted);">Tier ${model.tier}</span>`}
+    </div>
+
+    <div class="drawer-desc">${model.description}</div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-label">Identity</div>
+      <div class="drawer-row">
+        <span class="drawer-row-label">Owner</span>
+        <span class="drawer-row-value">${model.owner}</span>
+      </div>
+      <div class="drawer-row">
+        <span class="drawer-row-label">Validator</span>
+        <span class="drawer-row-value">${model.validator}</span>
+      </div>
+      <div class="drawer-row">
+        <span class="drawer-row-label">Last reviewed</span>
+        <span class="drawer-row-value">${model.last_review_date}</span>
+      </div>
+      <div class="drawer-row">
+        <span class="drawer-row-label">Next review</span>
+        <span class="drawer-row-value">${model.next_review_date}</span>
       </div>
     </div>
-    ${findingsHTML}
+
+    <div class="drawer-section">
+      <div class="drawer-section-label">Frameworks</div>
+      <div class="flow-list">${frameworks || '<span class="flow-item">—</span>'}</div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-label">Data Flow</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">Upstream</div>
+      <div class="flow-list">${upstream}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;margin-bottom:3px;">Downstream</div>
+      <div class="flow-list">${downstream}</div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Findings</span>
+        <span style="font-size:10px;font-weight:400;">
+          <span style="color:var(--negative);">&#9650; ${openCount} open</span>
+          &nbsp;
+          <span style="color:var(--positive);">&#x2713; ${remCount} remediated</span>
+        </span>
+      </div>
+      ${findingsHTML}
+    </div>
+
+    <a class="drawer-pdf-btn" href="${API_BASE}/api/models/${model.id}/pdf" target="_blank" rel="noopener">
+      &#x21E9; Download MDD (PDF)
+    </a>
   `;
-
-  document.getElementById('detail-panel').classList.add('visible');
-  document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-  // Wire up PDF download button
-  const pdfBtn = document.getElementById('detail-pdf-btn');
-  pdfBtn.href = modelPdfUrl(model.id);
-  pdfBtn.style.display = 'inline-block';
 }
 
-function closeDetail() {
-  selectedModelId = null;
-  document.getElementById('detail-panel').classList.remove('visible');
-  renderTable(filteredModels);
+function clearDrawer() {
+  document.getElementById('model-drawer-content').innerHTML =
+    `<div class="detail-drawer-empty">Select a model to view details</div>`;
+  const chatCtx = document.getElementById('chat-model-ctx');
+  if (chatCtx) chatCtx.textContent = '';
 }
 
-function severityBadge(sev) {
-  const map = {
-    critical: 'badge-critical',
-    major:    'badge-major',
-    minor:    'badge-minor',
-  };
-  return `<span class="badge ${map[sev] || 'badge-minor'}">${(sev || '').toUpperCase()}</span>`;
+function severityBadgeCls(sev) {
+  return { critical: 'badge-critical', major: 'badge-major', minor: 'badge-minor' }[sev] || 'badge-minor';
 }
+function statusIconCls(s)   { return { remediated: 'status-icon remediated', open: 'status-icon open', in_progress: 'status-icon in_progress' }[s] || 'status-icon'; }
+function statusIconLabel(s) { return { remediated: '&#x2713; REMEDIATED', open: '&#9888; OPEN', in_progress: '&#9675; IN PROGRESS' }[s] || s; }
 
-function statusIcon(s) {
-  const map = {
-    remediated:  `<span class="status-icon remediated">&#x2713; REMEDIATED</span>`,
-    open:        `<span class="status-icon open">&#9888; OPEN</span>`,
-    in_progress: `<span class="status-icon in_progress">&#9675; IN PROGRESS</span>`,
-  };
-  return map[s] || `<span class="status-icon">${s}</span>`;
-}
-
-function modelPdfUrl(modelId) {
-  return `${API_BASE}/api/models/${modelId}/pdf`;
-}
-
+// ──────────────────────────────────────────────────────────────────────────────
+// Document modal
+// ──────────────────────────────────────────────────────────────────────────────
 function normalizeDocEntries(model) {
   const docs = model.doc_files || [];
   const entries = [];
   const seenMddStems = new Set();
-
   for (const fname of docs) {
     const isMddSource = /^mdd_/i.test(fname) && /\.(md|tex)$/i.test(fname);
     if (isMddSource) {
@@ -1033,111 +757,123 @@ function normalizeDocEntries(model) {
       if (seenMddStems.has(stem)) continue;
       seenMddStems.add(stem);
       entries.push({
-        label: `${stem}.pdf`,
-        type: 'PDF',
-        previewUrl: `${API_BASE}/api/models/${model.id}/doc/${fname}`,
-        downloadUrl: modelPdfUrl(model.id),
+        label: `${stem}.pdf`, type: 'PDF',
+        previewUrl:   `${API_BASE}/api/models/${model.id}/doc/${fname}`,
+        downloadUrl:  `${API_BASE}/api/models/${model.id}/pdf`,
         downloadName: null,
         downloadLabel: 'Download PDF',
       });
       continue;
     }
-
     const apiUrl = `${API_BASE}/api/models/${model.id}/doc/${fname}`;
     entries.push({
-      label: fname,
-      type: fname.split('.').pop().toUpperCase(),
-      previewUrl: apiUrl,
-      downloadUrl: apiUrl,
-      downloadName: fname,
-      downloadLabel: 'Download',
+      label: fname, type: fname.split('.').pop().toUpperCase(),
+      previewUrl: apiUrl, downloadUrl: apiUrl,
+      downloadName: fname, downloadLabel: 'Download',
     });
   }
-
   return entries;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Document modal
-// ──────────────────────────────────────────────────────────────────────────────
 function openDocs(event, modelId) {
   event.stopPropagation();
   const model = allModels.find(m => m.id === modelId);
   if (!model) return;
   const docs = normalizeDocEntries(model);
-
-  document.getElementById('modal-title').textContent   = `${model.id} — ${model.name}`;
+  document.getElementById('modal-title').textContent    = `${model.id} — ${model.name}`;
   document.getElementById('modal-subtitle').textContent = `v${model.version} | ${docs.length || 0} document(s) available`;
-
-  if (!docs.length) {
-    document.getElementById('doc-list').innerHTML = `<li style="color:var(--muted);font-size:11px;text-align:center;padding:12px">No documents registered</li>`;
-  } else {
-    document.getElementById('doc-list').innerHTML = docs.map(doc => {
-      const downloadAttr = doc.downloadName ? `download="${doc.downloadName}"` : '';
-      return `
-      <li class="doc-item">
-        <div>
-          <div class="doc-filename">${doc.label}</div>
-          <div class="doc-type">${doc.type} document</div>
-        </div>
-        <div class="doc-actions">
-          <a class="btn" href="${doc.previewUrl}" target="_blank" rel="noopener">Preview</a>
-          <a class="btn btn-docs" href="${doc.downloadUrl}" ${downloadAttr}>${doc.downloadLabel}</a>
-        </div>
-      </li>`;
-    }).join('');
-  }
-
+  document.getElementById('doc-list').innerHTML = docs.length
+    ? docs.map(doc => {
+        const downloadAttr = doc.downloadName ? `download="${doc.downloadName}"` : '';
+        return `
+        <li class="doc-item">
+          <div>
+            <div class="doc-filename">${doc.label}</div>
+            <div class="doc-type">${doc.type} document</div>
+          </div>
+          <div class="doc-actions">
+            <a class="btn-sm" href="${doc.previewUrl}" target="_blank" rel="noopener">Preview</a>
+            <a class="btn-sm docs" href="${doc.downloadUrl}" ${downloadAttr}>${doc.downloadLabel}</a>
+          </div>
+        </li>`;
+      }).join('')
+    : `<li style="color:var(--muted);font-size:11px;text-align:center;padding:12px;">No documents registered</li>`;
   document.getElementById('doc-modal').classList.add('open');
 }
 
-function closeDocModal() {
-  document.getElementById('doc-modal').classList.remove('open');
-}
-
-function closeModal(e) {
-  if (e.target === document.getElementById('doc-modal')) closeDocModal();
-}
+function closeDocModal() { document.getElementById('doc-modal').classList.remove('open'); }
+function closeModal(e)   { if (e.target === document.getElementById('doc-modal')) closeDocModal(); }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Validation pipeline
 // ──────────────────────────────────────────────────────────────────────────────
 const PIPELINE_STAGES = [
-  { key: 'draft',        label: 'Draft',          icon: '&#9998;',  dotCls: '' },
-  { key: 'in_validation',label: 'In Validation',  icon: '&#128270;', dotCls: 'active' },
-  { key: 'mro_review',   label: 'MRO Review',     icon: '&#128203;', dotCls: 'warn' },
-  { key: 'cro_approval', label: 'CRO Approval',   icon: '&#9997;',  dotCls: 'warn' },
-  { key: 'production',   label: 'Production',     icon: '&#9989;',  dotCls: 'done' },
+  { key: 'draft',        label: 'Draft',         icon: '&#9998;',   dotCls: '' },
+  { key: 'in_validation',label: 'In Validation', icon: '&#128270;', dotCls: 'active' },
+  { key: 'mro_review',   label: 'MRO Review',    icon: '&#128203;', dotCls: 'warn' },
+  { key: 'cro_approval', label: 'CRO Approval',  icon: '&#9997;',   dotCls: 'warn' },
+  { key: 'production',   label: 'Production',    icon: '&#9989;',   dotCls: 'done' },
 ];
 
 function renderPipeline(models) {
   const stageMap = {};
   for (const s of PIPELINE_STAGES) stageMap[s.key] = [];
-  for (const m of models) {
-    const key = m.status;
-    if (stageMap[key]) stageMap[key].push(m);
-  }
+  for (const m of models) { if (stageMap[m.status]) stageMap[m.status].push(m); }
 
   const html = PIPELINE_STAGES.map((stage, idx) => {
-    const mods    = stageMap[stage.key] || [];
-    const isLast  = idx === PIPELINE_STAGES.length - 1;
-    const tagsCls = stage.key === 'production' ? 'done' : stage.key === 'in_validation' ? 'warn' : '';
-    const tags = mods.map(m =>
-      `<span class="pipeline-model-tag ${tagsCls}" title="${m.name}">${m.short_name}</span>`
+    const mods   = stageMap[stage.key] || [];
+    const isLast = idx === PIPELINE_STAGES.length - 1;
+    const tagCls = stage.key === 'production' ? 'done' : stage.key === 'in_validation' ? 'warn' : '';
+    const tags   = mods.map(m =>
+      `<span class="pipeline-model-tag ${tagCls}" title="${m.name}">${m.short_name}</span>`
     ).join('');
-
     return `
     <div class="pipeline-stage">
       <div class="pipeline-dot-wrap">
         <div class="pipeline-dot ${stage.dotCls}">${stage.icon}</div>
         <div class="pipeline-stage-label ${stage.dotCls}">${stage.label}</div>
-        <div class="pipeline-models">${tags || '<span style="font-size:9px;color:var(--muted)">—</span>'}</div>
+        <div class="pipeline-models">${tags || '<span style="font-size:9px;color:var(--muted);">—</span>'}</div>
       </div>
-      ${!isLast ? '<div style="position:absolute;top:18px;left:50%;right:-50%;height:2px;background:var(--border);z-index:0"></div>' : ''}
+      ${!isLast ? '<div style="position:absolute;top:18px;left:50%;right:-50%;height:2px;background:var(--border);z-index:0;"></div>' : ''}
     </div>`;
   }).join('');
 
   document.getElementById('pipeline-flow').innerHTML = html;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Capital-approved models
+// ──────────────────────────────────────────────────────────────────────────────
+async function loadCapitalApproved() {
+  const list = document.getElementById('cap-list');
+  try {
+    const res = await fetch(`${API_BASE}/api/models/governance/registry/capital-approved`);
+    if (!res.ok) throw new Error('not ok');
+    const data = await res.json();
+    const models = data.models || data;
+    if (!models.length) {
+      list.innerHTML = `<li style="font-size:11px;color:var(--muted);padding:8px 0;">No capital-approved models found.</li>`;
+      return;
+    }
+    list.innerHTML = models.map(m => `
+      <li class="cap-item">
+        <span class="cap-item-id">${m.id}</span>
+        <span class="cap-item-name">${m.name}</span>
+        <span class="badge green" style="font-size:9px;">APPROVED</span>
+      </li>`).join('');
+  } catch {
+    const approved = allModels.filter(m => m.status === 'production');
+    if (!approved.length) {
+      list.innerHTML = `<li style="font-size:11px;color:var(--muted);padding:8px 0;">No production models currently.</li>`;
+      return;
+    }
+    list.innerHTML = approved.map(m => `
+      <li class="cap-item">
+        <span class="cap-item-id">${m.id}</span>
+        <span class="cap-item-name">${m.name}</span>
+        <span class="badge green" style="font-size:9px;">APPROVED</span>
+      </li>`).join('');
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1147,7 +883,7 @@ function computeStatsLocal(models, meta) {
   const by_status = {};
   let open_findings_total = 0;
   let critical_open = 0;
-  let tier1_count = 0;
+  let tier1_count   = 0;
 
   for (const m of models) {
     by_status[m.status] = (by_status[m.status] || 0) + 1;
@@ -1157,13 +893,7 @@ function computeStatsLocal(models, meta) {
       if (f.severity === 'critical' && f.status === 'open') critical_open++;
     }
   }
-  return {
-    total_models: meta.total_models,
-    by_status,
-    open_findings_total,
-    critical_open,
-    tier1_count,
-  };
+  return { total_models: meta.total_models, by_status, open_findings_total, critical_open, tier1_count };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1183,9 +913,9 @@ const EMBEDDED_REGISTRY = {
       "description": "Bilateral credit valuation adjustment for OTC derivatives. Prices counterparty credit risk using Monte Carlo simulation of exposure profiles combined with market-implied default probabilities.",
       "doc_files": ["mdd_cva_v1.0.tex"],
       "findings": [
-        {"id": "CVA-F1", "severity": "major", "description": "Stressed CVA not computed; only unstressed CVA reported", "status": "open"},
-        {"id": "CVA-F2", "severity": "minor", "description": "Wrong reversal rate model claim (30 steps, should be 200)", "status": "open"},
-        {"id": "CVA-F3", "severity": "minor", "description": "SA-CVA capital charge calculation not documented", "status": "open"}
+        {"id": "CVA-F1", "severity": "major",  "description": "Stressed CVA not computed; only unstressed CVA reported", "status": "open"},
+        {"id": "CVA-F2", "severity": "minor",  "description": "Wrong reversal rate model claim (30 steps, should be 200)", "status": "open"},
+        {"id": "CVA-F3", "severity": "minor",  "description": "SA-CVA capital charge calculation not documented", "status": "open"}
       ]
     },
     {
@@ -1233,15 +963,15 @@ const EMBEDDED_REGISTRY = {
       "description": "Foundational Monte Carlo exposure simulation: 59-factor correlated paths (HW2F IR x 5 curves, GBM FX x 10, Heston EQ x 12, CIR credit x 15). Outputs EE, PFE97.5%, EPE, ENE with full collateral simulation.",
       "doc_files": ["mdd_pfe_ccr_v1.0.tex", "mdd_pfe_ccr_v1.1.tex"],
       "findings": [
-        {"id": "C-1", "severity": "critical", "description": "Risk-neutral vs real-world measure distinction not documented", "status": "remediated"},
-        {"id": "C-2", "severity": "critical", "description": "Factor count error: 47 claimed, actual 59", "status": "remediated"},
-        {"id": "C-3", "severity": "critical", "description": "No full SA-CCR IR three-bucket aggregation", "status": "remediated"},
-        {"id": "C-4", "severity": "critical", "description": "500-path intraday run statistical reliability not assessed", "status": "remediated"},
-        {"id": "C-5", "severity": "critical", "description": "Backtesting methodology incorrect (max-over-1yr not horizon-by-horizon)", "status": "remediated"},
-        {"id": "M-2", "severity": "major", "description": "IMM approval gap analysis not documented", "status": "remediated"},
-        {"id": "M-5", "severity": "major", "description": "Stressed EPE methodology missing", "status": "remediated"},
-        {"id": "IMM-1", "severity": "major", "description": "Full P-measure simulation not implemented in production", "status": "open"},
-        {"id": "IMM-2", "severity": "major", "description": "1-year parallel run (SA-CCR vs IMM) not completed", "status": "open"}
+        {"id": "C-1",   "severity": "critical", "description": "Risk-neutral vs real-world measure distinction not documented", "status": "remediated"},
+        {"id": "C-2",   "severity": "critical", "description": "Factor count error: 47 claimed, actual 59", "status": "remediated"},
+        {"id": "C-3",   "severity": "critical", "description": "No full SA-CCR IR three-bucket aggregation", "status": "remediated"},
+        {"id": "C-4",   "severity": "critical", "description": "500-path intraday run statistical reliability not assessed", "status": "remediated"},
+        {"id": "C-5",   "severity": "critical", "description": "Backtesting methodology incorrect (max-over-1yr not horizon-by-horizon)", "status": "remediated"},
+        {"id": "M-2",   "severity": "major",    "description": "IMM approval gap analysis not documented", "status": "remediated"},
+        {"id": "M-5",   "severity": "major",    "description": "Stressed EPE methodology missing", "status": "remediated"},
+        {"id": "IMM-1", "severity": "major",    "description": "Full P-measure simulation not implemented in production", "status": "open"},
+        {"id": "IMM-2", "severity": "major",    "description": "1-year parallel run (SA-CCR vs IMM) not completed", "status": "open"}
       ]
     }
   ],
@@ -1252,88 +982,67 @@ const EMBEDDED_REGISTRY = {
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
-// MDD search (debounced, client-side)
+// Model AI Q&A (SSE streaming via fetch)
 // ──────────────────────────────────────────────────────────────────────────────
-let _mddSearchTimer = null;
-document.addEventListener('DOMContentLoaded', function() {
-  const el = document.getElementById('mddSearch');
-  if (el) {
-    el.addEventListener('input', function() {
-      clearTimeout(_mddSearchTimer);
-      _mddSearchTimer = setTimeout(() => {
-        const q = this.value.toLowerCase();
-        document.querySelectorAll('.model-row').forEach(row => {
-          const text = row.textContent.toLowerCase();
-          row.style.display = text.includes(q) ? '' : 'none';
-        });
-      }, 150);
-    });
-  }
-});
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Model chat sidebar
-// ──────────────────────────────────────────────────────────────────────────────
-let _currentModelId = null;
-const PERSONA_MAP = {
-  'APEX-MDL-0004': 'Dr. Yuki Tanaka',
-  'APEX-MDL-0005': 'Dr. Yuki Tanaka',
-  'APEX-MDL-0006': 'Dr. Yuki Tanaka',
-};
-
-function openModelChat(modelId, modelName) {
-  _currentModelId = modelId;
-  const persona = PERSONA_MAP[modelId] || 'Dr. Samuel Achebe';
-  document.getElementById('chatModelTitle').textContent = modelName;
-  document.getElementById('chatPersonaName').textContent = 'Answered by ' + persona;
-  document.getElementById('chatMessages').innerHTML = '';
-  document.getElementById('modelChatPanel').style.display = 'block';
-  document.getElementById('chatInput').focus();
-}
-
-function closeModelChat() {
-  document.getElementById('modelChatPanel').style.display = 'none';
-  _currentModelId = null;
-}
-
 async function sendModelQuestion() {
-  const input = document.getElementById('chatInput');
+  const input    = document.getElementById('chat-input');
   const question = input.value.trim();
-  if (!question || !_currentModelId) return;
-  input.value = '';
+  if (!question) return;
 
-  const msgs = document.getElementById('chatMessages');
-  msgs.innerHTML += `<div style="margin-bottom:8px;"><strong style="color:#79c0ff;">You:</strong> ${question}</div>`;
+  const modelId = selectedModelId || null;
+  input.value   = '';
+
+  const msgs = document.getElementById('chat-messages');
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat-msg-user';
+  userDiv.innerHTML = `<strong>You:</strong> ${question}`;
+  msgs.appendChild(userDiv);
+
   const answerDiv = document.createElement('div');
-  answerDiv.style.marginBottom = '8px';
-  answerDiv.innerHTML = '<strong style="color:#3fb950;">Answer:</strong> ';
+  answerDiv.className = 'chat-msg-answer';
   const textSpan = document.createElement('span');
+  answerDiv.innerHTML = '<strong>Answer:</strong> ';
   answerDiv.appendChild(textSpan);
   msgs.appendChild(answerDiv);
+  msgs.scrollTop = msgs.scrollHeight;
 
-  const resp = await fetch('/api/models/chat', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({model_id: _currentModelId, question, stream: true})
-  });
+  try {
+    const resp = await fetch('/api/models/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model_id: modelId, question, stream: true })
+    });
 
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  while (true) {
-    const {done, value} = await reader.read();
-    if (done) break;
-    const chunk = decoder.decode(value);
-    for (const line of chunk.split('\n')) {
-      if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-        try {
-          const data = JSON.parse(line.slice(6));
-          if (data.text) textSpan.textContent += data.text;
-          msgs.scrollTop = msgs.scrollHeight;
-        } catch {}
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      for (const line of chunk.split('\n')) {
+        if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.text) textSpan.textContent += data.text;
+            msgs.scrollTop = msgs.scrollHeight;
+          } catch {}
+        }
       }
     }
+  } catch (err) {
+    textSpan.textContent = '(API unavailable)';
   }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Expander toggle
+// ──────────────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.expander-header').forEach(h => {
+  h.addEventListener('click', () => {
+    h.classList.toggle('open');
+    h.nextElementSibling.classList.toggle('open');
+  });
+});
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 init();

@@ -9,91 +9,6 @@
   <style>
     body { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
 
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-
-    .page-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-
-    .page-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 760px;
-      line-height: 1.7;
-    }
-
-    .page-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .page-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--card);
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* KPI bar */
-    .kpi-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .kpi-box {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px 18px;
-      flex: 1;
-      min-width: 150px;
-    }
-    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .kpi-value { font-size: 20px; font-weight: 600; color: var(--text); margin-top: 4px; }
-    .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .kpi-value.pos { color: var(--positive); }
-    .kpi-value.neg { color: var(--negative); }
-    .kpi-value.warn{ color: var(--warning); }
-
-    /* Main grid */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .full-width { grid-column: 1 / -1; }
-
-    /* Section header */
-    .section-header {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .section-header .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent);
-    }
-
     /* Greeks table */
     .greeks-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .greeks-table th {
@@ -123,13 +38,8 @@
     .ccr-pct.ok { color: var(--positive); }
     .ccr-pct.warn { color: var(--warning); }
     .ccr-pct.breach { color: var(--negative); }
-    .gauge-bar {
-      height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
-    }
-    .gauge-fill {
-      height: 100%; border-radius: 3px;
-      transition: width 0.4s ease;
-    }
+    .gauge-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .gauge-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .gauge-fill.ok     { background: var(--positive); }
     .gauge-fill.warn   { background: var(--warning); box-shadow: 0 0 6px rgba(210,153,34,.5); }
     .gauge-fill.breach { background: var(--negative); box-shadow: 0 0 6px rgba(248,81,73,.5); }
@@ -156,18 +66,16 @@
       padding: 5px 8px; border-bottom: 1px solid var(--border); font-size: 10px;
       text-transform: uppercase;
     }
-    .blotter-table td {
-      padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.4);
-    }
+    .blotter-table td { padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.4); }
     .blotter-table td.time { color: var(--muted); font-variant-numeric: tabular-nums; }
     .blotter-table td.instrument { color: var(--text); }
     .side-badge {
       display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px;
       font-weight: 600; text-transform: uppercase;
     }
-    .side-badge.buy { background: rgba(63,185,80,.15); color: var(--positive); }
-    .side-badge.sell{ background: rgba(248,81,73,.15);  color: var(--negative); }
-    .side-badge.pay { background: rgba(210,153,34,.15); color: var(--warning); }
+    .side-badge.buy  { background: rgba(63,185,80,.15); color: var(--positive); }
+    .side-badge.sell { background: rgba(248,81,73,.15);  color: var(--negative); }
+    .side-badge.pay  { background: rgba(210,153,34,.15); color: var(--warning); }
     .status-chip {
       display: inline-block; padding: 1px 6px; border-radius: 3px;
       font-size: 10px; font-weight: 500;
@@ -190,16 +98,9 @@
     .cb-state.open   { background: rgba(248,81,73,.15);  color: var(--negative); }
     .cb-pnl { font-size: 12px; font-variant-numeric: tabular-nums; }
 
-    /* Plotly chart containers */
-    #pnl-chart { height: 200px; }
-
-    /* Trade execution panel */
-    .trade-panel {
-      display: flex; flex-direction: column; gap: 12px;
-    }
-    .demo-trades {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
-    }
+    /* Trade execution */
+    .trade-panel { display: flex; flex-direction: column; gap: 12px; }
+    .demo-trades { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     .demo-btn {
       background: var(--bg-secondary); border: 1px solid var(--border);
       border-radius: 5px; padding: 8px 10px; cursor: pointer;
@@ -207,7 +108,7 @@
       text-align: left; transition: border-color 0.2s;
     }
     .demo-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .demo-btn .btn-side  { font-weight: 600; font-size: 10px; display: block; margin-bottom: 2px; }
+    .demo-btn .btn-side { font-weight: 600; font-size: 10px; display: block; margin-bottom: 2px; }
     .demo-btn .btn-side.buy  { color: var(--positive); }
     .demo-btn .btn-side.sell { color: var(--negative); }
     .demo-btn .btn-ticker { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -230,12 +131,61 @@
     .exec-btn:hover { opacity: 0.85; }
     .exec-btn:disabled { opacity: 0.4; cursor: default; }
 
+    /* WS fills scroll area */
+    #ws-fills {
+      height: 100px; overflow-y: auto;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 5px; padding: 8px 10px;
+      font-family: monospace; font-size: 11px; color: var(--muted);
+    }
+    .ws-fill-line { margin-bottom: 2px; }
+    .ws-fill-line .fill-buy  { color: var(--positive); }
+    .ws-fill-line .fill-sell { color: var(--negative); }
+
     /* WS live indicator */
     .ws-dot {
       width: 7px; height: 7px; border-radius: 50%;
       background: var(--muted); display: inline-block; margin-right: 4px;
     }
     .ws-dot.live { background: var(--positive); box-shadow: 0 0 6px rgba(63,185,80,.6); }
+
+    /* Section label */
+    .section-header {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-header .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
+
+    /* Inner tab grid for Monitor */
+    .monitor-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+      align-items: start;
+    }
+    .monitor-main { min-width: 0; }
+
+    /* Desk drawer detail items */
+    .drawer-field { margin-bottom: 10px; }
+    .drawer-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+    .drawer-field-value { font-size: 13px; color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .limit-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 3px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+    }
+    .limit-badge.ok   { background: rgba(63,185,80,.15); color: var(--positive); }
+    .limit-badge.warn { background: rgba(210,153,34,.15); color: var(--warning); }
+    .limit-badge.breach { background: rgba(248,81,73,.15); color: var(--negative); }
+
+    /* Analyze 2-col grid */
+    .analyze-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
 
     /* Confirmation modal */
     .modal-overlay {
@@ -253,178 +203,178 @@
     .modal-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
     .modal-field-value { font-size: 13px; color: var(--text); font-weight: 500; }
     .modal-section { font-size: 11px; color: var(--muted); margin-bottom: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
-    .var-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; }
     .modal-close {
       width: 100%; margin-top: 14px; background: var(--bg-secondary);
       border: 1px solid var(--border); border-radius: 4px; color: var(--text);
       font-family: monospace; font-size: 12px; padding: 7px; cursor: pointer;
     }
     .modal-close:hover { border-color: var(--accent); }
+
+    /* KPI pos/neg/warn */
+    .kpi-value.pos  { color: var(--positive); }
+    .kpi-value.neg  { color: var(--negative); }
+    .kpi-value.warn { color: var(--warning); }
+
+    @media (max-width: 900px) {
+      .monitor-layout { grid-template-columns: 1fr; }
+      .analyze-grid   { grid-template-columns: 1fr; }
+      .manual-form    { grid-template-columns: 1fr 1fr; }
+      .demo-trades    { grid-template-columns: 1fr 1fr; }
+    }
   </style>
   <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
 
+<!-- ── Page shell ─────────────────────────────────────────────────────────── -->
+<div class="page-shell">
+
+  <!-- Header -->
   <div class="page-header">
-    <div>
+    <div class="page-header-left">
       <div class="page-title">Trading Floor</div>
-      <div class="page-subtitle">
-        Live execution, book risk, and counterparty pressure in one operating view.
-        The job of this page is to compress action into a few signals: where P&amp;L is moving,
-        how exposure is changing, and whether the desk is still inside its control envelope.
-      </div>
+      <div class="page-subtitle">Front-office monitor and execution</div>
     </div>
-    <div class="page-actions">
-      <div class="page-chip">OMS + Risk Snapshot</div>
-      <div class="page-chip">Pre-trade and Post-trade Checks</div>
+    <div class="page-header-right">
+      <span class="last-refresh" id="last-refresh">—</span>
+      <span class="source-chip" data-source="LIVE">LIVE</span>
     </div>
   </div>
 
-  <!-- Confirmation modal -->
-  <div class="modal-overlay" id="confirm-modal">
-    <div class="modal-box">
-      <div class="modal-title" id="modal-title">Trade Confirmed</div>
-      <div class="modal-grid" id="modal-grid"></div>
-      <div class="modal-section">
-        VaR Impact &nbsp;
-        <span id="modal-var-before" style="color:var(--text)">—</span>
-        <span style="color:var(--muted)"> → </span>
-        <span id="modal-var-after"  style="color:var(--text)">—</span>
-        <span id="modal-limit-badge" class="status-chip" style="margin-left:8px">—</span>
-      </div>
-      <div class="modal-section" id="modal-greeks"></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="modal-pretrade"></div>
-      <button class="modal-close" onclick="closeModal()">Close</button>
-    </div>
-  </div>
+  <!-- Alert rail -->
+  <div class="alert-rail" id="trading-alerts" data-empty="true"></div>
 
-  <!-- KPI bar -->
-  <div class="kpi-bar" id="kpi-bar">
-    <div class="kpi-box">
-      <div class="kpi-label">Daily P&amp;L</div>
-      <div class="kpi-value" id="kpi-daily">—</div>
-      <div class="kpi-sub">All desks</div>
-    </div>
-    <div class="kpi-box">
+  <!-- KPI strip -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
       <div class="kpi-label">YTD P&amp;L</div>
       <div class="kpi-value pos" id="kpi-ytd">—</div>
       <div class="kpi-sub">All desks</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Portfolio Delta</div>
-      <div class="kpi-value" id="kpi-delta">—</div>
-      <div class="kpi-sub">Net USD</div>
+    <div class="kpi-card">
+      <div class="kpi-label">Daily P&amp;L</div>
+      <div class="kpi-value" id="kpi-daily">—</div>
+      <div class="kpi-sub">All desks</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Portfolio Vega</div>
-      <div class="kpi-value" id="kpi-vega">—</div>
-      <div class="kpi-sub">Net USD/vol pt</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">CCR Utilisation</div>
-      <div class="kpi-value" id="kpi-ccr">—</div>
-      <div class="kpi-sub">vs. total limit</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Circuit Breaker</div>
-      <div class="kpi-value pos" id="kpi-cb">CLOSED</div>
-      <div class="kpi-sub">System-wide</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Live Feed</div>
-      <div class="kpi-value" id="kpi-feed" style="font-size:14px">
-        <span class="ws-dot" id="ws-dot"></span><span id="ws-label">connecting…</span>
-      </div>
-      <div class="kpi-sub">WebSocket</div>
+    <div class="kpi-card">
+      <div class="kpi-label">Peak Limit Util</div>
+      <div class="kpi-value" id="kpi-peak-util">—</div>
+      <div class="kpi-sub">Max delta util% across books</div>
     </div>
   </div>
 
-  <!-- Main grid -->
-  <div class="main-grid">
+  <!-- Connection status (hidden visually but functional) -->
+  <div id="status" style="font-size:11px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+    <span class="ws-dot" id="ws-dot"></span>
+    <span id="ws-label">connecting…</span>
+  </div>
 
-    <!-- Greeks table -->
-    <div class="card">
-      <div class="section-header"><div class="dot"></div>Portfolio Greeks</div>
-      <table class="greeks-table">
-        <thead>
-          <tr>
-            <th>Book</th>
-            <th>Delta $</th>
-            <th>Gamma $k</th>
-            <th>Vega $k</th>
-            <th>Theta $</th>
-            <th>DV01 $</th>
-            <th>Δ Lim %</th>
-          </tr>
-        </thead>
-        <tbody id="greeks-tbody"></tbody>
-      </table>
+  <!-- ── Outer tab bar: Monitor | Execute | Analyze ────────────────────────── -->
+  <div class="tab-bar" style="margin-bottom:16px">
+    <button class="tab-btn active" data-tab="monitor" onclick="switchTab('monitor')">Monitor</button>
+    <button class="tab-btn" data-tab="execute"  onclick="switchTab('execute')">Execute</button>
+    <button class="tab-btn" data-tab="analyze"  onclick="switchTab('analyze')">Analyze</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       MONITOR TAB
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="monitor">
+
+    <!-- Inner tab bar: Blotter | Desks | Positions -->
+    <div class="tab-bar" style="margin-bottom:12px">
+      <button class="tab-btn active" data-tab="inner-blotter"   onclick="switchInnerTab('inner-blotter')">Blotter</button>
+      <button class="tab-btn"        data-tab="inner-desks"     onclick="switchInnerTab('inner-desks')">Desks</button>
+      <button class="tab-btn"        data-tab="inner-positions" onclick="switchInnerTab('inner-positions')">Positions</button>
     </div>
 
-    <!-- CCR Limits -->
-    <div class="card">
-      <div class="section-header"><div class="dot" style="background:var(--warning)"></div>CCR Limit Utilisation</div>
-      <div class="ccr-list" id="ccr-list"></div>
-    </div>
+    <div class="monitor-layout">
+      <div class="monitor-main">
 
-    <!-- P&L attribution -->
-    <div class="card">
-      <div class="section-header"><div class="dot" style="background:var(--positive)"></div>P&amp;L Attribution</div>
-      <div id="pnl-chart"></div>
-      <table class="pnl-table" style="margin-top:12px">
-        <thead>
-          <tr>
-            <th>Book</th>
-            <th>Daily</th>
-            <th>MTD</th>
-            <th>YTD</th>
-          </tr>
-        </thead>
-        <tbody id="pnl-tbody"></tbody>
-      </table>
-    </div>
+        <!-- Blotter inner panel -->
+        <div class="tab-panel active" id="inner-blotter">
+          <div class="card">
+            <div class="section-header"><div class="dot" style="background:#79c0ff"></div>Recent Trades</div>
+            <table class="blotter-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Book</th>
+                  <th>Instrument</th>
+                  <th>Side</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="blotter-tbody"></tbody>
+            </table>
+          </div>
+        </div>
 
-    <!-- P&L Explain — Greek attribution waterfall -->
-    <div class="card">
-      <div class="section-header">
-        <div class="dot" style="background:#a5d6ff"></div>P&amp;L Explain — Greek Attribution
-        <button onclick="resetSod()" style="margin-left:auto;font-size:10px;padding:2px 8px;background:var(--border);color:var(--text);border:none;border-radius:3px;cursor:pointer">Reset SOD</button>
+        <!-- Desks inner panel -->
+        <div class="tab-panel" id="inner-desks">
+          <div class="card">
+            <div class="section-header"><div class="dot" style="background:var(--positive)"></div>Desk P&amp;L</div>
+            <table class="pnl-table">
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Daily</th>
+                  <th>MTD</th>
+                  <th>YTD</th>
+                </tr>
+              </thead>
+              <tbody id="desks-pnl-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Positions inner panel -->
+        <div class="tab-panel" id="inner-positions">
+          <div class="card">
+            <div class="section-header"><div class="dot"></div>Book Greeks</div>
+            <table class="greeks-table">
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Delta $k</th>
+                  <th>Gamma $k</th>
+                  <th>Vega $k</th>
+                  <th>Theta $</th>
+                  <th>DV01 $</th>
+                  <th>Δ Lim %</th>
+                </tr>
+              </thead>
+              <tbody id="positions-greeks-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WS fill notifications -->
+        <div style="margin-top:12px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Live fill stream</div>
+          <div id="ws-fills"><span style="color:var(--muted)">Waiting for fills…</span></div>
+        </div>
+
+      </div><!-- .monitor-main -->
+
+      <!-- Desk detail drawer -->
+      <div class="detail-drawer" id="desk-drawer">
+        <div class="detail-drawer-title">Desk Detail</div>
+        <div class="detail-drawer-empty" id="desk-drawer-empty">Select a desk to view details</div>
+        <div id="desk-drawer-content" style="display:none"></div>
       </div>
-      <div id="pnl-explain-chart" style="height:200px"></div>
-      <table class="pnl-table" style="margin-top:8px">
-        <thead><tr><th>Desk</th><th>Delta</th><th>Gamma</th><th>Theta</th><th>Vega</th><th>Unexpl.</th><th>Actual</th></tr></thead>
-        <tbody id="pnl-explain-tbody"></tbody>
-      </table>
-    </div>
 
-    <!-- Circuit Breaker -->
+    </div><!-- .monitor-layout -->
+  </div><!-- #monitor -->
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       EXECUTE TAB
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="execute">
     <div class="card">
-      <div class="section-header"><div class="dot" style="background:var(--negative)"></div>Circuit Breakers</div>
-      <div id="cb-list"></div>
-    </div>
-
-    <!-- Blotter -->
-    <div class="card full-width">
-      <div class="section-header"><div class="dot" style="background:#79c0ff"></div>Recent Trades</div>
-      <table class="blotter-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>ID</th>
-            <th>Book</th>
-            <th>Instrument</th>
-            <th>Side</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="blotter-tbody"></tbody>
-      </table>
-    </div>
-
-    <!-- Trade Execution panel -->
-    <div class="card full-width">
       <div class="section-header"><div class="dot" style="background:var(--accent)"></div>Trade Execution</div>
       <div class="trade-panel">
 
@@ -495,414 +445,680 @@
           <button class="exec-btn" id="exec-btn" onclick="manualTrade()">Execute</button>
         </div>
 
+        <!-- Pre-trade check display -->
+        <div id="pretrade-display" style="font-size:11px;color:var(--muted);min-height:16px"></div>
+
       </div>
     </div>
+  </div><!-- #execute -->
 
-  </div><!-- main-grid -->
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       ANALYZE TAB
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="analyze">
+    <div class="analyze-grid">
 
-  <script>
-    // ── Helpers ──────────────────────────────────────────────────────────────
+      <!-- Full Greeks table -->
+      <div class="card">
+        <div class="section-header"><div class="dot"></div>Portfolio Greeks</div>
+        <table class="greeks-table">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Delta $k</th>
+              <th>Gamma $k</th>
+              <th>Vega $k</th>
+              <th>Theta $</th>
+              <th>DV01 $</th>
+              <th>Δ Lim %</th>
+            </tr>
+          </thead>
+          <tbody id="greeks-tbody"></tbody>
+        </table>
+      </div>
 
-    const fmt = (n, decimals = 0) => n == null ? '—' :
-      new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      }).format(n);
+      <!-- CCR table -->
+      <div class="card">
+        <div class="section-header"><div class="dot" style="background:var(--warning)"></div>CCR Limit Utilisation</div>
+        <div class="ccr-list" id="ccr-list"></div>
+      </div>
 
-    const fmtMM  = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
-    const fmtK   = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
-    const fmtPnl = (n) => { if (n == null) return '—'; return `${n >= 0 ? '+' : ''}${fmtMM(n)}`; };
-    const pnlClass   = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
-    const colorClass = (pct) => pct > 100 ? 'breach' : pct > 80 ? 'warn' : 'ok';
-    const statusColor = (s) => s === 'GREEN' ? 'var(--positive)' : s === 'RED' ? 'var(--negative)' : 'var(--warning)';
+      <!-- P&L attribution waterfall -->
+      <div class="card">
+        <div class="section-header">
+          <div class="dot" style="background:var(--positive)"></div>P&amp;L Attribution
+        </div>
+        <div id="pnl-chart" style="height:200px"></div>
+        <table class="pnl-table" style="margin-top:12px">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Daily</th>
+              <th>MTD</th>
+              <th>YTD</th>
+            </tr>
+          </thead>
+          <tbody id="pnl-tbody"></tbody>
+        </table>
+      </div>
 
-    // ── Fetch & render ────────────────────────────────────────────────────────
+      <!-- P&L Explain waterfall -->
+      <div class="card">
+        <div class="section-header">
+          <div class="dot" style="background:#a5d6ff"></div>P&amp;L Explain — Greek Attribution
+          <button onclick="resetSod()" style="margin-left:auto;font-size:10px;padding:2px 8px;background:var(--border);color:var(--text);border:none;border-radius:3px;cursor:pointer">Reset SOD</button>
+        </div>
+        <div id="pnl-explain-chart" style="height:200px"></div>
+        <table class="pnl-table" style="margin-top:8px">
+          <thead><tr><th>Desk</th><th>Delta</th><th>Gamma</th><th>Theta</th><th>Vega</th><th>Unexpl.</th><th>Actual</th></tr></thead>
+          <tbody id="pnl-explain-tbody"></tbody>
+        </table>
+      </div>
 
-    async function loadGreeks() {
-      const res = await fetch('/api/trading/greeks').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
+    </div><!-- .analyze-grid -->
+  </div><!-- #analyze -->
 
-      // KPI delta/vega
-      const p = data.portfolio;
-      const deltaEl = document.getElementById('kpi-delta');
-      deltaEl.textContent = fmtK(p.delta);
-      deltaEl.className = 'kpi-value ' + pnlClass(p.delta);
-      const vegaEl = document.getElementById('kpi-vega');
-      vegaEl.textContent = fmtK(p.vega);
-      vegaEl.className = 'kpi-value ' + pnlClass(p.vega);
-
-      const tbody = document.getElementById('greeks-tbody');
-      tbody.innerHTML = '';
-
-      data.books.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><div>${b.name}</div><div class="desk-label">${b.trader}</div></td>
-          <td class="${b.delta >= 0 ? 'pos' : 'neg'}">${fmtK(b.delta)}</td>
-          <td class="${b.gamma >= 0 ? 'pos' : 'neg'}">${fmtK(b.gamma)}</td>
-          <td class="${b.vega  >= 0 ? 'pos' : 'neg'}">${fmtK(b.vega)}</td>
-          <td class="${b.theta >= 0 ? 'pos' : 'neg'}">${fmtK(b.theta)}</td>
-          <td class="${b.dv01  >= 0 ? 'pos' : 'neg'}">${fmtK(b.dv01)}</td>
-          <td class="${b.delta_util_pct > 80 ? 'neg' : b.delta_util_pct > 60 ? 'warn' : 'pos'}">${b.delta_util_pct}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // Totals row
-      const tot = data.portfolio;
-      const tr = document.createElement('tr');
-      tr.className = 'total-row';
-      tr.innerHTML = `
-        <td>Portfolio Total</td>
-        <td>${fmtK(tot.delta)}</td>
-        <td>${fmtK(tot.gamma)}</td>
-        <td>${fmtK(tot.vega)}</td>
-        <td>${fmtK(tot.theta)}</td>
-        <td>${fmtK(tot.dv01)}</td>
-        <td>—</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    async function loadCCR() {
-      const res = await fetch('/api/trading/ccr').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      // KPI
-      const ccrEl = document.getElementById('kpi-ccr');
-      ccrEl.textContent = `${data.total_util_pct}%`;
-      ccrEl.className = 'kpi-value ' + colorClass(data.total_util_pct);
-
-      const list = document.getElementById('ccr-list');
-      list.innerHTML = '';
-      data.counterparties.forEach(cp => {
-        const cls = colorClass(cp.utilization);
-        const pct = Math.min(cp.utilization, 100);
-        const div = document.createElement('div');
-        div.className = 'ccr-row';
-        div.innerHTML = `
-          <div class="ccr-header">
-            <span class="ccr-cp">${cp.counterparty} <span style="color:var(--muted);font-size:10px">${cp.rating}</span></span>
-            <span class="ccr-meta">${cp.ead_mm}MM / ${cp.limit_mm}MM lim &nbsp;
-              <span class="ccr-pct ${cls}">${cp.utilization}%</span>
-            </span>
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       ADVANCED / CIRCUIT BREAKERS — secondary expander
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="secondary-expander" style="margin-top:20px">
+    <div class="expander-header">
+      <span class="expander-caret">▾</span>
+      Advanced / Circuit Breakers
+    </div>
+    <div class="expander-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 0">
+        <div class="card">
+          <div class="section-header"><div class="dot" style="background:var(--negative)"></div>Circuit Breakers</div>
+          <div id="cb-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-header"><div class="dot" style="background:#a5d6ff"></div>Historical P&amp;L Waterfall</div>
+          <div id="pnl-hist-chart" style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">
+            Load Analyze tab to render
           </div>
-          <div class="gauge-bar"><div class="gauge-fill ${cls}" style="width:${pct}%"></div></div>
-        `;
-        list.appendChild(div);
-      });
-    }
+        </div>
+      </div>
+    </div>
+  </div>
 
-    async function loadPnl() {
-      const res = await fetch('/api/trading/pnl').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
+</div><!-- .page-shell -->
 
-      // KPI
-      const dailyEl = document.getElementById('kpi-daily');
-      dailyEl.textContent = fmtPnl(data.total.daily);
-      dailyEl.className = 'kpi-value ' + pnlClass(data.total.daily);
-      const ytdEl = document.getElementById('kpi-ytd');
-      ytdEl.textContent = fmtPnl(data.total.ytd);
-      ytdEl.className = 'kpi-value ' + pnlClass(data.total.ytd);
+<!-- ── Trade confirmation modal (global overlay) ──────────────────────── -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Trade Confirmed</div>
+    <div class="modal-grid" id="modal-grid"></div>
+    <div class="modal-section">
+      VaR Impact &nbsp;
+      <span id="modal-var-before" style="color:var(--text)">—</span>
+      <span style="color:var(--muted)"> → </span>
+      <span id="modal-var-after"  style="color:var(--text)">—</span>
+      <span id="modal-limit-badge" class="status-chip" style="margin-left:8px">—</span>
+    </div>
+    <div class="modal-section" id="modal-greeks"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px" id="modal-pretrade"></div>
+    <button class="modal-close" onclick="closeModal()">Close</button>
+  </div>
+</div>
 
-      // P&L bar chart
-      const books  = data.books.map(b => b.name);
-      const daily  = data.books.map(b => b.daily / 1_000);
-      const colors = daily.map(v => v >= 0 ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.75)');
+<script>
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
-      Plotly.newPlot('pnl-chart', [{
-        type: 'bar', x: books, y: daily,
-        marker: { color: colors },
-        name: 'Daily P&L ($k)',
-      }], {
-        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-        margin: { t: 5, b: 50, l: 40, r: 5 },
-        font: { family: 'monospace', size: 10, color: '#8b949e' },
-        xaxis: { tickfont: { size: 9 }, tickangle: -30, gridcolor: '#21262d' },
-        yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
-        showlegend: false,
-      }, { displayModeBar: false, responsive: true });
+  const fmt = (n, decimals = 0) => n == null ? '—' :
+    new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(n);
 
-      // Table
-      const tbody = document.getElementById('pnl-tbody');
-      tbody.innerHTML = '';
-      data.books.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><div style="color:var(--text)">${b.name}</div><div style="color:var(--muted);font-size:10px">${b.desk}</div></td>
-          <td class="${pnlClass(b.daily)}">${fmtPnl(b.daily)}</td>
-          <td class="${pnlClass(b.mtd)}">${fmtPnl(b.mtd)}</td>
-          <td class="${pnlClass(b.ytd)}">${fmtPnl(b.ytd)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+  const fmtMM  = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
+  const fmtK   = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
+  const fmtPnl = (n) => { if (n == null) return '—'; return `${n >= 0 ? '+' : ''}${fmtMM(n)}`; };
+  const pnlClass   = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
+  const colorClass = (pct) => pct > 100 ? 'breach' : pct > 80 ? 'warn' : 'ok';
+  const statusColor = (s) => s === 'GREEN' ? 'var(--positive)' : s === 'RED' ? 'var(--negative)' : 'var(--warning)';
 
-      const tot = data.total;
-      const tr = document.createElement('tr');
-      tr.className = 'total-row';
-      tr.innerHTML = `
-        <td>Total</td>
-        <td class="${pnlClass(tot.daily)}">${fmtPnl(tot.daily)}</td>
-        <td class="${pnlClass(tot.mtd)}">${fmtPnl(tot.mtd)}</td>
-        <td class="${pnlClass(tot.ytd)}">${fmtPnl(tot.ytd)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
+  // ── Tab switching ─────────────────────────────────────────────────────────
 
-    async function loadPnlExplain() {
-      const res = await fetch('/api/trading/pnl-explain').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      const desks  = Object.keys(data.by_desk);
-      const p      = data.portfolio;
-      const cats   = ['Delta', 'Gamma', 'Theta', 'Vega', 'Unexpl.'];
-      const vals   = [p.delta_pnl, p.gamma_pnl, p.theta_pnl, p.vega_pnl, p.unexplained];
-      const colors = vals.map(v => v >= 0 ? 'rgba(63,185,80,0.8)' : 'rgba(248,81,73,0.8)');
-
-      Plotly.newPlot('pnl-explain-chart', [{
-        type: 'waterfall', orientation: 'v',
-        x: [...cats, 'Total'],
-        y: [...vals.map(v => v / 1e3), p.total_actual_pnl / 1e3],
-        measure: [...cats.map(() => 'relative'), 'total'],
-        connector: { line: { color: '#30363d' } },
-        increasing: { marker: { color: 'rgba(63,185,80,0.8)' } },
-        decreasing: { marker: { color: 'rgba(248,81,73,0.8)' } },
-        totals:     { marker: { color: 'rgba(88,166,255,0.8)' } },
-        texttemplate: '%{y:.1f}k', textposition: 'outside',
-      }], {
-        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-        margin: { t: 18, b: 30, l: 45, r: 5 },
-        font: { family: 'monospace', size: 10, color: '#8b949e' },
-        xaxis: { gridcolor: '#21262d' },
-        yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
-        showlegend: false,
-      }, { displayModeBar: false, responsive: true });
-
-      const tbody = document.getElementById('pnl-explain-tbody');
-      tbody.innerHTML = '';
-      desks.forEach(desk => {
-        const d = data.by_desk[desk];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="color:var(--text)">${desk}</td>
-          <td class="${pnlClass(d.delta_pnl)}">${fmtPnl(d.delta_pnl)}</td>
-          <td class="${pnlClass(d.gamma_pnl)}">${fmtPnl(d.gamma_pnl)}</td>
-          <td class="${pnlClass(d.theta_pnl)}">${fmtPnl(d.theta_pnl)}</td>
-          <td class="${pnlClass(d.vega_pnl)}">${fmtPnl(d.vega_pnl)}</td>
-          <td class="${pnlClass(d.unexplained)}">${fmtPnl(d.unexplained)}</td>
-          <td class="${pnlClass(d.total_actual_pnl)}">${fmtPnl(d.total_actual_pnl)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      // Firm total row
-      const tr = document.createElement('tr');
-      tr.className = 'total-row';
-      tr.innerHTML = `
-        <td>FIRM</td>
-        <td class="${pnlClass(p.delta_pnl)}">${fmtPnl(p.delta_pnl)}</td>
-        <td class="${pnlClass(p.gamma_pnl)}">${fmtPnl(p.gamma_pnl)}</td>
-        <td class="${pnlClass(p.theta_pnl)}">${fmtPnl(p.theta_pnl)}</td>
-        <td class="${pnlClass(p.vega_pnl)}">${fmtPnl(p.vega_pnl)}</td>
-        <td class="${pnlClass(p.unexplained)}">${fmtPnl(p.unexplained)}</td>
-        <td class="${pnlClass(p.total_actual_pnl)}">${fmtPnl(p.total_actual_pnl)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    async function resetSod() {
-      await fetch('/api/trading/pnl-explain/reset-sod', { method: 'POST' });
-      await loadPnlExplain();
-    }
-
-    async function loadCircuitBreaker() {
-      const res = await fetch('/api/trading/circuit-breaker').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      const cbKpi = document.getElementById('kpi-cb');
-      cbKpi.textContent = data.system_state;
-      cbKpi.className = 'kpi-value ' + (data.system_state === 'CLOSED' ? 'pos' : 'neg');
-
-      const list = document.getElementById('cb-list');
-      list.innerHTML = '';
-      data.desks.forEach(d => {
-        const div = document.createElement('div');
-        div.className = 'cb-row';
-        div.innerHTML = `
-          <span class="cb-desk">${d.desk}</span>
-          <span class="cb-pnl ${pnlClass(d.daily_loss)}">${fmtPnl(d.daily_loss)}</span>
-          <span class="cb-state ${d.state.toLowerCase()}">${d.state}</span>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    async function loadBlotter() {
-      const res = await fetch('/api/trading/blotter').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      const tbody = document.getElementById('blotter-tbody');
-      tbody.innerHTML = '';
-      data.trades.forEach(t => {
-        const sideCls = t.side.toLowerCase();
-        const qty = t.qty >= 1_000_000
-          ? `${(t.qty / 1_000_000).toFixed(0)}MM`
-          : t.qty >= 1_000 ? `${(t.qty / 1_000).toFixed(0)}k` : t.qty;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="time">${t.time}</td>
-          <td style="color:var(--muted)">${t.id}</td>
-          <td style="color:var(--accent)">${t.book}</td>
-          <td class="instrument">${t.instrument}</td>
-          <td><span class="side-badge ${sideCls}">${t.side}</span></td>
-          <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${qty}</td>
-          <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${t.price}</td>
-          <td><span class="status-chip">${t.status}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // ── Demo trade catalog ────────────────────────────────────────────────────
-
-    const DEMO_TRADES = [
-      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'AAPL',         side:'buy',  qty:5000},
-      {desk:'RATES',       book_id:'RATES_BOOK_1', ticker:'US10Y',        side:'sell', qty:10000},
-      {desk:'DERIVATIVES', book_id:'DERIV_BOOK_1', ticker:'AAPL_CALL_200',side:'buy',  qty:500},
-      {desk:'FX',          book_id:'FX_BOOK_1',    ticker:'EURUSD',       side:'buy',  qty:5000000},
-      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'NVDA',         side:'buy',  qty:8000},
-      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'SPY',          side:'sell', qty:2000},
-    ];
-
-    const DESK_BOOKS = {
-      EQUITY:'EQ_BOOK_1', RATES:'RATES_BOOK_1', FX:'FX_BOOK_1',
-      CREDIT:'CREDIT_BOOK_1', DERIVATIVES:'DERIV_BOOK_1', COMMODITIES:'COMM_BOOK_1',
-    };
-
-    function demoTrade(idx) {
-      const t = DEMO_TRADES[idx];
-      submitOrder(t.desk, t.book_id, t.ticker, t.side, t.qty);
-    }
-
-    function manualTrade() {
-      const ticker  = document.getElementById('form-ticker').value.trim().toUpperCase();
-      const side    = document.getElementById('form-side').value;
-      const qty     = parseFloat(document.getElementById('form-qty').value);
-      const desk    = document.getElementById('form-desk').value;
-      if (!ticker || !qty || qty <= 0) { alert('Enter ticker and qty'); return; }
-      submitOrder(desk, DESK_BOOKS[desk] || 'EQ_BOOK_1', ticker, side, qty);
-    }
-
-    async function submitOrder(desk, book_id, ticker, side, qty) {
-      const btn = document.getElementById('exec-btn');
-      if (btn) btn.disabled = true;
-      try {
-        const res = await fetch('/api/trading/orders', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({desk, book_id, ticker, side, qty}),
-        }).catch(() => null);
-        if (!res) { alert('Network error'); return; }
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          alert('Order failed: ' + (err.detail || res.statusText));
-          return;
-        }
-        const conf = await res.json();
-        showConfirmation(conf);
-        // Refresh panels immediately
-        await Promise.all([loadGreeks(), loadPnl(), loadBlotter()]);
-      } finally {
-        if (btn) btn.disabled = false;
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-bar:first-of-type .tab-btn, .tab-bar').forEach(() => {});
+    // Outer tabs only (first tab-bar's buttons)
+    document.querySelectorAll('[data-tab]').forEach(el => {
+      if (el.tagName === 'BUTTON' && ['monitor','execute','analyze'].includes(el.dataset.tab)) {
+        el.classList.remove('active');
       }
-    }
-
-    // ── Confirmation modal ────────────────────────────────────────────────────
-
-    function showConfirmation(conf) {
-      const fmtP = (n) => n == null ? '—' : `$${(n/1_000_000).toFixed(2)}MM`;
-
-      const title = document.getElementById('modal-title');
-      title.textContent = `${conf.side} ${fmt(conf.quantity)} ${conf.ticker} — FILLED`;
-      title.style.color = conf.side === 'BUY' ? 'var(--positive)' : 'var(--negative)';
-
-      document.getElementById('modal-grid').innerHTML = `
-        <div><div class="modal-field-label">UTI</div><div class="modal-field-value" style="font-size:10px">${conf.uti.slice(0,16)}…</div></div>
-        <div><div class="modal-field-label">Fill Price</div><div class="modal-field-value">$${conf.fill_price.toFixed(4)}</div></div>
-        <div><div class="modal-field-label">Notional</div><div class="modal-field-value">${fmtP(conf.notional)}</div></div>
-        <div><div class="modal-field-label">Book</div><div class="modal-field-value">${conf.book_id}</div></div>
-      `;
-
-      document.getElementById('modal-var-before').textContent = fmtP(conf.var_before);
-      document.getElementById('modal-var-after').textContent  = fmtP(conf.var_after);
-
-      const badge = document.getElementById('modal-limit-badge');
-      badge.textContent = conf.limit_status;
-      badge.style.color = statusColor(conf.limit_status);
-
-      const g = conf.greeks || {};
-      document.getElementById('modal-greeks').innerHTML =
-        `Greeks (incremental) — Δ: ${fmtK(g.delta)} | Γ: ${fmtK(g.gamma)} | ν: ${fmtK(g.vega)} | DV01: ${fmtK(g.dv01)}`;
-
-      document.getElementById('modal-pretrade').textContent = conf.pre_trade_message || '';
-
-      document.getElementById('confirm-modal').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('confirm-modal').classList.remove('active');
-    }
-
-    // Close modal on overlay click
-    document.getElementById('confirm-modal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
     });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      if (['monitor','execute','analyze'].includes(p.id)) p.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
 
-    // ── WebSocket ─────────────────────────────────────────────────────────────
+    // Re-render Plotly charts if switching to analyze (they need visible container)
+    if (tabId === 'analyze') {
+      Plotly.Plots.resize(document.getElementById('pnl-chart'));
+      Plotly.Plots.resize(document.getElementById('pnl-explain-chart'));
+    }
+  }
 
-    let ws = null;
-    function connectWS() {
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      ws = new WebSocket(`${proto}://${location.host}/ws/trading`);
-      const dot   = document.getElementById('ws-dot');
-      const label = document.getElementById('ws-label');
+  function switchInnerTab(tabId) {
+    ['inner-blotter','inner-desks','inner-positions'].forEach(id => {
+      const btn = document.querySelector(`[data-tab="${id}"]`);
+      const panel = document.getElementById(id);
+      if (btn)   btn.classList.remove('active');
+      if (panel) panel.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
 
-      ws.onopen = () => {
-        dot.classList.add('live');
-        label.textContent = 'live';
-      };
-      ws.onmessage = (ev) => {
-        const msg = JSON.parse(ev.data);
-        if (msg.type === 'fill') {
-          loadBlotter();   // new trade booked
-        } else if (msg.type === 'positions') {
-          loadPnl();       // P&L moved
+  // ── Alert rail helpers ────────────────────────────────────────────────────
+
+  function addAlert(level, text) {
+    const rail = document.getElementById('trading-alerts');
+    rail.removeAttribute('data-empty');
+    const item = document.createElement('div');
+    item.className = `alert-item ${level}`;
+    item.textContent = text;
+    rail.appendChild(item);
+  }
+
+  function clearAlerts() {
+    const rail = document.getElementById('trading-alerts');
+    rail.innerHTML = '';
+    rail.setAttribute('data-empty', 'true');
+  }
+
+  // ── Fetch & render ────────────────────────────────────────────────────────
+
+  // Shared greeks data for both Analyze and Positions subtab
+  let _greeksData = null;
+
+  async function loadGreeks() {
+    const res = await fetch('/api/trading/greeks').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    _greeksData = data;
+
+    // KPI — peak limit util
+    const peakUtil = Math.max(...(data.books || []).map(b => b.delta_util_pct || 0));
+    const peakEl = document.getElementById('kpi-peak-util');
+    peakEl.textContent = `${peakUtil.toFixed(0)}%`;
+    peakEl.className = 'kpi-value ' + colorClass(peakUtil);
+
+    // Analyze tab: full greeks table
+    renderGreeksTable('greeks-tbody', data);
+    // Monitor/Positions subtab
+    renderGreeksTable('positions-greeks-tbody', data);
+  }
+
+  function renderGreeksTable(tbodyId, data) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (data.books || []).forEach(b => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div>${b.name}</div><div class="desk-label">${b.trader}</div></td>
+        <td class="${b.delta >= 0 ? 'pos' : 'neg'}">${fmtK(b.delta)}</td>
+        <td class="${b.gamma >= 0 ? 'pos' : 'neg'}">${fmtK(b.gamma)}</td>
+        <td class="${b.vega  >= 0 ? 'pos' : 'neg'}">${fmtK(b.vega)}</td>
+        <td class="${b.theta >= 0 ? 'pos' : 'neg'}">${fmtK(b.theta)}</td>
+        <td class="${b.dv01  >= 0 ? 'pos' : 'neg'}">${fmtK(b.dv01)}</td>
+        <td class="${b.delta_util_pct > 80 ? 'neg' : b.delta_util_pct > 60 ? 'warn' : 'pos'}">${b.delta_util_pct}%</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    // Totals row
+    const tot = data.portfolio;
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+      <td>Portfolio Total</td>
+      <td>${fmtK(tot.delta)}</td>
+      <td>${fmtK(tot.gamma)}</td>
+      <td>${fmtK(tot.vega)}</td>
+      <td>${fmtK(tot.theta)}</td>
+      <td>${fmtK(tot.dv01)}</td>
+      <td>—</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // Shared PnL data for both Analyze and Desks subtab
+  let _pnlData = null;
+
+  async function loadPnl() {
+    const res = await fetch('/api/trading/pnl').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    _pnlData = data;
+
+    // KPI
+    const dailyEl = document.getElementById('kpi-daily');
+    dailyEl.textContent = fmtPnl(data.total.daily);
+    dailyEl.className = 'kpi-value ' + pnlClass(data.total.daily);
+    const ytdEl = document.getElementById('kpi-ytd');
+    ytdEl.textContent = fmtPnl(data.total.ytd);
+    ytdEl.className = 'kpi-value ' + pnlClass(data.total.ytd);
+
+    // Analyze tab: P&L bar chart
+    const books  = data.books.map(b => b.name);
+    const daily  = data.books.map(b => b.daily / 1_000);
+    const colors = daily.map(v => v >= 0 ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.75)');
+
+    Plotly.newPlot('pnl-chart', [{
+      type: 'bar', x: books, y: daily,
+      marker: { color: colors },
+      name: 'Daily P&L ($k)',
+    }], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      margin: { t: 5, b: 50, l: 40, r: 5 },
+      font: { family: 'monospace', size: 10, color: '#8b949e' },
+      xaxis: { tickfont: { size: 9 }, tickangle: -30, gridcolor: '#21262d' },
+      yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
+      showlegend: false,
+    }, { displayModeBar: false, responsive: true });
+
+    // Analyze tab: P&L table
+    renderPnlTable('pnl-tbody', data);
+    // Monitor/Desks subtab
+    renderPnlTable('desks-pnl-tbody', data);
+  }
+
+  function renderPnlTable(tbodyId, data) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    data.books.forEach(b => {
+      const tr = document.createElement('tr');
+      tr.dataset.bookName = b.name;
+      tr.dataset.deskName = b.desk;
+      tr.style.cursor = 'pointer';
+      tr.innerHTML = `
+        <td><div style="color:var(--text)">${b.name}</div><div style="color:var(--muted);font-size:10px">${b.desk}</div></td>
+        <td class="${pnlClass(b.daily)}">${fmtPnl(b.daily)}</td>
+        <td class="${pnlClass(b.mtd)}">${fmtPnl(b.mtd)}</td>
+        <td class="${pnlClass(b.ytd)}">${fmtPnl(b.ytd)}</td>
+      `;
+      tr.addEventListener('click', () => showDeskDrawer(b));
+      tbody.appendChild(tr);
+    });
+    const tot = data.total;
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+      <td>Total</td>
+      <td class="${pnlClass(tot.daily)}">${fmtPnl(tot.daily)}</td>
+      <td class="${pnlClass(tot.mtd)}">${fmtPnl(tot.mtd)}</td>
+      <td class="${pnlClass(tot.ytd)}">${fmtPnl(tot.ytd)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function showDeskDrawer(book) {
+    const greeksBook = (_greeksData && _greeksData.books)
+      ? _greeksData.books.find(b => b.name === book.name)
+      : null;
+
+    const deltaUtil = greeksBook ? greeksBook.delta_util_pct : null;
+    const vegaUtil  = greeksBook ? (greeksBook.vega_util_pct || '—') : '—';
+    const utilCls   = deltaUtil != null ? colorClass(deltaUtil) : '';
+
+    document.getElementById('desk-drawer-empty').style.display = 'none';
+    const content = document.getElementById('desk-drawer-content');
+    content.style.display = 'block';
+    content.innerHTML = `
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px">${book.name}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;text-transform:uppercase">${book.desk}</div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Daily P&amp;L</div>
+        <div class="drawer-field-value ${pnlClass(book.daily)}">${fmtPnl(book.daily)}</div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">YTD P&amp;L</div>
+        <div class="drawer-field-value ${pnlClass(book.ytd)}">${fmtPnl(book.ytd)}</div>
+      </div>
+      ${deltaUtil != null ? `
+      <div class="drawer-field">
+        <div class="drawer-field-label">Delta Util %</div>
+        <div class="drawer-field-value">${deltaUtil}%</div>
+      </div>` : ''}
+      ${greeksBook ? `
+      <div class="drawer-field">
+        <div class="drawer-field-label">Vega $k</div>
+        <div class="drawer-field-value ${pnlClass(greeksBook.vega)}">${fmtK(greeksBook.vega)}</div>
+      </div>` : ''}
+      <div class="drawer-field">
+        <div class="drawer-field-label">Limit Status</div>
+        <div class="drawer-field-value">
+          <span class="limit-badge ${utilCls}">${utilCls.toUpperCase() || 'N/A'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  async function loadCCR() {
+    const res = await fetch('/api/trading/ccr').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    // Alert rail: CCR breaches
+    const breaches = (data.counterparties || []).filter(cp => cp.status === 'BREACH' || cp.utilization > 100);
+    breaches.forEach(cp => addAlert('critical', `CCR breach: ${cp.counterparty}`));
+
+    const list = document.getElementById('ccr-list');
+    list.innerHTML = '';
+    data.counterparties.forEach(cp => {
+      const cls = colorClass(cp.utilization);
+      const pct = Math.min(cp.utilization, 100);
+      const div = document.createElement('div');
+      div.className = 'ccr-row';
+      div.innerHTML = `
+        <div class="ccr-header">
+          <span class="ccr-cp">${cp.counterparty} <span style="color:var(--muted);font-size:10px">${cp.rating}</span></span>
+          <span class="ccr-meta">${cp.ead_mm}MM / ${cp.limit_mm}MM lim &nbsp;
+            <span class="ccr-pct ${cls}">${cp.utilization}%</span>
+          </span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill ${cls}" style="width:${pct}%"></div></div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function loadPnlExplain() {
+    const res = await fetch('/api/trading/pnl-explain').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    const desks  = Object.keys(data.by_desk);
+    const p      = data.portfolio;
+    const cats   = ['Delta', 'Gamma', 'Theta', 'Vega', 'Unexpl.'];
+    const vals   = [p.delta_pnl, p.gamma_pnl, p.theta_pnl, p.vega_pnl, p.unexplained];
+
+    Plotly.newPlot('pnl-explain-chart', [{
+      type: 'waterfall', orientation: 'v',
+      x: [...cats, 'Total'],
+      y: [...vals.map(v => v / 1e3), p.total_actual_pnl / 1e3],
+      measure: [...cats.map(() => 'relative'), 'total'],
+      connector: { line: { color: '#30363d' } },
+      increasing: { marker: { color: 'rgba(63,185,80,0.8)' } },
+      decreasing: { marker: { color: 'rgba(248,81,73,0.8)' } },
+      totals:     { marker: { color: 'rgba(88,166,255,0.8)' } },
+      texttemplate: '%{y:.1f}k', textposition: 'outside',
+    }], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      margin: { t: 18, b: 30, l: 45, r: 5 },
+      font: { family: 'monospace', size: 10, color: '#8b949e' },
+      xaxis: { gridcolor: '#21262d' },
+      yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
+      showlegend: false,
+    }, { displayModeBar: false, responsive: true });
+
+    const tbody = document.getElementById('pnl-explain-tbody');
+    tbody.innerHTML = '';
+    desks.forEach(desk => {
+      const d = data.by_desk[desk];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--text)">${desk}</td>
+        <td class="${pnlClass(d.delta_pnl)}">${fmtPnl(d.delta_pnl)}</td>
+        <td class="${pnlClass(d.gamma_pnl)}">${fmtPnl(d.gamma_pnl)}</td>
+        <td class="${pnlClass(d.theta_pnl)}">${fmtPnl(d.theta_pnl)}</td>
+        <td class="${pnlClass(d.vega_pnl)}">${fmtPnl(d.vega_pnl)}</td>
+        <td class="${pnlClass(d.unexplained)}">${fmtPnl(d.unexplained)}</td>
+        <td class="${pnlClass(d.total_actual_pnl)}">${fmtPnl(d.total_actual_pnl)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    // Firm total row
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+      <td>FIRM</td>
+      <td class="${pnlClass(p.delta_pnl)}">${fmtPnl(p.delta_pnl)}</td>
+      <td class="${pnlClass(p.gamma_pnl)}">${fmtPnl(p.gamma_pnl)}</td>
+      <td class="${pnlClass(p.theta_pnl)}">${fmtPnl(p.theta_pnl)}</td>
+      <td class="${pnlClass(p.vega_pnl)}">${fmtPnl(p.vega_pnl)}</td>
+      <td class="${pnlClass(p.unexplained)}">${fmtPnl(p.unexplained)}</td>
+      <td class="${pnlClass(p.total_actual_pnl)}">${fmtPnl(p.total_actual_pnl)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  async function resetSod() {
+    await fetch('/api/trading/pnl-explain/reset-sod', { method: 'POST' });
+    await loadPnlExplain();
+  }
+
+  async function loadCircuitBreaker() {
+    const res = await fetch('/api/trading/circuit-breaker').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    // Alert rail: system triggered
+    if (data.system_state === 'TRIGGERED') {
+      addAlert('critical', 'Circuit breaker TRIGGERED — system-wide halt');
+    }
+
+    const list = document.getElementById('cb-list');
+    list.innerHTML = '';
+    data.desks.forEach(d => {
+      const div = document.createElement('div');
+      div.className = 'cb-row';
+      div.innerHTML = `
+        <span class="cb-desk">${d.desk}</span>
+        <span class="cb-pnl ${pnlClass(d.daily_loss)}">${fmtPnl(d.daily_loss)}</span>
+        <span class="cb-state ${d.state.toLowerCase()}">${d.state}</span>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function loadBlotter() {
+    const res = await fetch('/api/trading/blotter').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    const tbody = document.getElementById('blotter-tbody');
+    tbody.innerHTML = '';
+    data.trades.forEach(t => {
+      const sideCls = t.side.toLowerCase();
+      const qty = t.qty >= 1_000_000
+        ? `${(t.qty / 1_000_000).toFixed(0)}MM`
+        : t.qty >= 1_000 ? `${(t.qty / 1_000).toFixed(0)}k` : t.qty;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="time">${t.time}</td>
+        <td style="color:var(--accent)">${t.book}</td>
+        <td class="instrument">${t.instrument}</td>
+        <td><span class="side-badge ${sideCls}">${t.side}</span></td>
+        <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${qty}</td>
+        <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${t.price}</td>
+        <td><span class="status-chip">${t.status}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Demo trade catalog ────────────────────────────────────────────────────
+
+  const DEMO_TRADES = [
+    {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'AAPL',          side:'buy',  qty:5000},
+    {desk:'RATES',       book_id:'RATES_BOOK_1', ticker:'US10Y',         side:'sell', qty:10000},
+    {desk:'DERIVATIVES', book_id:'DERIV_BOOK_1', ticker:'AAPL_CALL_200', side:'buy',  qty:500},
+    {desk:'FX',          book_id:'FX_BOOK_1',    ticker:'EURUSD',        side:'buy',  qty:5000000},
+    {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'NVDA',          side:'buy',  qty:8000},
+    {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'SPY',           side:'sell', qty:2000},
+  ];
+
+  const DESK_BOOKS = {
+    EQUITY:'EQ_BOOK_1', RATES:'RATES_BOOK_1', FX:'FX_BOOK_1',
+    CREDIT:'CREDIT_BOOK_1', DERIVATIVES:'DERIV_BOOK_1', COMMODITIES:'COMM_BOOK_1',
+  };
+
+  function demoTrade(idx) {
+    const t = DEMO_TRADES[idx];
+    submitOrder(t.desk, t.book_id, t.ticker, t.side, t.qty);
+  }
+
+  function manualTrade() {
+    const ticker = document.getElementById('form-ticker').value.trim().toUpperCase();
+    const side   = document.getElementById('form-side').value;
+    const qty    = parseFloat(document.getElementById('form-qty').value);
+    const desk   = document.getElementById('form-desk').value;
+    if (!ticker || !qty || qty <= 0) { alert('Enter ticker and qty'); return; }
+    submitOrder(desk, DESK_BOOKS[desk] || 'EQ_BOOK_1', ticker, side, qty);
+  }
+
+  async function submitOrder(desk, book_id, ticker, side, qty) {
+    const btn = document.getElementById('exec-btn');
+    if (btn) btn.disabled = true;
+    const preEl = document.getElementById('pretrade-display');
+    if (preEl) preEl.textContent = 'Submitting…';
+    try {
+      const res = await fetch('/api/trading/orders', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({desk, book_id, ticker, side, qty}),
+      }).catch(() => null);
+      if (!res) { alert('Network error'); if (preEl) preEl.textContent = ''; return; }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Order failed: ' + (err.detail || res.statusText));
+        if (preEl) preEl.textContent = '';
+        return;
+      }
+      const conf = await res.json();
+      if (preEl) preEl.textContent = conf.pre_trade_message || '';
+      showConfirmation(conf);
+      // Refresh panels immediately
+      await Promise.all([loadGreeks(), loadPnl(), loadBlotter()]);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // ── Confirmation modal ────────────────────────────────────────────────────
+
+  function showConfirmation(conf) {
+    const fmtP = (n) => n == null ? '—' : `$${(n/1_000_000).toFixed(2)}MM`;
+
+    const title = document.getElementById('modal-title');
+    title.textContent = `${conf.side} ${fmt(conf.quantity)} ${conf.ticker} — FILLED`;
+    title.style.color = conf.side === 'BUY' ? 'var(--positive)' : 'var(--negative)';
+
+    document.getElementById('modal-grid').innerHTML = `
+      <div><div class="modal-field-label">UTI</div><div class="modal-field-value" style="font-size:10px">${conf.uti.slice(0,16)}…</div></div>
+      <div><div class="modal-field-label">Fill Price</div><div class="modal-field-value">$${conf.fill_price.toFixed(4)}</div></div>
+      <div><div class="modal-field-label">Notional</div><div class="modal-field-value">${fmtP(conf.notional)}</div></div>
+      <div><div class="modal-field-label">Book</div><div class="modal-field-value">${conf.book_id}</div></div>
+    `;
+
+    document.getElementById('modal-var-before').textContent = fmtP(conf.var_before);
+    document.getElementById('modal-var-after').textContent  = fmtP(conf.var_after);
+
+    const badge = document.getElementById('modal-limit-badge');
+    badge.textContent = conf.limit_status;
+    badge.style.color = statusColor(conf.limit_status);
+
+    const g = conf.greeks || {};
+    document.getElementById('modal-greeks').innerHTML =
+      `Greeks (incremental) — Δ: ${fmtK(g.delta)} | Γ: ${fmtK(g.gamma)} | ν: ${fmtK(g.vega)} | DV01: ${fmtK(g.dv01)}`;
+
+    document.getElementById('modal-pretrade').textContent = conf.pre_trade_message || '';
+
+    document.getElementById('confirm-modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('confirm-modal').classList.remove('active');
+  }
+
+  document.getElementById('confirm-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── WebSocket ─────────────────────────────────────────────────────────────
+
+  let ws = null;
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws/trading`);
+    const dot   = document.getElementById('ws-dot');
+    const label = document.getElementById('ws-label');
+
+    ws.onopen = () => {
+      dot.classList.add('live');
+      label.textContent = 'live';
+    };
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'fill') {
+        loadBlotter();
+        // Append to ws-fills scroll area
+        const fills = document.getElementById('ws-fills');
+        if (fills) {
+          const line = document.createElement('div');
+          line.className = 'ws-fill-line';
+          const side = (msg.side || '').toUpperCase();
+          const cls  = side === 'BUY' ? 'fill-buy' : 'fill-sell';
+          line.innerHTML = `<span class="${cls}">${side}</span> ${msg.ticker || ''} ${msg.qty || ''} @ ${msg.price || '—'} <span style="color:var(--muted)">${new Date().toLocaleTimeString()}</span>`;
+          // Remove placeholder
+          const placeholder = fills.querySelector('span');
+          if (placeholder) placeholder.remove();
+          fills.appendChild(line);
+          fills.scrollTop = fills.scrollHeight;
         }
-        // 'tick' messages are used only for WS health indicator
-      };
-      ws.onclose = () => {
-        dot.classList.remove('live');
-        label.textContent = 'reconnecting…';
-        setTimeout(connectWS, 3000);
-      };
-      ws.onerror = () => ws.close();
-      setInterval(() => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({type:'ping'})); }, 25_000);
-    }
+      } else if (msg.type === 'positions') {
+        loadPnl();
+      }
+      // 'tick' messages used only for WS health indicator
+    };
+    ws.onclose = () => {
+      dot.classList.remove('live');
+      label.textContent = 'reconnecting…';
+      setTimeout(connectWS, 3000);
+    };
+    ws.onerror = () => ws.close();
+    setInterval(() => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({type:'ping'})); }, 25_000);
+  }
 
-    // ── Boot ─────────────────────────────────────────────────────────────────
+  // ── Expander toggle ───────────────────────────────────────────────────────
 
-    async function loadAll() {
-      await Promise.all([loadGreeks(), loadCCR(), loadPnl(), loadPnlExplain(), loadCircuitBreaker(), loadBlotter()]);
-    }
+  document.querySelectorAll('.expander-header').forEach(h => {
+    h.addEventListener('click', () => {
+      h.classList.toggle('open');
+      h.nextElementSibling.classList.toggle('open');
+    });
+  });
 
-    loadAll();
-    connectWS();
-    setInterval(loadAll, 30_000);  // fallback poll every 30s
-  </script>
+  // ── Last refresh ──────────────────────────────────────────────────────────
+
+  function updateRefreshTime() {
+    const el = document.getElementById('last-refresh');
+    if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+
+  async function loadAll() {
+    clearAlerts();
+    await Promise.all([
+      loadGreeks(),
+      loadCCR(),
+      loadPnl(),
+      loadPnlExplain(),
+      loadCircuitBreaker(),
+      loadBlotter(),
+    ]);
+    updateRefreshTime();
+  }
+
+  loadAll();
+  connectWS();
+  setInterval(loadAll, 30_000);
+</script>
 </body>
 </html>
