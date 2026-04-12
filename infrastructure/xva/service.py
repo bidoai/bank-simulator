@@ -46,7 +46,10 @@ class SimulationXVAService:
     def _map_fills_to_pyxva_config(self, fills: list[dict]) -> dict:
         """Map OMS blotter entries to pyxva EngineConfig format."""
         if not fills:
-            return {}
+            return {
+                "trades": [{"id": "SAMPLE_IRS_001", "product": "irs", "notional": 50_000_000.0, "tenor": 5, "counterparty": "Goldman Sachs"}],
+                "counterparty_spreads": {"Goldman Sachs": 0.0085},
+            }
 
         trades = []
         cp_spreads: dict[str, float] = {}

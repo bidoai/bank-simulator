@@ -3,6 +3,16 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 
+import structlog
+
+log = structlog.get_logger(__name__)
+
+# Agency MBS positions: (name, face_usd, market_price, gross_coupon, wam_months, psa_speed, seasoning)
+_AGENCY_MBS_POSITIONS = [
+    ("FNMA 5.5 TBA",           4_200_000_000, 0.9800, 0.055, 348, 1.0,  3),
+    ("Specified Pool LLB 5.0", 1_180_000_000, 0.9881, 0.050, 312, 0.80, 18),
+]
+
 
 @dataclass(frozen=True)
 class StructuredPosition:
@@ -109,12 +119,38 @@ class SecuritizedProductsService:
     def get_pipeline(self) -> dict:
         return {
             "priority_builds": [
-                {"name": "Agency MBS OAS engine", "status": "FOUNDATION", "detail": "Rate paths, prepayment model, pathwise cash flows, and effective duration/convexity."},
+                {"name": "Agency MBS OAS engine", "status": "LIVE", "detail": "PSA prepayment model, Ho-Lee rate paths (100 paths), OAS bisection solver, effective duration, convexity, 7-scenario analysis."},
                 {"name": "Specified pool collateral analytics", "status": "NEXT", "detail": "Loan-balance, geography, and burnout segmentation on top of TBA analytics."},
                 {"name": "Non-agency waterfall engine", "status": "LATER", "detail": "Loss timing, tranche allocation, and structural trigger framework."},
             ],
             "as_of": self._now(),
         }
+
+    def get_mbs_analytics(self, r0: float | None = None) -> list[dict]:
+        """
+        Run live MBS analytics (OAS, effective duration, convexity, scenario analysis)
+        for the agency MBS positions using the PSA prepayment model and Ho-Lee paths.
+
+        r0: short rate (annual, decimal). If None, fetches from the live FRED curve.
+        """
+        from infrastructure.securitized_products.mbs_analytics import analyze_mbs_position
+
+        if r0 is None:
+            try:
+                from infrastructure.market_data.fred_curve import yield_cache
+                r0 = yield_cache.get(2.0, yield_cache.get(1.0, 0.0425)) / 100.0
+            except Exception:
+                r0 = 0.0425  # fallback: ~4.25% short rate
+
+        results = []
+        for name, face, price, coupon, wam, psa, seasoning in _AGENCY_MBS_POSITIONS:
+            try:
+                analytics = analyze_mbs_position(name, face, price, coupon, wam, psa, r0, seasoning)
+                results.append(analytics)
+            except Exception as exc:
+                log.warning("mbs_analytics.failed", name=name, error=str(exc))
+
+        return results
 
 
 securitized_products_service = SecuritizedProductsService()

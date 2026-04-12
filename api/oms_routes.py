@@ -36,6 +36,10 @@ router = APIRouter()
 
 _DB_PATH = str(Path(__file__).parent.parent / "data" / "oms_trades.db")
 
+# Serialise concurrent order submissions — prevents PositionManager data corruption
+# under concurrent requests. Single-user demo: contention never occurs in practice.
+_ORDER_LOCK = asyncio.Lock()
+
 # ---------------------------------------------------------------------------
 # Request schema
 # ---------------------------------------------------------------------------
@@ -126,23 +130,28 @@ async def submit_order(order: OrderRequest) -> dict:
     if order.side.lower() not in ("buy", "sell"):
         raise HTTPException(status_code=400, detail="side must be 'buy' or 'sell'")
 
-    try:
-        conf = oms.submit_order(
-            desk=order.desk.upper(),
-            book_id=order.book_id,
-            ticker=order.ticker,
-            side=order.side,
-            qty=order.qty,
-        )
-    except (ValueError, RuntimeError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+    async with _ORDER_LOCK:
+        try:
+            conf = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: oms.submit_order(
+                    desk=order.desk.upper(),
+                    book_id=order.book_id,
+                    ticker=order.ticker,
+                    side=order.side,
+                    qty=order.qty,
+                ),
+            )
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
 
     conf_dict = conf.model_dump(mode="json")
 
-    # Fire-and-forget: persist to SQLite and broadcast to WS clients
-    asyncio.create_task(_persist_trade(conf_dict))
-    asyncio.create_task(trading_broadcaster.broadcast_fill(conf_dict))
+    # Persist synchronously — trade record must survive; await so errors surface
+    await _persist_trade(conf_dict)
 
+    # Broadcast and XVA refresh are non-critical; fire-and-forget is fine here
+    asyncio.create_task(trading_broadcaster.broadcast_fill(conf_dict))
     from infrastructure.xva.service import xva_service
     asyncio.create_task(xva_service.refresh())
 

@@ -21,6 +21,7 @@
 \usepackage{listings}
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{mdframed}
 \pgfplotsset{compat=1.18}
 
 % ── Formatting ────────────────────────────────────────────────────────────────
@@ -43,6 +44,49 @@
 \titleformat{\section}{\large\bfseries}{}{0em}{\thesection\quad}
 \titleformat{\subsection}{\normalsize\bfseries}{}{0em}{\thesubsection\quad}
 
+% ── Callout boxes ─────────────────────────────────────────────────────────────
+\mdfdefinestyle{analogy}{
+  backgroundcolor=blue!5,
+  linecolor=blue!40,
+  linewidth=1pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=8pt,
+  skipbelow=8pt,
+  frametitle={\small\bfseries\color{blue!70!black} Analogy},
+  frametitlebelowskip=4pt
+}
+
+\mdfdefinestyle{plainenglish}{
+  backgroundcolor=green!5,
+  linecolor=green!50!black,
+  linewidth=1pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=6pt,
+  skipbelow=6pt,
+  frametitle={\small\bfseries\color{green!50!black} In plain terms},
+  frametitlebelowskip=4pt
+}
+
+\mdfdefinestyle{casestudy}{
+  backgroundcolor=orange!5,
+  linecolor=orange!60,
+  linewidth=1pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=8pt,
+  skipbelow=8pt,
+  frametitle={\small\bfseries\color{orange!80!black} Real World},
+  frametitlebelowskip=4pt
+}
+
 % ── Custom commands ────────────────────────────────────────────────────────────
 \newcommand{\basis}{\text{bp}}
 \newcommand{\E}{\mathbb{E}}
@@ -64,8 +108,8 @@
   {\large\bfseries Quantitative Research \& Treasury\par}
   \vspace{1.5cm}
   {\LARGE\bfseries Bank Balance Sheet Optimization\\[0.5em]}
-  {\large Theory, Mathematics, Regulatory Framework,\\
-   Technology, and Revenue Generation\par}
+  {\large How Banks Make Money, Manage Risk, and Navigate\\
+   a Maze of Regulations — Explained for Everyone\par}
   \vspace{1cm}
   \rule{\textwidth}{0.4pt}
   \vspace{0.5cm}
@@ -78,12 +122,14 @@
   \vspace{1cm}
   \begin{minipage}{0.85\textwidth}
     \small\itshape
-    This document is proprietary to Apex Global Bank.  It describes
-    the quantitative framework, regulatory constraints, computational
-    infrastructure, and revenue-generation mechanisms underlying the
-    bank's balance sheet optimization program.  Sections 3--8 contain
-    material non-public information.  Distribution restricted to
-    authorized personnel.
+    This document tells the story of how a major bank optimizes its balance sheet:
+    what that means, why it matters, how the mathematics works, and how it
+    generates billions of dollars in annual revenue.  It is written to be
+    accessible to anyone who has ever balanced a personal budget or wondered
+    how banks actually make money — while retaining full technical rigour for
+    the quants and risk managers who will use these models in production.
+    Sections 3--8 contain material non-public information.
+    Distribution restricted to authorized personnel.
   \end{minipage}
   \vfill
 \end{titlepage}
@@ -92,23 +138,41 @@
 \newpage
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Introduction and Strategic Context}
+\section{Introduction: The World's Most Complex Household Budget}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{What Is Balance Sheet Optimization?}
+\subsection{What Is a Balance Sheet, and Why Does It Need Optimizing?}
 
-A bank's balance sheet is fundamentally a portfolio of financial claims.  On
-the asset side: loans, securities, derivatives, and cash.  On the liability
-side: deposits, wholesale funding, issued debt, and equity.  \emph{Balance
-sheet optimization} is the discipline of constructing and managing this
-portfolio to maximize risk-adjusted return subject to regulatory constraints,
-liquidity requirements, and the bank's own risk appetite.
+Every business has a balance sheet --- a snapshot that answers two questions:
+\textit{What do you own?} and \textit{Where did the money come from to buy it?}
+Your own personal balance sheet might look like this: you own a house (\$400K),
+a car (\$20K), and savings (\$30K).  You owe a mortgage (\$300K) and a car loan
+(\$15K).  The difference --- what you own minus what you owe --- is your equity
+(\$135K).
 
-Unlike trading book optimization, which operates on a horizon of hours to
-days, balance sheet optimization operates on horizons of months to years.
-It is a strategic planning function that touches every product line:
-commercial lending, retail deposits, fixed-income securities portfolios,
-derivatives books, repo/securities finance, and off-balance-sheet vehicles.
+A bank's balance sheet works on exactly the same principle, just at a scale that
+strains the imagination.  Apex Global Bank's balance sheet stands at \$285
+billion.  JPMorgan's is \$3.9 trillion --- larger than the GDP of Germany.
+
+\begin{mdframed}[style=analogy]
+Think of a bank as a giant financial intermediary.  It borrows money cheaply
+(from your savings deposits, paying you 1--2\%) and lends it out expensively
+(mortgages at 6\%, corporate loans at 7\%).  The spread between those rates ---
+the ``net interest margin'' --- is the bank's core business.  Balance sheet
+optimization is the discipline of making that spread as large and as safe as
+possible.
+\end{mdframed}
+
+On the \textbf{asset side} of the balance sheet, the bank holds loans, bonds,
+cash, and derivatives.  On the \textbf{liability side}, it holds deposits,
+borrowed money, and issued debt.  The difference between assets and liabilities
+is the bank's equity --- the ``skin in the game'' that shareholders have put in.
+
+\emph{Balance sheet optimization} is the discipline of constructing and
+managing this portfolio to maximize risk-adjusted return subject to regulatory
+constraints, liquidity requirements, and the bank's own risk appetite.  It
+sounds simple in one sentence.  In practice, it is one of the most complex
+multi-dimensional optimization problems in applied mathematics.
 
 At the highest level, the problem is:
 
@@ -118,73 +182,89 @@ At the highest level, the problem is:
   \mathbf{g}(\mathbf{a}, \mathbf{l}) \leq \mathbf{0}
 \end{equation}
 
-where $\mathbf{a}$ is the asset allocation vector, $\mathbf{l}$ is the
-liability structure vector, RORWA is the return on risk-weighted assets, and
-$\mathbf{g}$ encodes the regulatory and risk constraints (capital ratios,
-liquidity ratios, concentration limits, stress test floors).
+\begin{mdframed}[style=plainenglish]
+Maximize return on capital (RORWA) by choosing the best mix of assets
+($\mathbf{a}$) and liabilities ($\mathbf{l}$) --- but stay inside the rules
+($\mathbf{g} \leq \mathbf{0}$ encodes dozens of regulatory constraints).
+\end{mdframed}
 
-In practice this is far more complex than a single optimization: the
-constraints are multi-dimensional, some are non-linear, many are path-dependent
-over time, and the objective itself is a function of models that embed their
-own uncertainty.
+Unlike trading book optimization, which operates on a horizon of hours to
+days, balance sheet optimization operates on horizons of months to years.
+It is a strategic planning function that touches every product line:
+commercial lending, retail deposits, fixed-income securities portfolios,
+derivatives books, repo/securities finance, and off-balance-sheet vehicles.
 
-\subsection{Why It Matters: Revenue at Stake}
+\subsection{Why It Matters: Billions of Dollars Are on the Table}
 
-At a JPMorgan-scale institution (\$3.9 trillion balance sheet), a 5 basis
-point improvement in return on assets (ROA) is worth approximately
-\$2 billion per year.  The levers available through balance sheet optimization
-include:
+Here is a number that puts everything into perspective: at JPMorgan, a
+5 basis point (0.05\%) improvement in return on assets is worth approximately
+\$2 billion per year.  That is the magnitude of the prize for getting balance
+sheet optimization right.
+
+The levers available include:
 
 \begin{itemize}[noitemsep]
-  \item \textbf{Capital efficiency}: replacing high-RWA assets with
-        equivalent-yield lower-RWA assets releases CET1 that can be redeployed
-        or returned to shareholders via buybacks.
-  \item \textbf{Funding cost reduction}: optimizing the liability mix
-        (longer-term funding when the curve is inverted; shorter-term when
-        normally sloped) reduces the weighted average cost of funds.
-  \item \textbf{NII maximization}: positioning the balance sheet's
-        asset-liability duration gap to benefit from expected rate moves.
-  \item \textbf{Regulatory arbitrage} (within the rules): choosing product
-        structures that achieve the same economic exposure with lower capital
-        consumption (e.g., guarantees vs.\ direct loans, cleared vs.\
-        bilateral derivatives).
-  \item \textbf{Liquidity buffer efficiency}: minimizing the drag from
-        mandatory HQLA holdings while maintaining LCR/NSFR compliance.
+  \item \textbf{Capital efficiency}: Hold the same loans but use less
+        shareholder capital by choosing assets with lower regulatory ``risk
+        weights''.  The freed capital can be redeployed or returned to
+        shareholders via buybacks.
+  \item \textbf{Funding cost reduction}: Borrow at the lowest possible cost
+        consistent with stability.  In 2023, banks that locked in long-term
+        funding cheaply before the rate hike cycle saved hundreds of basis
+        points relative to peers who relied on short-term floating-rate paper.
+  \item \textbf{NII maximization}: Position the bank's interest rate
+        sensitivity to benefit from expected rate moves.  A bank with the
+        right duration gap captured an extra \$6.8 billion in net interest
+        income when rates rose 200bps in 2022--2023.
+  \item \textbf{Smart regulatory navigation}: Choosing product structures
+        that achieve the same economic goal with lower capital consumption.
+        Example: a guarantee costs far less capital than a direct loan to the
+        same counterparty.
+  \item \textbf{Liquidity buffer efficiency}: Minimizing the drag from
+        mandatory ``rainy-day fund'' assets while staying compliant.
 \end{itemize}
 
-\subsection{The Regulatory Stack}
+\subsection{The Regulatory Maze}
 
-Balance sheet optimization operates inside a dense regulatory framework.  The
-binding constraints are:
+After the 2008 financial crisis, regulators worldwide decided that banks had
+been far too thinly capitalised and far too reliant on short-term, flighty
+funding.  They built a dense framework of rules to prevent a repeat.  Every
+optimization decision at Apex Global Bank must fit inside this framework:
 
 \begin{table}[H]
   \centering
   \caption{Key Regulatory Constraints on the Bank Balance Sheet}
   \begin{tabular}{llll}
     \toprule
-    Regulation & Metric & Minimum & Apex Current \\
+    Regulation & What It Measures & Minimum & Apex Today \\
     \midrule
-    Basel III / 12 CFR 3 & CET1 ratio & 4.5\% (+ CCB 2.5\%) & 13.0\% \\
-    Basel III / 12 CFR 3 & Tier 1 ratio & 6.0\% (+ CCB) & 14.5\% \\
-    Basel III / 12 CFR 3 & Total Capital ratio & 8.0\% (+ CCB) & 16.2\% \\
-    Basel III / 12 CFR 3 & Leverage ratio & 3.0\% (SLR) & 7.8\% \\
-    Basel III / 12 CFR 249 & LCR & 100\% & 118\% \\
-    Basel III / 12 CFR 249 & NSFR & 100\% & 112\% \\
-    Dodd-Frank / 12 CFR 252 & DFAST CET1 floor (adverse) & 4.5\% (regulatory) & 8.7\% trough \\
-    Basel IV / FRTB & FRTB-SA floor & Binding from 2025 & --- \\
-    Concentration rules & Single-name limit & 25\% of CET1 & Monitored \\
+    Basel III / 12 CFR 3 & Core equity vs.\ risk & 4.5\% (+ 2.5\% buffer) & 13.0\% \\
+    Basel III / 12 CFR 3 & Broader capital vs.\ risk & 6.0\% (+ buffer) & 14.5\% \\
+    Basel III / 12 CFR 3 & Total capital vs.\ risk & 8.0\% (+ buffer) & 16.2\% \\
+    Basel III / 12 CFR 3 & Capital vs.\ all assets & 3.0\% (SLR) & 7.8\% \\
+    Basel III / 12 CFR 249 & 30-day liquidity buffer & 100\% & 118\% \\
+    Basel III / 12 CFR 249 & 1-year funding stability & 100\% & 112\% \\
+    Dodd-Frank / 12 CFR 252 & Worst recession CET1 floor & 4.5\% regulatory & 8.7\% trough \\
+    Basel IV / FRTB & Trading book capital floor & Binding from 2025 & --- \\
+    Concentration rules & Single-name exposure cap & 25\% of CET1 & Monitored \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Each of these constraints reduces the feasible set and potentially creates
-binding limits that shape the optimal balance sheet structure.
+Each of these constraints carves away part of the feasible solution space.
+The art of balance sheet optimization is finding the highest-return operating
+point within what remains.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{The Optimization Problem: Mathematical Formulation}
+\section{The Optimization Problem: Putting It All Into One Equation}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{State Variables and Decision Variables}
+\subsection{Setting Up the Problem}
+
+To write this problem mathematically, we first need to define what we are
+choosing.  Imagine the bank's balance sheet as a giant spreadsheet that updates
+every quarter.  The rows are asset classes and liability classes.  The
+optimization asks: by how much should we grow or shrink each row?
 
 Let $t = 0, 1, \ldots, T$ index quarterly periods.  The state of the balance
 sheet at time $t$ is described by:
@@ -197,27 +277,32 @@ sheet at time $t$ is described by:
         for $j = 1,\ldots,K_L$
   \item $r_k^A(t)$: yield on asset class $k$ at time $t$
   \item $r_j^L(t)$: cost of liability class $j$ at time $t$
-  \item $\rho_k(t)$: risk weight for asset class $k$ (SA or IMA)
+  \item $\rho_k(t)$: risk weight for asset class $k$ (how much capital it
+        consumes under the regulatory rulebook)
   \item $q_t$: macroeconomic state vector (GDP growth, unemployment, rates)
 \end{itemize}
 
-The decision variables are the \emph{incremental} changes:
+The decision variables are the \emph{incremental} changes at each step:
+$\Delta A_k(t)$ and $\Delta L_j(t)$ for all asset/liability classes and
+time periods.
 
-\begin{equation}
-  \Delta A_k(t), \quad \Delta L_j(t), \quad \forall\, k, j, t
-\end{equation}
-
-subject to the balance sheet identity:
+The first hard constraint is the most fundamental fact about a bank:
 
 \begin{equation}
   \sum_k A_k(t) = \sum_j L_j(t), \qquad \forall\, t
   \label{eq:bsi}
 \end{equation}
 
-\subsection{Objective Function}
+\begin{mdframed}[style=plainenglish]
+You can only lend out what you have borrowed (plus your equity).  Total assets
+always equal total liabilities plus equity.  This is the accounting identity
+that ties the whole system together.
+\end{mdframed}
 
-The primary objective is to maximize the net present value of risk-adjusted
-returns over the planning horizon $[0, T]$:
+\subsection{What We Are Trying to Maximize}
+
+The objective is to maximize the net present value of risk-adjusted earnings
+over the planning horizon:
 
 \begin{equation}
   \max_{\{\Delta A_k(t),\, \Delta L_j(t)\}}
@@ -227,133 +312,225 @@ returns over the planning horizon $[0, T]$:
   \right]
 \end{equation}
 
-where $\delta = 1/(1+h)$ is the discount factor (hurdle rate $h$ is the
-bank's cost of equity, typically CAPM-derived: $h = r_f + \beta (r_m - r_f)$).
+where $\delta = 1/(1+h)$ is the discount factor, $h$ is the bank's cost of
+equity (what shareholders expect as a minimum return), and the terms inside
+the brackets are:
+\begin{itemize}[noitemsep]
+  \item \textbf{NII}: Net Interest Income --- interest earned on loans and
+        bonds, minus interest paid on deposits and borrowed money.
+        This is the core revenue engine.
+  \item \textbf{Fee}: Non-interest income --- trading revenues, advisory
+        fees, transaction fees.
+  \item \textbf{Credit\_Loss}: Loans that go bad.  In a recession, this
+        number can explode.
+  \item \textbf{OpRisk}: Operational risk losses --- fines, fraud, systems
+        failures.
+  \item \textbf{FTP\_Cost}: The internal cost of funding allocated to each
+        business line (explained in detail in Section~6).
+\end{itemize}
 
-Equivalently, using the RORWA metric preferred by bank management:
+Management prefers to think in terms of RORWA --- Return on Risk-Weighted
+Assets --- because it accounts for how much capital each activity consumes:
 
 \begin{equation}
   \text{RORWA}(t) = \frac{\text{Net\_Income\_after\_tax}(t)}{\text{RWA}(t)}
 \end{equation}
 
-\subsection{Net Interest Income}
+\begin{mdframed}[style=analogy]
+Think of RORWA as the efficiency score of the whole bank.  A bank that earns
+\$10B on \$200B of risk-weighted assets (5\% RORWA) is far more efficient
+than one that earns \$10B on \$500B of risk-weighted assets (2\% RORWA),
+even if headline profits look the same.
+\end{mdframed}
+
+\subsection{Net Interest Income: The Engine Room}
 
 \begin{equation}
   \text{NII}(t) = \sum_k r_k^A(t) \cdot A_k(t) - \sum_j r_j^L(t) \cdot L_j(t)
 \end{equation}
 
-The net interest margin (NIM) is:
+\begin{mdframed}[style=plainenglish]
+NII is simply: (interest rate on each asset $\times$ balance) summed up,
+minus (interest rate on each liability $\times$ balance) summed up.
+If the bank lends \$100B at 6\% and funds that with deposits at 1\%,
+NII is \$5B.  Optimization is about widening that gap --- or at least
+protecting it.
+\end{mdframed}
+
+The net interest margin (NIM) expresses NII as a percentage of earning
+assets --- a benchmark for comparing banks of different sizes:
 
 \begin{equation}
   \text{NIM}(t) = \frac{\text{NII}(t)}{\text{Average\_Earning\_Assets}(t)}
 \end{equation}
 
-\subsection{Capital Constraints}
+\subsection{The Capital Constraints: How Much of Your Own Money?}
 
-The CET1 constraint:
+The most fundamental rule in post-2008 banking is that banks must fund
+themselves with enough of their own equity to absorb unexpected losses.
+The CET1 (Common Equity Tier 1) ratio is the headline measure:
 
 \begin{equation}
   \frac{\text{CET1}(t)}{\text{RWA}(t)} \geq \kappa_{\text{CET1}}, \qquad \forall\, t
   \label{eq:cet1}
 \end{equation}
 
-where $\kappa_{\text{CET1}} = 7\%$ (4.5\% minimum + 2.5\% CCB) in normal conditions
-and $\kappa_{\text{CET1}}^{\text{stress}} = 6.5\%$ under severely adverse DFAST.
+where $\kappa_{\text{CET1}} = 7\%$ in normal conditions
+(4.5\% minimum + 2.5\% Conservation Buffer) and $6.5\%$ under a severe
+stress scenario.
 
-Risk-weighted assets:
+Risk-weighted assets (RWA) are the denominator --- not the raw balance of
+every asset, but each asset scaled by how risky it is:
 
 \begin{equation}
   \text{RWA}(t) = \sum_k \rho_k(t) \cdot A_k(t)
   \label{eq:rwa}
 \end{equation}
 
-The leverage ratio constraint:
+\begin{mdframed}[style=analogy]
+A mortgage on a house in New York backed by 20\% equity gets a risk weight
+of roughly 50\%, while a loan to a junk-rated company might get 150\%.
+Regulators invented risk weights so that banks would not just pile into the
+riskiest loans because they yield the most.  The trick is to find assets that
+yield well \emph{relative} to their risk weight.
+\end{mdframed}
+
+The leverage ratio is a backstop --- it ignores risk weights entirely and
+simply asks: is there enough Tier 1 capital against all assets?
 
 \begin{equation}
   \frac{\text{Tier1}(t)}{\text{Total\_Leverage\_Exposure}(t)} \geq \kappa_{\text{SLR}}
   \label{eq:slr}
 \end{equation}
 
-where Total Leverage Exposure = total assets + off-balance-sheet items + derivative
-add-ons.  The SLR (Supplementary Leverage Ratio) is often the binding constraint
-for large banks with low-RWA assets (Treasuries, Agency MBS).
+\begin{mdframed}[style=casestudy]
+The leverage ratio is specifically there to prevent banks from gaming risk
+weights.  Before 2008, some European banks ran leverage ratios of 40:1 ---
+for every \$1 of equity, they held \$40 of assets.  A 2.5\% loss on assets
+wiped them out.  Today the minimum leverage ratio is 3\%---meaning the maximum
+leverage is roughly 33:1.  Apex runs at 7.8\%, giving it a comfortable cushion.
+\end{mdframed}
 
-\subsection{Liquidity Constraints}
+\subsection{Liquidity Constraints: The 30-Day Survival Fund}
 
-\textbf{LCR (Liquidity Coverage Ratio):}
+Even a solvent bank can fail if it runs out of cash.  Lehman Brothers in 2008
+was arguably solvent on paper the day it filed for bankruptcy --- it simply
+could not roll over its overnight borrowings fast enough.  Post-crisis
+regulators introduced two liquidity ratios to prevent this.
+
+\textbf{LCR --- Liquidity Coverage Ratio:}
 
 \begin{equation}
   \text{LCR}(t) = \frac{\text{HQLA}(t)}{\text{Net\_Cash\_Outflows}_{30d}(t)} \geq 1.0
   \label{eq:lcr}
 \end{equation}
 
-where HQLA (High-Quality Liquid Assets) = Level 1 assets (cash, central bank
-reserves, Treasuries) at 100\% + Level 2A assets (Agency debt, covered bonds)
-at 85\% + Level 2B assets (non-financial corporate bonds, equities) at 50\%.
+\begin{mdframed}[style=plainenglish]
+LCR asks: if a stress event triggered your worst-case deposit outflows and
+funding withdrawals for 30 days straight, would you have enough liquid assets
+(cash, Treasuries, central bank reserves) to survive without external help?
+You must hold enough High-Quality Liquid Assets (HQLA) to cover 100\% of
+those outflows.
+\end{mdframed}
 
-Net cash outflows are computed from stressed runoff rates applied to each
-liability category:
+HQLA earns lower returns than loans.  Cash in a reserve account earns the
+Fed Funds rate (5.25\% today), while Treasuries earn 4.5--4.7\%, versus
+corporate loans at 6.5\%+.  Every dollar held in HQLA is a dollar that
+cannot be lent out at a higher yield.  This is the ``liquidity drag'' ---
+and minimizing it while staying compliant is one of the key optimization
+problems.
+
+Net cash outflows in a 30-day stress scenario:
 
 \begin{equation}
   \text{Net\_Cash\_Outflows}_{30d}(t) = \sum_j \alpha_j \cdot L_j(t) - \text{Cash\_Inflows}(t)
 \end{equation}
 
-where $\alpha_j$ is the 30-day stressed runoff rate for liability class $j$
-(e.g., $\alpha_{\text{retail deposits}} = 3\%$, $\alpha_{\text{wholesale unsecured}} = 25\%$,
-$\alpha_{\text{secured funding}} = 0\%\text{ to } 25\%$ depending on collateral quality).
+where $\alpha_j$ is the 30-day stressed runoff rate for each liability type:
+retail savings deposits have a low runoff (3\%) because ordinary depositors
+are slow to flee; wholesale unsecured funding has a high runoff (25\%) because
+professional investors move fast.
 
-\textbf{NSFR (Net Stable Funding Ratio):}
+\textbf{NSFR --- Net Stable Funding Ratio:}
 
 \begin{equation}
   \text{NSFR}(t) = \frac{\text{ASF}(t)}{\text{RSF}(t)} \geq 1.0
   \label{eq:nsfr}
 \end{equation}
 
-Available Stable Funding (ASF):
-\begin{equation}
-  \text{ASF}(t) = \sum_j \beta_j^{\text{ASF}} \cdot L_j(t)
-\end{equation}
+\begin{mdframed}[style=plainenglish]
+NSFR is the 1-year version of LCR.  It asks: are you using stable, long-term
+money (savings deposits, long-term bonds) to fund your long-term assets
+(mortgages, corporate loans)?  Or are you dangerously using overnight borrowing
+to fund 30-year mortgages?  NSFR forces the match.
+\end{mdframed}
 
-Required Stable Funding (RSF):
+Available Stable Funding (ASF) is what the bank raises with a stability
+weighting $\beta^{\text{ASF}}$; Required Stable Funding (RSF) is what its
+assets demand:
+
 \begin{equation}
+  \text{ASF}(t) = \sum_j \beta_j^{\text{ASF}} \cdot L_j(t), \qquad
   \text{RSF}(t) = \sum_k \beta_k^{\text{RSF}} \cdot A_k(t)
 \end{equation}
 
-where $\beta^{\text{ASF}}$ and $\beta^{\text{RSF}}$ are Basel-prescribed factors.
-High-RSF assets (e.g., loans > 1 year, RSF = 65--85\%) paired with low-ASF
-short-term funding creates NSFR pressure.
+\begin{mdframed}[style=casestudy]
+Silicon Valley Bank collapsed in March 2023 partly because it funded long-dated
+bonds (high RSF) with short-term, rate-sensitive deposits from tech startups
+(low ASF in a stress scenario).  When interest rates rose sharply, its bond
+portfolio lost value while deposit outflows accelerated.  NSFR is designed
+specifically to force banks to avoid this mismatch.
+\end{mdframed}
 
-\subsection{DFAST Stress Constraint}
+\subsection{The DFAST Stress Constraint: Surviving a Two-Year Recession}
 
-The stress test constraint ensures the CET1 ratio survives the 9-quarter
-projection even under the severely adverse scenario:
+Every year, the Federal Reserve runs a ``stress test'' called DFAST
+(Dodd-Frank Act Stress Test) on large banks.  The test asks: if the economy
+plunged into a severe recession --- GDP falling 6\%, unemployment reaching 10\%,
+house prices dropping 25\% --- would this bank still be standing at the end
+of nine quarters?
+
+The constraint this imposes on the optimization:
 
 \begin{equation}
   \min_{t \in [1,9]} \text{CET1\_ratio}^{\text{sev\_adv}}(t) \geq \kappa_{\text{floor}}
   \label{eq:dfast}
 \end{equation}
 
-where $\kappa_{\text{floor}} = 6.5\%$ (internal risk appetite) or 4.5\% (regulatory minimum).
+\begin{mdframed}[style=plainenglish]
+Even in the worst-case nine-quarter scenario fed to it by the Fed, the bank's
+capital ratio must not fall below the floor (Apex's internal floor is 6.5\%;
+the regulatory minimum is 4.5\%).  This means the bank cannot grow its loan
+book so aggressively today that a recession two years from now would wipe out
+its capital cushion.
+\end{mdframed}
 
-This constraint is forward-looking and non-linear: it couples the current balance
-sheet composition to the modelled stressed loss path over 9 quarters.
+This constraint is what makes the problem non-trivial.  The current composition
+of the balance sheet affects the \emph{future} stressed capital path.  A bank
+that lends heavily to commercial real estate today will have a much lower
+stressed CET1 trough if commercial real estate collapses --- and the DFAST
+model will catch this and constrain the lending decision today.
 
-\subsection{Concentration Constraints}
+\subsection{Concentration Constraints: Do Not Put All Eggs in One Basket}
 
-Single-name concentration:
+If a bank lends half its capital to a single company, it is fine until that
+company defaults.  Concentration rules prevent this:
+
 \begin{equation}
   A_{\text{counterparty-}i}(t) \leq 0.25 \cdot \text{CET1}(t), \qquad \forall\, i
   \label{eq:conc}
 \end{equation}
 
-Sector concentration:
+No single counterparty can represent more than 25\% of CET1.  Sector
+concentration is also capped:
+
 \begin{equation}
   \sum_{i \in \text{sector-}s} A_i(t) \leq 0.25 \cdot \text{Total\_Assets}(t), \qquad \forall\, s
 \end{equation}
 
-\subsection{The Full Constrained Problem}
+\subsection{The Complete Problem at a Glance}
 
-Combining constraints \eqref{eq:bsi}--\eqref{eq:conc}:
+Assembling all constraints into one statement:
 
 \begin{equation}
   \begin{aligned}
@@ -361,13 +538,13 @@ Combining constraints \eqref{eq:bsi}--\eqref{eq:conc}:
       \sum_{t=0}^{T} \delta^t \left[ \text{NII}(t) - \text{CreditLoss}(t)
       - \text{OpRisk}(t) \right] \\
     \text{s.t.} \quad
-    & \eqref{eq:bsi}: \text{Balance sheet identity} \\
+    & \eqref{eq:bsi}: \text{Balance sheet identity (assets = liabilities + equity)} \\
     & \eqref{eq:cet1}: \text{CET1 ratio} \geq 7\% \\
-    & \eqref{eq:slr}: \text{SLR} \geq 3\% \\
-    & \eqref{eq:lcr}: \text{LCR} \geq 100\% \\
-    & \eqref{eq:nsfr}: \text{NSFR} \geq 100\% \\
-    & \eqref{eq:dfast}: \text{DFAST CET1 trough} \geq 6.5\% \\
-    & \eqref{eq:conc}: \text{Concentration limits} \\
+    & \eqref{eq:slr}: \text{Leverage ratio} \geq 3\% \\
+    & \eqref{eq:lcr}: \text{30-day liquidity buffer} \geq 100\% \\
+    & \eqref{eq:nsfr}: \text{1-year stable funding} \geq 100\% \\
+    & \eqref{eq:dfast}: \text{Stress-test CET1 trough} \geq 6.5\% \\
+    & \eqref{eq:conc}: \text{Single-name and sector concentration limits} \\
     & A_k(t) \geq 0, \quad L_j(t) \geq 0 \quad \forall\, k, j, t
   \end{aligned}
   \label{eq:fullopt}
@@ -376,17 +553,26 @@ Combining constraints \eqref{eq:bsi}--\eqref{eq:conc}:
 This is a multi-period nonlinear program (NLP) with integer components
 (lending decisions), stochastic elements (credit losses depend on macro
 realization), and regulatory feedback (RWA changes with asset mix).  In
-practice it is decomposed into subproblems: capital optimization, liquidity
-optimization, NII/duration management, and pricing.
+practice, no bank solves this giant problem in one shot.  Instead, it is
+decomposed into subproblems --- capital optimization, liquidity optimization,
+NII and duration management, and pricing --- each handled by a specialist
+team with its own models.  The next four sections walk through each subproblem.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Capital Optimization}
+\section{Capital Optimization: Getting the Most From Every Dollar of Equity}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{RWA Minimization and the Capital Efficiency Frontier}
+Equity capital is the most expensive form of funding a bank has.  Shareholders
+expect returns of 10--14\% per year.  The bank therefore wants to hold only
+as much equity as it absolutely needs, and deploy every dollar of it into
+the highest-returning activities.
 
-The \emph{capital efficiency frontier} maps every unit of expected return
-against the required capital.  The Sharpe-style metric is:
+\subsection{The Capital Efficiency Frontier: A Map of Returns vs.\ Risk}
+
+Every business activity a bank undertakes --- a mortgage, a corporate bond,
+an interest rate swap --- earns a return and consumes capital.  The
+\emph{capital efficiency frontier} maps these activities by the return they
+generate per unit of capital consumed.  The metric is RAROC:
 
 \begin{equation}
   \text{RAROC}(k) = \frac{r_k^A - r_k^{\text{FTP}} - \text{EL}_k}
@@ -396,107 +582,155 @@ against the required capital.  The Sharpe-style metric is:
 where:
 \begin{itemize}[noitemsep]
   \item $r_k^A$: gross yield on asset class $k$
-  \item $r_k^{\text{FTP}}$: matched-maturity FTP charge (Section~6)
-  \item $\text{EL}_k = \text{PD}_k \cdot \text{LGD}_k$: expected loss rate
-  \item $\text{EC}_k$: economic capital allocation per unit (see below)
+  \item $r_k^{\text{FTP}}$: the internal ``transfer price'' charged to
+        account for the cost of funding (Section~6)
+  \item $\text{EL}_k = \text{PD}_k \cdot \text{LGD}_k$: expected annual
+        credit loss (probability of default $\times$ loss given default)
+  \item $\text{EC}_k$: economic capital per unit of the activity
 \end{itemize}
 
-A business line is value-creating if $\text{RAROC}(k) > h$ (hurdle rate).  The
-optimization re-allocates the balance sheet toward high-RAROC activities.
+\begin{mdframed}[style=plainenglish]
+RAROC answers the question: after funding costs, after expected loan losses,
+how much does this activity earn per dollar of capital locked up?  If RAROC
+is higher than the shareholder hurdle rate, it creates value.  If not, the
+bank would do better returning the capital to shareholders.
+\end{mdframed}
 
-\subsection{Economic Capital Allocation}
+A business line creates value if $\text{RAROC}(k) > h$ (the hurdle rate,
+typically 11\% for a money-center bank).  Optimization re-allocates the
+balance sheet away from sub-hurdle activities toward high-RAROC ones.
 
-Regulatory capital (RWA-based) and economic capital (model-based) can
-diverge.  Economic capital is typically computed using a portfolio credit VaR
-at a 99.9\% confidence level (consistent with BBB-rated survival probability):
+\subsection{Economic Capital: The Bank's Internal Risk Measurement}
+
+Beyond regulatory capital (which follows a rulebook), banks compute
+\emph{economic capital} --- their internal view of how much equity they truly
+need to absorb unexpected losses at a 99.9\% confidence level.
 
 \begin{equation}
   \text{EC}_{\text{portfolio}} = \text{VaR}_{99.9\%}(\text{CreditLoss}_{1yr}) - \text{EL}
 \end{equation}
 
-Per-obligor capital is allocated using the marginal contribution:
+\begin{mdframed}[style=plainenglish]
+At 99.9\% confidence, the bank should only be wiped out once in 1,000 years.
+Economic capital is the extra cushion above expected losses that provides this
+protection.  It is the bank's own honest assessment of risk --- which may be
+more or less than the regulator's prescribed minimum.
+\end{mdframed}
+
+The clever insight is that adding a loan to a \emph{diversified} portfolio
+consumes less capital than adding the same loan in isolation, because it does
+not move in lockstep with other loans:
 
 \begin{equation}
   \text{EC}_i = \frac{\partial \text{EC}_{\text{portfolio}}}{\partial w_i}
               = \text{Corr}(L_i, L_{\text{portfolio}}) \cdot \sigma_{L_i} \cdot z_{99.9\%}
 \end{equation}
 
-where $L_i$ is the loss random variable for obligor $i$.  This ``marginal
-EC'' framework means that adding a low-correlation obligor consumes less
-capital than an equally risky but highly correlated one.
+\begin{mdframed}[style=analogy]
+This is exactly the same logic as portfolio diversification in stock investing.
+Adding a tech stock to a tech-heavy portfolio barely reduces your total risk.
+Adding an oil stock to that same portfolio reduces it significantly --- because
+when tech is down, oil often is not.  A bank with a diversified loan book
+across sectors and geographies needs less capital than one concentrated in
+a single sector.
+\end{mdframed}
 
-\subsection{SA vs.\ IMA Capital Arbitrage}
+\subsection{IMA vs.\ SA: The Capital Arbitrage Worth 30--60\%}
 
-Under Basel III, banks with IMA approval compute market risk capital using
-internal VaR models (lower capital for diversified portfolios).  Under FRTB,
-all banks report SA capital as a floor.
-
-The capital ratio under SA vs.\ IMA:
+For trading book assets, banks can choose between two methods of calculating
+capital:
 
 \begin{equation}
   \text{RWA}^{\text{SA}}(k) = \rho_k^{\text{SA}} \cdot \text{EAD}_k
 \end{equation}
 
 \begin{equation}
-  \text{RWA}^{\text{IMA}}(k) = 12.5 \cdot \left[ \max\left(\text{VaR}_t, \bar{k} \cdot \overline{\text{VaR}}_{60d}\right)
-                                         + \max\left(\text{SVaR}_t, \bar{k} \cdot \overline{\text{SVaR}}_{60d}\right) \right]
+  \text{RWA}^{\text{IMA}}(k) = 12.5 \cdot \left[ \max\left(\text{VaR}_t,
+    \bar{k} \cdot \overline{\text{VaR}}_{60d}\right)
+    + \max\left(\text{SVaR}_t, \bar{k} \cdot \overline{\text{SVaR}}_{60d}\right) \right]
 \end{equation}
 
-For a well-diversified trading book, $\text{RWA}^{\text{IMA}} < \text{RWA}^{\text{SA}}$ by
-30--60\%, representing a significant capital saving that justifies the cost of
-IMA model development and validation.
+The SA (Standardised Approach) uses fixed, conservative risk weights prescribed
+by regulators.  The IMA (Internal Models Approach) allows the bank to use its
+own VaR model, which --- for a well-diversified book --- typically computes
+30--60\% less capital than the SA.
 
-\subsection{Capital Buffer Tiering}
+The trade-off: IMA requires building, validating, and maintaining sophisticated
+risk models under SR 11-7 governance.  SA is simpler but expensive.  Every
+major bank with a significant trading book invests heavily in IMA --- the
+capital saving pays for itself many times over.
 
-Optimal capital management requires maintaining a buffer above the regulatory
-minimum.  The buffer serves multiple purposes:
+\subsection{Keeping Buffers: How Much Capital Is Too Much?}
+
+Apex runs a CET1 ratio of 13\% against a regulatory minimum of 7\%.  Why hold
+six percentage points of ``excess'' capital?  The answer is layered:
 
 \begin{equation}
   \text{CET1}_{\text{target}} = \kappa_{\text{min}} + B_{\text{CCB}} + B_{\text{DFAST}} + B_{\text{management}}
 \end{equation}
 
 \begin{itemize}[noitemsep]
-  \item $\kappa_{\text{min}} = 4.5\%$: Basel III minimum
-  \item $B_{\text{CCB}} = 2.5\%$: Capital Conservation Buffer
-  \item $B_{\text{DFAST}}$: buffer between trough (severely adverse) and minimum;
-        at Apex this is $\approx 2.2\%$ (trough 6.7\%, minimum 4.5\%)
-  \item $B_{\text{management}} = 1.0\text{--}1.5\%$: management buffer for
-        strategic flexibility, acquisitions, unexpected losses
+  \item $\kappa_{\text{min}} = 4.5\%$: Basel III minimum --- the absolute floor.
+  \item $B_{\text{CCB}} = 2.5\%$: Capital Conservation Buffer.  Breach this,
+        and regulators restrict dividend payments and buybacks.
+  \item $B_{\text{DFAST}} \approx 2.2\%$: The gap between today's CET1 and
+        the projected trough under the Fed's severely adverse scenario.
+        Consume this and the stress test submission fails.
+  \item $B_{\text{management}} = 1.0\text{--}1.5\%$: Discretionary buffer.
+        For strategic acquisitions, unexpected shocks, and the ability to move
+        quickly without calling an emergency board meeting.
 \end{itemize}
 
-A bank holding excess capital beyond these buffers faces pressure from
-shareholders to deploy it efficiently via buybacks, dividends, or accretive
-acquisitions.
+\begin{mdframed}[style=casestudy]
+In the 2020 COVID shock, banks that had maintained substantial management
+buffers were able to absorb the initial wave of credit losses without cutting
+dividends or raising emergency equity.  Banks that were running thin --- close
+to their DFAST trough --- had to freeze buybacks and in some cases accept
+government support.  The management buffer is not idle excess capital.
+It is optionality.
+\end{mdframed}
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Liquidity Optimization}
+\section{Liquidity Optimization: Keeping the Lights On}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{The Liquidity Drag and HQLA Portfolio Management}
+A bank can be perfectly solvent --- owning more than it owes --- and still
+fail overnight if it cannot make its payments.  This happened to Northern
+Rock in 2007, Bear Stearns in 2008, and nearly happened to dozens of others.
+Liquidity management is the discipline of ensuring the bank can always meet
+its obligations, even in a panic.
 
-LCR and NSFR compliance requires the bank to hold a portfolio of
-High-Quality Liquid Assets (HQLA).  HQLA earns below-market yields (e.g.,
-Treasuries at 4.5\% vs.\ corporate loans at 6.5\%+), creating a structural
-``liquidity drag'' on NIM:
+\subsection{The Liquidity Drag: Paying for Peace of Mind}
+
+LCR and NSFR compliance requires holding a portfolio of HQLA.  The
+``liquidity drag'' is the yield it gives up relative to higher-yielding loans:
 
 \begin{equation}
   \text{Liquidity\_Drag} = (\bar{r}^A - r^{\text{HQLA}}) \cdot \frac{\text{HQLA}}{A}
 \end{equation}
 
-At Apex with HQLA of \$45B and a balance sheet of \$285B (16\% HQLA ratio):
+At Apex with \$45B of HQLA on a \$285B balance sheet:
 
 \begin{equation}
-  \text{Liquidity\_Drag} \approx (6.2\% - 4.5\%) \times 16\% = 27\, \text{bps NIM}
+  \text{Liquidity\_Drag} \approx (6.2\% - 4.5\%) \times 16\% = 27\, \text{basis points of NIM}
 \end{equation}
 
-HQLA portfolio optimization seeks to maximize yield within the HQLA
-composition constraints:
+\begin{mdframed}[style=plainenglish]
+Apex gives up 0.27\% of its entire earning-asset yield just to hold the
+required liquidity buffer.  On a \$285B balance sheet, that is roughly
+\$770 million per year in forgone income.  This is the price of never having
+a liquidity crisis.
+\end{mdframed}
+
+The HQLA portfolio can itself be optimized --- not all liquid assets are
+equally low-yielding.  The optimization shifts from near-zero-yield excess
+cash at the Fed toward Treasuries and Agency bonds:
 
 \begin{equation}
   \max_{\text{HQLA mix}} \sum_{i \in \text{HQLA}} w_i \cdot r_i
   \quad \text{s.t.} \quad
   \begin{cases}
-    \text{Level 1} \geq 60\% \text{ of HQLA} \\
+    \text{Level 1 assets} \geq 60\% \text{ of HQLA} \\
     \text{Level 2A} \leq 40\% \text{ of HQLA} \\
     \text{Level 2B} \leq 15\% \text{ of HQLA} \\
     \text{Duration} \leq D_{\text{max}} \\
@@ -504,33 +738,34 @@ composition constraints:
   \end{cases}
 \end{equation}
 
-Within Level 1, the bank can substitute between cash (0\% yield), central bank
-reserves (Fed Funds: 5.25\%), and Treasury bills/bonds (4.5\%--4.7\%).
-The optimization shifts toward Treasuries and away from excess cash.
+Replacing \$45B of excess cash with a laddered Treasury portfolio at 4.65\%
+earns \$2.1B per year with \emph{no reduction in LCR compliance}.  That
+optimization alone is worth an analyst team.
 
-\subsection{Intraday Liquidity Management}
+\subsection{Intraday Liquidity: The Hidden Plumbing}
 
-Intraday liquidity management is distinct from LCR/NSFR.  The bank must fund
-settlement obligations throughout the day via Fedwire and CHIPS:
+Separate from LCR/NSFR, the bank must fund each day's payment obligations
+as they arrive throughout the day.  Apex processes billions of dollars of
+payments through Fedwire and CHIPS daily:
 
 \begin{equation}
   \text{Intraday\_Peak}(t) = \max_{\tau \in [0, T_{\text{day}}]}
   \left[ \text{Outflows}(\tau) - \text{Inflows}(\tau) - \text{Reserve}(\tau) \right]^+
 \end{equation}
 
-Minimizing the peak intraday liquidity requirement (and thus the cost of
-intraday credit from the Fed) is a treasury optimization problem.  Tools
-include:
+Tools for reducing the peak:
 \begin{itemize}[noitemsep]
-  \item Prefunding (posting collateral to Fed discount window)
-  \item Payment sequencing (delaying non-urgent payments to afternoon)
-  \item Correspondent banking netting
+  \item Posting collateral to the Fed discount window (intraday credit at 0\%)
+  \item Payment sequencing --- urgent payments go out at 9AM; non-urgent
+        ones go at 3PM when inflows have arrived
+  \item Correspondent banking netting --- offsetting obligations with
+        counterparties before settling
 \end{itemize}
 
-\subsection{Funding Mix Optimization}
+\subsection{Building a Stable Funding Mix}
 
-The liability-side optimization seeks the lowest-cost, most stable funding mix
-consistent with NSFR compliance:
+The liability-side optimization aims for the lowest-cost, most stable
+funding mix that passes NSFR:
 
 \begin{equation}
   \min_{\Delta L_j} \sum_j r_j^L \cdot L_j
@@ -538,13 +773,17 @@ consistent with NSFR compliance:
   \text{NSFR} \geq 100\%, \quad \text{LCR} \geq 100\%
 \end{equation}
 
-The trade-off: demand deposits are cheap (near-zero rate) but have high NSFR
-ASF factors only if stable (50\% core vs.\ 0\% non-stable).  Long-term
-unsecured debt has a high ASF (100\%) but is expensive (e.g.,
-OIS + 80--120bps for senior unsecured).
+The trade-off is fundamental:
+\begin{itemize}[noitemsep]
+  \item \textbf{Demand deposits} are nearly free (0.1\% interest) and have
+        high ASF if they are ``core'' (stable, relationship-driven) --- but
+        can evaporate quickly in a crisis.
+  \item \textbf{Long-term unsecured bonds} are expensive
+        (OIS + 80--120 bps) but have 100\% ASF weight --- maximum stability.
+\end{itemize}
 
 \begin{definition}[Optimal Funding Tenor]
-Given a flat (or inverted) yield curve, the optimal funding maturity $\tau^*$
+Given the shape of the yield curve, the optimal funding maturity $\tau^*$
 for a $T$-year asset satisfies:
 
 \begin{equation}
@@ -552,21 +791,34 @@ for a $T$-year asset satisfies:
 \end{equation}
 
 where $\text{Rollover\_Risk}(\tau, T) = \sigma_r^2 \cdot (T - \tau)$ is the
-expected cost of refunding if short-term rates rise.
+expected cost of refunding if short-term rates rise before maturity.
 \end{definition}
 
-In a normal upward-sloping curve, short-term funding is cheaper but
-rollover risk is higher.  In an inverted curve (2022--2024), long-term
-funding may be cheaper even without considering rollover risk.
+\begin{mdframed}[style=casestudy]
+In 2021--2022, many regional banks made the mistake of funding long-dated
+mortgage portfolios with short-term, rate-sensitive deposits.  When the Fed
+hiked rates by 525 bps in 18 months --- the fastest hiking cycle in 40 years
+--- those banks faced a brutal math problem: their loan income was locked in
+at 3\% fixed rates while their funding costs rose toward 5\%.  The banks that
+survived were those that had locked in long-term funding when rates were low,
+accepting a small cost today to avoid a catastrophe later.
+\end{mdframed}
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Asset-Liability Management (ALM)}
+\section{Asset-Liability Management: Playing Chess With Interest Rates}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{NII Sensitivity and the Repricing Gap}
+The single biggest driver of a bank's profitability is the level and direction
+of interest rates.  When rates rise, banks that lend at floating rates make
+more money.  When rates fall, banks with long-dated fixed-rate loans benefit.
+Asset-Liability Management (ALM) is the function that deliberately positions
+the bank to benefit from the rate environment --- while managing the risk of
+being wrong.
 
-The repricing gap model described in Section~2 provides a
-first-order linear approximation of NII sensitivity:
+\subsection{The Repricing Gap: How Rate-Sensitive Is the Bank?}
+
+The repricing gap measures how much of the balance sheet will reprice at new
+interest rates within the next 12 months:
 
 \begin{equation}
   \Delta\text{NII} \approx \text{RSA}^{12m} \cdot \Delta r - \text{RSL}^{12m} \cdot \Delta r
@@ -574,38 +826,54 @@ first-order linear approximation of NII sensitivity:
   \label{eq:gap}
 \end{equation}
 
-where $\text{RSA}^{12m}$ is the rate-sensitive asset balance repricing within
-12 months, and $\text{RSL}^{12m}$ is the corresponding liability balance.
+where $\text{RSA}^{12m}$ is the rate-sensitive asset balance (floating-rate
+loans, maturing fixed-rate loans) and $\text{RSL}^{12m}$ is the corresponding
+liability balance.
 
-The repricing gap captures only the \emph{volume effect} of rate changes.
-Higher-order effects (yield curve non-parallelism, option costs, basis) require
-more sophisticated modelling.
+\begin{mdframed}[style=plainenglish]
+If the bank has more floating-rate assets than floating-rate liabilities,
+a positive Gap, it benefits when rates rise (earns more on assets than it
+pays on liabilities).  A negative Gap means the opposite --- the bank
+benefits when rates fall.  Most retail banks are asset-sensitive (positive
+Gap) because mortgages eventually reset while savings deposits are sluggish.
+\end{mdframed}
 
-\subsection{EVE and Duration Gap}
+\subsection{EVE: The Longer View of Rate Risk}
 
-The Economic Value of Equity sensitivity:
+NII sensitivity captures the next 12 months.  But the bank's assets and
+liabilities also have market values that change with interest rates.
+Economic Value of Equity (EVE) captures this longer-horizon sensitivity:
 
 \begin{equation}
   \frac{\Delta\text{EVE}}{\text{EVE}} \approx -D_{\text{gap}} \cdot \frac{\Delta r}{1 + r}
 \end{equation}
 
-where the duration gap is:
+where the duration gap is the difference between the average ``life'' of
+assets and the average ``life'' of liabilities, weighted by their sizes:
 
 \begin{equation}
   D_{\text{gap}} = D_A - \frac{L}{A} \cdot D_L
 \end{equation}
 
-Positive $D_{\text{gap}}$ means the bank is asset-sensitive in EVE terms
-(rising rates reduce EVE).  Negative $D_{\text{gap}}$ means liability-sensitive.
+\begin{mdframed}[style=analogy]
+Duration is financial physics for ``how much does this asset's price change
+when rates move?''  A 10-year bond's price falls much more when rates rise
+than a 1-year bond's price does.  The duration gap measures whether the bank's
+assets change in value \emph{more or less} than its liabilities when rates
+shift.  A large positive duration gap means big EVE losses when rates rise ---
+which is exactly what happened to SVB.
+\end{mdframed}
 
-\begin{proposition}[EVE-NII Trade-off]
-A bank cannot simultaneously minimize both NII sensitivity and EVE sensitivity
-to interest rate risk.  Shortening asset duration increases NII in a rising
-rate environment but reduces EVE (less benefit from discounting liabilities
-at higher rates).  This is the fundamental ALM trade-off.
+\begin{proposition}[The Fundamental ALM Trade-off]
+A bank cannot simultaneously protect both NII and EVE against interest rate
+risk.  Shortening asset duration (holding more floating-rate loans) protects
+NII in a rising rate environment but leaves EVE more exposed.  Lengthening
+asset duration (more fixed-rate loans and long bonds) stabilizes EVE but
+makes NII vulnerable to rate rises.
 \end{proposition}
 
-The optimal duration gap maximizes the utility function:
+The optimal duration gap maximizes the weighted utility of NII and EVE
+outcomes across rate scenarios:
 
 \begin{equation}
   \max_{D_{\text{gap}}} \quad U(\Delta\text{NII}, \Delta\text{EVE})
@@ -613,134 +881,165 @@ The optimal duration gap maximizes the utility function:
     - w_3 \cdot |\Delta\text{EVE}|^2
 \end{equation}
 
-subject to duration gap within the risk appetite band $[D^-, D^+]$.
+subject to the risk appetite band $[D^-, D^+]$ set by the ALM Committee.
 
-\subsection{Hedging the Duration Gap}
+\subsection{Hedging: Using Swaps to Adjust the Duration Gap}
 
-If the current duration gap exceeds the target, the ALM desk uses interest rate
-swaps to close the gap:
+If the current duration gap is outside the target range, the ALM desk uses
+interest rate swaps to correct it without buying or selling physical assets:
 
 \begin{itemize}[noitemsep]
-  \item \textbf{Pay-fixed receiver IRS:} Converts a floating-rate liability
-        into fixed-rate, increasing effective liability duration.
-  \item \textbf{Receive-fixed payer IRS:} Converts a fixed-rate asset into
-        floating, reducing effective asset duration.
+  \item \textbf{Pay-fixed receiver IRS}: The bank pays a fixed rate and
+        receives a floating rate --- effectively converting a floating-rate
+        liability into a fixed one, increasing liability duration.
+  \item \textbf{Receive-fixed payer IRS}: The bank receives a fixed rate
+        and pays a floating one --- converting a fixed asset into a
+        floating asset, reducing asset duration.
 \end{itemize}
 
-The notional of swap required to close a duration gap of $\Delta D$ over a
-target balance sheet of $A$:
+The notional of swap needed to close a duration gap of $\Delta D$:
 
 \begin{equation}
   N_{\text{swap}} = \frac{\Delta D \cdot A}{D_{\text{swap}}}
 \end{equation}
 
-where $D_{\text{swap}} = \text{DV01}_{\text{swap}} / \text{Price}_{\text{swap}}$.
+\begin{mdframed}[style=plainenglish]
+Swaps let the bank change its interest rate exposure without actually
+restructuring its loan book --- which would take months and cost real money.
+It is like adjusting the bet without changing the underlying assets.
+\end{mdframed}
 
-\subsection{Convexity and Prepayment Risk}
+\subsection{Convexity: When Duration Alone Is Not Enough}
 
-Fixed-rate mortgages and callable bonds exhibit \emph{negative convexity}:
-when rates fall, borrowers prepay (shortening asset duration when the bank
-least wants it) and when rates rise, borrowers extend (lengthening duration
-when the bank least wants that).
-
-The effective duration and convexity:
+Fixed-rate mortgages behave in an awkward way that makes them particularly
+tricky to hedge.  When rates fall, homeowners refinance their mortgages early
+--- returning the bank's capital right when reinvestment rates are lowest.
+When rates rise, those same homeowners hold onto their cheap fixed-rate
+mortgages for as long as possible.  This is \emph{negative convexity}:
 
 \begin{equation}
   P(r) \approx P(r_0) \left[ 1 - D_{\text{eff}} \cdot \Delta r
     + \frac{1}{2} C_{\text{eff}} \cdot (\Delta r)^2 \right]
 \end{equation}
 
-For a pass-through MBS, $C_{\text{eff}} < 0$, creating a P\&L concavity
-that increases with the size of the rate move.
-
-A bank with a large MBS portfolio must hedge convexity separately using:
-\begin{itemize}[noitemsep]
-  \item Receiver swaptions (provide positive convexity when rates fall)
-  \item CMS caps/floors
-  \item Callable bond portfolios to offset MBS negative convexity
-\end{itemize}
+For mortgage-backed securities (MBS), $C_{\text{eff}} < 0$ --- meaning the
+price falls faster when rates rise \emph{and} rises slower when rates fall
+than a simple bond would.  Banks with large MBS portfolios hedge this with
+swaptions and callable bonds that provide offsetting positive convexity.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Fund Transfer Pricing (FTP)}
+\section{Fund Transfer Pricing: The Internal Economy of a Bank}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{Matched-Maturity FTP Architecture}
+Imagine a bank with 20 business lines.  The mortgage desk lends \$40B at
+4.5\%.  The corporate banking desk lends \$30B at 6.5\%.  Which is more
+profitable?  The answer depends entirely on what it costs each desk to fund
+those loans.  Without a rigorous internal pricing system, a bank cannot know
+where it is actually making money --- and will misprice every product it sells.
 
-The FTP framework transfers the cost of funding and the benefit of funding
-between the business lines and a central Treasury pool.  Every asset originates
-a charge; every liability originates a credit:
+Fund Transfer Pricing (FTP) is the solution: a system of internal charges and
+credits that transfers the cost (and benefit) of funding between business
+lines and a central Treasury pool.
+
+\subsection{How FTP Works}
+
+Every asset the bank creates generates an FTP \emph{charge} to the originating
+desk.  Every deposit raised generates an FTP \emph{credit}:
 
 \begin{equation}
-  \text{FTP\_Charge}(k) = \underbrace{r^{\text{OIS}}(\tau_k)}_{\text{Funding cost}}
-                        + \underbrace{\lambda_k}_{\text{Liquidity premium}}
-                        + \underbrace{\psi_k}_{\text{Optionality premium}}
+  \text{FTP\_Charge}(k) = \underbrace{r^{\text{OIS}}(\tau_k)}_{\substack{\text{Risk-free}\\\text{funding cost}}}
+                        + \underbrace{\lambda_k}_{\substack{\text{Liquidity}\\\text{premium}}}
+                        + \underbrace{\psi_k}_{\substack{\text{Optionality}\\\text{premium}}}
 \end{equation}
 
-where:
+\begin{mdframed}[style=analogy]
+Think of Treasury as the bank's internal bank.  The mortgage desk wants to
+fund \$1B of 30-year mortgages?  Treasury says: ``I'll fund that for you at
+OIS plus our liquidity premium for 30-year money.''  The desk then knows the
+true all-in cost of its lending.  If it cannot make a spread above that FTP
+charge, it is not earning its keep.
+\end{mdframed}
+
+The three components of the FTP charge:
 \begin{itemize}[noitemsep]
-  \item $r^{\text{OIS}}(\tau_k)$: OIS swap rate at the contractual maturity $\tau_k$
-  \item $\lambda_k$: liquidity premium representing the cost of term funding above OIS
-  \item $\psi_k$: optionality premium for embedded options (prepayment, early
-        withdrawal, commitment fee)
+  \item $r^{\text{OIS}}(\tau_k)$: the risk-free rate at the matched maturity,
+        from the OIS (overnight indexed swap) curve.  This is the rock-bottom
+        cost of risk-free money for this tenor.
+  \item $\lambda_k$: the liquidity premium --- the extra cost above OIS to
+        raise actual term funding in the market.  A 5-year bond today might
+        price at OIS + 45bps.
+  \item $\psi_k$: the optionality premium for embedded options.  A mortgage
+        with a prepayment option costs more to fund than a plain loan.
 \end{itemize}
 
-\subsection{FTP and the Elimination of Cross-Subsidy}
+\subsection{How FTP Eliminates the Illusion of Cheap Funding}
 
-Without FTP, a bank using short-term cheap deposits to fund long-term loans
-appears to generate a large NII spread.  In reality, it is accumulating
-unhedged rollover risk.  FTP corrects this:
+Without FTP, banks consistently fool themselves.  Here is the illusion:
+
+A bank funds itself with overnight deposits at 0.5\% and lends on 30-year
+fixed mortgages at 4.5\%.  Gross spread: 4\%.  Looks great.  But the bank
+is not earning 4\% --- it is earning a tiny spread and accumulating enormous
+unhedged interest rate risk.  If rates rise 2\%, the deposit costs jump to
+2.5\% overnight while the mortgage is locked in at 4.5\%.  Real spread: 2\%.
+And the bank now faces enormous duration gap losses.
+
+FTP forces honest accounting:
 
 \begin{equation}
   \text{NIM}_{\text{adjusted}}(k) = r_k^A - \text{FTP}(k) - \text{EL}_k
 \end{equation}
 
-A loan desk with high gross NIM but high FTP charge (long-dated fixed-rate)
-may be less attractive than a shorter-duration product with lower gross NIM
-but a lower FTP charge.
+A 30-year mortgage funded at the 30-year FTP rate (OIS + 45bps at that tenor)
+suddenly shows its true profitability --- which may be far less exciting than
+the raw gross spread suggests.
 
-\subsection{Liquidity Premium Components}
-
-The liquidity premium $\lambda$ contains:
+\subsection{The Components of the Liquidity Premium}
 
 \begin{equation}
   \lambda = \lambda_{\text{term}} + \lambda_{\text{LCR}} + \lambda_{\text{NSFR}} + \lambda_{\text{CFP}}
 \end{equation}
 
 \begin{itemize}[noitemsep]
-  \item $\lambda_{\text{term}}$: term funding spread above OIS (market-observable from
-        senior unsecured issuance)
-  \item $\lambda_{\text{LCR}}$: cost of holding HQLA attributable to this liability class
-        (high-runoff liabilities incur higher LCR charges)
-  \item $\lambda_{\text{NSFR}}$: cost of providing stable funding to match RSF on the
-        asset side
-  \item $\lambda_{\text{CFP}}$: cost of maintaining Contingency Funding Plan reserves
+  \item $\lambda_{\text{term}}$: observed from the bank's own bond issuance
+        spread --- how much above OIS does it actually pay to borrow for
+        5 years?
+  \item $\lambda_{\text{LCR}}$: the cost of holding the HQLA buffer attributable
+        to this liability type.  A deposit with a high runoff factor forces the
+        bank to hold more HQLA against it.
+  \item $\lambda_{\text{NSFR}}$: the cost of providing stable funding to match
+        the stable funding requirement of the asset.
+  \item $\lambda_{\text{CFP}}$: the cost of maintaining Contingency Funding Plan
+        reserves for stress scenarios.
 \end{itemize}
 
-\subsection{Governance and Incentive Design}
+\subsection{Incentive Design: Why Getting FTP Wrong Is Costly}
 
-FTP design creates strong incentives.  If FTP is set too low:
+FTP rates shape behavior across the bank.  Setting them wrong is dangerous:
+
 \begin{itemize}[noitemsep]
-  \item Loan desks over-originate because the cost of funding is underpriced
-  \item Balance sheet grows unsustainably
+  \item \textbf{Too low}: Loan desks over-originate because funding is
+        underpriced.  The balance sheet grows unsustainably.  Treasury
+        absorbs the real funding costs silently.  This is exactly what
+        happened at many European banks pre-2008.
+  \item \textbf{Too high}: Business lines under-price deposit gathering.
+        Treasury retains excess profits; front-office desks are
+        cross-subsidizing Treasury's profit targets.  Loan volumes shrink
+        and clients take their business elsewhere.
 \end{itemize}
 
-If FTP is set too high:
-\begin{itemize}[noitemsep]
-  \item Desks under-price deposits relative to true value
-  \item Treasury retains excessive profit; business lines cross-subsidize Treasury
-\end{itemize}
-
-FTP rates must be reviewed at minimum quarterly by the ALM Committee,
-with Treasury as the internal market-maker.
+FTP rates must be reviewed quarterly by the ALM Committee and
+recalibrated to market rates whenever the yield curve shifts materially.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{RAROC and Risk-Adjusted Pricing}
+\section{RAROC: Should We Even Do This Trade?}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{RAROC Framework}
+Every time a banker wants to make a loan or execute a trade, someone in the
+risk function should be asking: given everything this activity costs in
+capital, funding, and expected losses, are we actually earning more than our
+cost of equity?  This is the RAROC question.
 
-Risk-Adjusted Return on Capital (RAROC) is the primary metric for comparing
-across business lines with different risk profiles:
+\subsection{The Full RAROC Formula}
 
 \begin{equation}
   \text{RAROC}(k) =
@@ -748,345 +1047,402 @@ across business lines with different risk profiles:
        {\text{EC}_k}
 \end{equation}
 
+\begin{mdframed}[style=plainenglish]
+The numerator is: what the activity actually earns (after funding costs and
+expected losses and operating expenses).  The denominator is: how much capital
+is locked up to support it.  Divide the first by the second, and you have the
+true risk-adjusted return on the capital deployed.
+\end{mdframed}
+
 \begin{definition}[RAROC Hurdle Rate]
-The hurdle rate $h$ is typically the bank's cost of equity, estimated via CAPM:
+The hurdle rate $h$ is the bank's cost of equity --- what shareholders expect
+as a minimum annual return.  Using the Capital Asset Pricing Model:
 \begin{equation}
   h = r_f + \beta \cdot (r_m - r_f) = 4.5\% + 1.2 \times 5.5\% = 11.1\%
 \end{equation}
-for a money-center bank with $\beta \approx 1.2$.  Any business line with
-$\text{RAROC} < h$ destroys shareholder value and should be restructured or exited.
+for a money-center bank with market beta $\beta \approx 1.2$.
+Any business line with RAROC $<$ 11.1\% is destroying shareholder value and
+should be restructured or exited.
 \end{definition}
 
-\subsection{Loan Pricing Using RAROC}
+\subsection{The Minimum Loan Rate: A Step-by-Step Calculation}
 
-The minimum loan rate $r^*$ for a new loan that achieves the hurdle RAROC:
+How low can a loan rate go before the bank loses money on a risk-adjusted
+basis?  Here is the calculation for a 5-year commercial loan:
 
 \begin{equation}
   r^* = r^{\text{FTP}}(\tau) + \lambda^{\text{FTP}} + \text{EL} + \frac{h \cdot \text{EC}}{A}
       + \text{OpCost}
 \end{equation}
 
-Example: 5-year commercial loan
+Working through the numbers:
 
 \begin{align}
-  r^{\text{OIS}}(5Y) &= 4.40\% \\
-  \lambda^{\text{FTP}}(5Y) &= 0.45\% \\
-  \text{EL} = \text{PD} \cdot \text{LGD} &= 1.5\% \times 45\% = 0.675\% \\
-  \frac{h \cdot \text{EC}}{A} &= 11.1\% \times 8\% = 0.888\% \\
-  \text{OpCost} &= 0.20\% \\
+  r^{\text{OIS}}(5Y) &= 4.40\% \quad \text{(5-year OIS swap rate)} \\
+  \lambda^{\text{FTP}}(5Y) &= 0.45\% \quad \text{(liquidity premium for 5-year funding)} \\
+  \text{EL} = \text{PD} \cdot \text{LGD} &= 1.5\% \times 45\% = 0.675\% \quad \text{(expected annual credit loss)} \\
+  \frac{h \cdot \text{EC}}{A} &= 11.1\% \times 8\% = 0.888\% \quad \text{(capital charge)} \\
+  \text{OpCost} &= 0.20\% \quad \text{(operations, compliance, origination)} \\
   \hline
-  r^* &\approx 6.61\%
+  r^* &\approx \mathbf{6.61\%}
 \end{align}
 
-Any loan priced above 6.61\% is value-creating.  Below this rate, the bank is
-lending at a negative RAROC.
+\begin{mdframed}[style=plainenglish]
+Every component of this calculation represents a real cost.  Lending below
+6.61\% on this loan means the bank is giving away shareholder capital without
+adequate compensation.  Above 6.61\%, the loan creates value.  A banker who
+accepts a 6.0\% rate because ``the client relationship is important'' is
+essentially asking shareholders to subsidize that relationship.
+\end{mdframed}
 
-\subsection{Capital Allocation and Performance Measurement}
+\subsection{Capital Allocation: Distributing the Total Budget}
 
-Economic capital is allocated to business lines proportional to their risk
-contribution.  The allocation must satisfy:
+The total economic capital must add up correctly:
 
 \begin{equation}
   \sum_k \text{EC}_k = \text{EC}_{\text{portfolio}}
 \end{equation}
 
-Using Euler's theorem on homogeneous risk measures (VaR is 1-homogeneous):
+Using Euler's theorem on homogeneous risk measures:
 
 \begin{equation}
   \text{EC}_k = w_k \cdot \frac{\partial \text{VaR}_\alpha}{\partial w_k}
 \end{equation}
 
-where $w_k$ is the exposure weight of business line $k$.  This ensures the
-diversification benefit is properly distributed.
+This ensures that the diversification benefit is properly distributed
+across business lines --- a concentrated desk that adds no diversification
+bears more of the total capital charge than a desk whose exposures offset
+other risks in the portfolio.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Stress Testing Integration}
+\section{Stress Testing: Planning for the Unthinkable}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{From DFAST to Balance Sheet Strategy}
+Regulators require banks to prove they could survive a severe recession.
+But the best-run banks use stress tests not just for compliance --- they use
+them as strategic planning tools.  ``We can grow loans by \$30B,'' a banker
+might say.  The DFAST model responds: ``Yes, but only if you are comfortable
+watching your CET1 ratio fall to 7.1\% in Q6 of the severely adverse
+scenario.  Are you?''
 
-DFAST stress testing is not merely a regulatory exercise — it is a strategic
-planning tool.  The severely adverse CET1 trough determines:
+\subsection{DFAST as a Constraint on Business Strategy}
+
+The severely adverse CET1 trough has direct operational consequences:
 
 \begin{itemize}[noitemsep]
-  \item \textbf{Maximum loan growth capacity}: if the bank originates $\Delta A$
-        in new loans before DFAST, the stressed loss on those loans reduces the
-        CET1 trough by approximately $\text{EL}_{\text{stress}} \cdot \Delta A / \text{RWA}$.
-  \item \textbf{Maximum dividend capacity}: any dividend paid reduces starting
-        CET1 and directly lowers the trough.
-  \item \textbf{Buyback capacity}: capital returned via buybacks above the buffer
-        could cause the trough to breach the internal floor.
+  \item \textbf{Maximum loan growth capacity}: Adding \$10B of new commercial
+        real estate loans today increases stressed losses by approximately
+        $\text{EL}_{\text{stress}} \times \$10B / \text{RWA}$ and reduces the
+        trough CET1 accordingly.  If the trough is already close to the floor,
+        this growth is blocked.
+  \item \textbf{Dividend capacity}: Every dollar of dividend paid reduces
+        starting CET1 and directly lowers the trough.  Banks announce dividend
+        plans only \emph{after} running DFAST.
+  \item \textbf{Share buyback capacity}: Buybacks above the buffer could cause
+        the trough to breach the internal floor.  The CFO and CRO jointly
+        approve buyback programs with DFAST sensitivity analysis.
 \end{itemize}
 
-The balance sheet optimization explicitly incorporates the DFAST constraint
-(equation~\eqref{eq:dfast}) as a planning constraint.
+\subsection{Reverse Stress Testing: Finding the Failure Modes}
 
-\subsection{Reverse Stress Testing}
-
-Reverse stress testing identifies the balance sheet composition that would
-cause the bank to breach regulatory minima.  The reverse stress problem:
+Forward DFAST asks: ``what happens in the Fed's scenario?''  Reverse stress
+testing asks: ``what would have to happen to actually break this bank?''
 
 \begin{equation}
   \min_{\text{scenario}} \text{CET1\_trough}(\text{scenario})
   \quad \text{s.t.} \quad \text{Scenario plausible under risk model}
 \end{equation}
 
-Key reverse stress scenarios:
+The three most dangerous scenarios for Apex:
 
 \begin{enumerate}[noitemsep]
-  \item \textbf{Credit concentration}: a sector-concentrated credit shock
-        (e.g., CRE collapse of -55\%) combined with deposit run causes simultaneous
-        asset loss and liability instability.
-  \item \textbf{Duration trap}: a sharp rate rise (+300bps rapidly) reduces
-        EVE to near-zero while simultaneously increasing funding costs on
-        short-dated liabilities (SVB-type scenario).
-  \item \textbf{Liquidity-solvency spiral}: an LCR breach forces fire-sale
-        of HQLA, which depresses prices of the HQLA assets themselves (pro-cyclical).
+  \item \textbf{Credit concentration collapse}: A 55\% drop in commercial
+        real estate values combined with a deposit run creates simultaneous
+        asset losses and liability instability.  Each reinforces the other
+        in a downward spiral.
+  \item \textbf{The Duration Trap} (SVB redux): A rapid +300bps rate shock
+        reduces EVE close to zero while simultaneously driving up funding
+        costs on short-dated liabilities.  SVB became the poster child for
+        this scenario in March 2023.
+  \item \textbf{The Liquidity-Solvency Spiral}: An LCR breach forces
+        fire-sales of HQLA assets --- but those forced sales depress HQLA
+        asset prices, which makes the LCR breach worse, which forces more
+        sales.  A liquidity problem becomes a solvency problem.
 \end{enumerate}
 
-Each reverse stress scenario generates a specific ``distance to failure''
-metric:
+Each scenario generates a ``distance to failure'' metric:
 
 \begin{equation}
   D_{\text{failure}} = \frac{\text{CET1\_current} - \text{CET1\_at\_failure}}
-                            {\text{CET1\_1-year-vol}}
+                            {\text{CET1\_1yr\_volatility}}
 \end{equation}
 
+The higher this distance, the more resilient the bank is.  Maintaining large
+distances on all three failure modes simultaneously is the goal of strategic
+balance sheet optimization.
+
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Technology, Calculators, and Infrastructure}
+\section{Technology: The Calculators That Power It All}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{Required Calculator Stack}
+A balance sheet optimization program is only as good as its models.  Building
+and maintaining the calculator stack is a multi-year engineering program
+requiring quants, technologists, and governance specialists working in concert.
 
-Balance sheet optimization requires an integrated stack of quantitative
-engines.  The minimum production set:
+\subsection{The Minimum Production Calculator Stack}
 
 \begin{table}[H]
   \centering
   \caption{Core Calculator Stack for Balance Sheet Optimization}
   \begin{tabular}{lll}
     \toprule
-    Calculator & Purpose & Key Output \\
+    Calculator & What It Does & Key Output \\
     \midrule
-    RWA / Capital Engine & SA and IMA RWA; CET1/Tier1/Total ratios & Capital ratios \\
-    VaR / SVaR Engine & IMA market risk capital & 10-day 99\% VaR, SVaR \\
-    FRTB-SA Engine & SA sensitivities; curvature; DRC & FRTB-SA capital \\
-    IFRS 9 ECL Engine & Loan loss provision; staging & ECL coverage ratio \\
-    DFAST Engine & 9-quarter CET1 projection & CET1 trough \\
-    ALM Engine & NII/EVE sensitivity; repricing gap & Duration gap; NIM \\
-    FTP Engine & Matched-maturity funding charges & Desk P\&L (FTP-adjusted) \\
-    Collateral / SIMM & VM/IM; liquidity stress & IM requirement; stress call \\
-    XVA Suite & CVA/DVA/FVA/MVA/ColVA/KVA & XVA charge per trade \\
-    RAROC Calculator & Risk-adjusted pricing; hurdle test & Minimum loan rate \\
+    RWA / Capital Engine & Computes regulatory capital for all assets & CET1/Tier1/Total ratios \\
+    VaR / SVaR Engine & Market risk capital (IMA method) & 10-day 99\% VaR \\
+    FRTB-SA Engine & Standardised approach as floor & FRTB-SA capital \\
+    IFRS 9 ECL Engine & Expected credit losses, loan staging & Provision and ECL ratio \\
+    DFAST Engine & 9-quarter recession simulation & CET1 trough \\
+    ALM Engine & Rate sensitivity, duration, NII & Duration gap, NIM \\
+    FTP Engine & Internal funding charges & Desk P\&L (adjusted) \\
+    Collateral / SIMM & Margin requirements under ISDA & IM requirement \\
+    XVA Suite & Full cost of derivatives trades & CVA/DVA/FVA/KVA \\
+    RAROC Calculator & Minimum viable pricing & Loan floor rate \\
     LCR / NSFR Calculator & Liquidity ratio compliance & LCR, NSFR ratios \\
-    Concentration Monitor & Single-name/sector/geo limits & Breach flags, HHI \\
+    Concentration Monitor & Exposure limits by name/sector & Breach flags \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\subsection{Data Architecture}
+\subsection{The Data Architecture}
 
-The calculators require a consistent, real-time data layer:
+All twelve calculators consume data from the same underlying infrastructure:
 
 \begin{itemize}[noitemsep]
-  \item \textbf{Positions layer}: real-time feed from OMS and loan systems;
-        all instruments mapped via instrument master (ISIN/CUSIP/product type)
-  \item \textbf{Market data layer}: live prices, rates, vol surfaces, credit
-        spreads; GBM simulation for real-time VaR (Apex uses 500ms tick interval)
-  \item \textbf{Reference data}: CSA terms, counterparty credit ratings, FATF
-        grey-list, PEP database, ISDA SIMM risk weights
-  \item \textbf{Event log}: append-only audit trail of all balance sheet changes,
-        capital actions, and model outputs (SQLite in Apex implementation)
-  \item \textbf{Regulatory parameters}: Fed-published DFAST scenarios, Basel
-        risk weights, LCR runoff rates (updated annually or upon regulatory change)
+  \item \textbf{Positions layer}: Real-time feed from OMS (Order Management
+        System) and loan systems.  All instruments mapped to ISIN/CUSIP.
+        At Apex: 500ms tick interval for trading book positions.
+  \item \textbf{Market data layer}: Live prices, interest rate curves, implied
+        volatility surfaces, credit spreads.  The VaR engine re-runs every
+        time a new market data tick arrives.
+  \item \textbf{Reference data}: CSA terms (for collateral), counterparty
+        credit ratings, ISDA SIMM risk weights, FATF grey-list for AML.
+  \item \textbf{Event log}: Append-only audit trail of all balance sheet
+        actions, capital calls, and model outputs.  Regulators expect this.
+        Apex uses SQLite with a write-ahead log.
+  \item \textbf{Regulatory parameters}: Fed-published DFAST scenarios,
+        Basel-prescribed risk weights, LCR runoff factors.  Updated annually.
 \end{itemize}
 
-\subsection{Computational Requirements}
+\subsection{How Much Computing Power Does This Require?}
 
 \begin{table}[H]
   \centering
   \caption{Computational Requirements by Calculator}
   \begin{tabular}{lllll}
     \toprule
-    Calculator & Frequency & Latency & Compute & Memory \\
+    Calculator & Frequency & Run Time & CPU Cores & Memory \\
     \midrule
-    VaR MC (2,000 paths, 11 instruments) & Daily post-close & 50ms & 1 CPU & 50MB \\
-    FRTB-SA (delta/vega/curvature) & Daily & 200ms & 4 CPU & 200MB \\
-    DFAST (9Q, 3 scenarios) & Quarterly & 5--30s & 8 CPU & 1GB \\
-    XVA (1,000 paths, 50 trades) & On trade & 2--10s & 16 CPU & 4GB \\
-    SIMM (CRIF-based, all CSAs) & Daily & 100ms & 2 CPU & 100MB \\
-    LCR / NSFR & Daily & 500ms & 2 CPU & 200MB \\
-    ALM / NII sensitivity & Monthly & 1s & 2 CPU & 100MB \\
-    IFRS 9 ECL (50 obligors) & Quarterly & 5ms & 1 CPU & 20MB \\
+    VaR MC (2,000 paths, 11 instruments) & Daily & 50ms & 1 & 50MB \\
+    FRTB-SA (delta/vega/curvature) & Daily & 200ms & 4 & 200MB \\
+    DFAST (9 quarters, 3 scenarios) & Quarterly & 5--30s & 8 & 1GB \\
+    XVA (1,000 paths, 50 trades) & On each new trade & 2--10s & 16 & 4GB \\
+    SIMM (all CSAs) & Daily & 100ms & 2 & 100MB \\
+    LCR / NSFR & Daily & 500ms & 2 & 200MB \\
+    ALM / NII sensitivity & Monthly & 1s & 2 & 100MB \\
+    IFRS 9 ECL (50 obligors) & Quarterly & 5ms & 1 & 20MB \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-For production-scale balance sheet optimization (850+ obligors, 10,000+
-derivative trades, full FRTB-IMA), the compute requirements scale to:
+For a production-scale institution (850+ obligors, 10,000+ derivative trades,
+full FRTB-IMA), the requirements scale dramatically:
 \begin{itemize}[noitemsep]
-  \item XVA: 64--128 GPU cores for real-time Monte Carlo (AAD sensitivities)
-  \item FRTB IMA: historical simulation on 10-year daily data for 500+ risk factors
-  \item DFAST: cluster parallelization across 3 scenarios × 9 quarters
+  \item \textbf{XVA}: 64--128 GPU cores for real-time Monte Carlo (using
+        AAD --- Adjoint Algorithmic Differentiation --- for sensitivities).
+  \item \textbf{FRTB IMA}: Historical simulation on 10+ years of daily data
+        across 500+ risk factors.  Petabytes of historical market data.
+  \item \textbf{DFAST}: Cluster parallelization --- 3 scenarios $\times$ 9
+        quarters $\times$ multiple credit models $\times$ macro satellite
+        models.
 \end{itemize}
 
-\subsection{Dashboards and Reporting}
+\subsection{The Dashboard Suite: Making It Visible}
 
-A best-practice balance sheet optimization dashboard suite consists of:
+The models are only useful if decision-makers can see their outputs clearly
+and act on them.  A best-practice balance sheet optimization dashboard suite:
 
-\paragraph{1.\ Capital Dashboard} CET1/Tier1/Total/Leverage ratios vs.\ regulatory
-minimums and internal targets.  RWA decomposition by risk type (credit,
-market, operational).  Capital headroom to constraint breaches.  Trajectory
-over prior 8 quarters.
+\paragraph{1.\ Capital Dashboard.}
+CET1, Tier 1, Total Capital, and Leverage ratios plotted against regulatory
+floors and internal targets.  RWA decomposed by risk type.  Capital headroom
+to each constraint.  An 8-quarter trailing history so trends are visible.
+The CRO sees this before the markets open every morning.
 
-\paragraph{2.\ Liquidity Dashboard} LCR and NSFR ratios real-time (intraday
-updates for LCR).  HQLA composition by Level (1/2A/2B).  30-day net cash
-outflow waterfall.  Intraday liquidity utilization vs.\ credit line.
+\paragraph{2.\ Liquidity Dashboard.}
+LCR and NSFR ratios with intraday updates for LCR.  HQLA composition waterfall
+(Level 1 vs.\ 2A vs.\ 2B).  30-day net cash outflow breakdown.  Intraday
+liquidity utilization against credit lines.  A red alert if LCR drops below
+110\% (internal buffer) at any point during the day.
 
-\paragraph{3.\ ALM / Rate Risk Dashboard} NII sensitivity bar chart
-($\pm$100bps, $\pm$200bps, instantaneous).  EVE sensitivity.  Repricing gap
-schedule (7 buckets, asset vs.\ liability bars).  Duration gap trend vs.\
-risk appetite band.  Warning indicators (SVB-style flag if EVE sensitivity
-exceeds --15\%).
+\paragraph{3.\ ALM / Interest Rate Risk Dashboard.}
+NII sensitivity bar charts under $\pm$100bps and $\pm$200bps shocks.
+EVE sensitivity.  Repricing gap schedule across 7 time buckets.
+Duration gap trend versus the risk appetite band.  An SVB-style warning
+flag if EVE sensitivity exceeds --15\% under an instantaneous +200bps shock.
 
-\paragraph{4.\ DFAST / Stress Dashboard} 9-quarter CET1 trajectory under all
-3 scenarios (Plotly chart with min CET1 floor and internal risk appetite band).
-Loss attribution waterfall (credit, market, operational, PPNR).  Distance to
-regulatory minimum.
+\paragraph{4.\ DFAST / Stress Dashboard.}
+Nine-quarter CET1 trajectory under all three Fed scenarios.  The chart shows
+the minimum floor line and the internal risk appetite band as horizontal
+reference lines.  Loss attribution waterfall (how much came from credit
+losses vs.\ market losses vs.\ operational risk vs.\ PPNR weakness).
+Distance to the regulatory minimum.
 
-\paragraph{5.\ FTP / RAROC Dashboard} Desk-level FTP-adjusted P\&L ranking.
-RAROC vs.\ hurdle rate by business line.  New origination pricing heat-map.
-FTP curve visualization (OIS + liquidity premium by tenor).
+\paragraph{5.\ FTP / RAROC Dashboard.}
+Business-line ranking by FTP-adjusted P\&L.  RAROC versus hurdle rate for
+each desk.  A heat-map of new origination pricing versus the RAROC floor.
+The FTP curve visualized as OIS plus liquidity premium at each tenor.
+Any desk below the hurdle rate shows in red.
 
-\paragraph{6.\ XVA Dashboard} CVA, DVA, FVA, MVA, ColVA, KVA by counterparty
-and trade.  Live WebSocket updates on new trade submissions.  XVA P\&L explain
-(delta, vega, credit) vs.\ prior day.
+\paragraph{6.\ XVA Dashboard.}
+CVA, DVA, FVA, MVA, ColVA, and KVA broken down by counterparty and trade.
+Live WebSocket updates as new trades are submitted to the OMS.
+XVA P\&L explain versus prior day (how much of today's XVA change came
+from market moves, credit spread changes, or new trades).
 
-\paragraph{7.\ Boardroom / Scenario Dashboard} Real-time agent-driven scenario
-narrative.  Scenario engine with live risk factor injection.  Model registry
-and MDD governance status.
+\paragraph{7.\ Boardroom / Scenario Dashboard.}
+Real-time narrative from the AI agent layer.  Scenario engine with live
+risk factor injection.  Model registry showing the governance status of
+every quantitative model.  The forum where the CRO, CFO, and Head of Trading
+discuss balance sheet strategy.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{How Balance Sheet Optimization Generates Revenue}
+\section{How Balance Sheet Optimization Actually Makes Money}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{Revenue Sources by Lever}
+Every section so far has described constraints and costs.  Now comes the
+payoff: what does all of this discipline actually generate in revenue?
 
-Balance sheet optimization generates value through several distinct mechanisms:
+\subsection{Lever 1 --- Liberating Trapped Capital}
 
-\subsubsection{Capital Efficiency: Releasing Trapped Capital}
+Capital is trapped when it is supporting assets that consume disproportionate
+regulatory risk weight relative to the income they generate.  Releasing it is
+pure value creation.
 
-When RWA can be reduced without sacrificing income, the freed capital can be
-redeployed into higher-RAROC activities or returned to shareholders.
-
-\textbf{Example -- Loan portfolio restructuring:}
-A bank holds \$10B of low-grade CRE loans (RW = 100\%, generating $6\%$ yield).
-These can be replaced with investment-grade corporate bonds (RW = 20\%,
-yielding $5.5\%$):
+\textbf{Example.}  Apex holds \$10B of lower-grade commercial real estate
+loans (risk weight 100\%, yield 6\%).  These can be swapped --- through
+secondary market sales and new origination discipline --- for investment-grade
+corporate bonds (risk weight 20\%, yield 5.5\%):
 
 \begin{align}
   \text{RWA reduction} &= (100\% - 20\%) \times \$10B = \$8B \\
   \text{CET1 freed} &= 7\% \times \$8B = \$560M \\
-  \text{NII sacrifice} &= (6\% - 5.5\%) \times \$10B = \$50M/\text{yr} \\
-  \text{Return on freed capital} &= \$50M / \$560M = 8.9\% \text{ cost}
+  \text{NII sacrifice} &= (6\% - 5.5\%) \times \$10B = \$50M/\text{yr}
 \end{align}
 
-If the freed CET1 can be deployed into a business generating RAROC $> 8.9\%$,
-the swap is value-creating.
+The trade gives up \$50M/yr in income but frees \$560M of equity capital.
+If that capital can be redeployed --- say, into a derivatives business
+generating RAROC 12\% on \$560M --- it generates \$67M, net benefit \$17M/yr
+from a simple asset swap.
 
-\subsubsection{NII Optimization: Positioning the Duration Gap}
+\subsection{Lever 2 --- Positioning the Duration Gap}
 
-A bank that correctly positions its duration gap before a rate cycle captures
-NII uplift:
+The most powerful lever in ALM is simply having the right duration gap
+going into a rate cycle.
 
-\textbf{Example -- Rate rise scenario:}
-Starting NII \$40B/year, duration gap +0.41yr.
-Rate rises 200bps: $\Delta\text{NII} = +\$6.8B/\text{yr}$ (Apex ALM model).
-This is a structural P\&L benefit worth capturing by avoiding over-hedging.
-A bank with zero duration gap would earn \$0 uplift; correctly calibrating
-the gap to +0.41yr (consistent with risk appetite) generates \$6.8B incremental
-NII under a +200bps scenario.
-
-Conversely, if rates had fallen 200bps, the bank would have lost \$5.9B NII.
-The asymmetric positioning (positive gap in an asset-sensitive bank) reflects
-the rate environment view embedded in the ALM strategy.
-
-\subsubsection{Liquidity Premium Capture}
-
-Treasury can earn the term liquidity premium by issuing short-term paper and
-lending to the asset book at FTP rates that include the term premium.  This
-``carry'' between short funding and long assets is a persistent revenue source
-in a normally-sloped yield curve:
+\textbf{Example.}  Apex enters 2022 with a duration gap of +0.41 years and
+starting NII of \$40B/year.  The Fed hikes 525bps over 18 months.  Result:
 
 \begin{equation}
-  \text{Carry} = r^{\text{FTP}}(10Y) - r^{\text{FTP}}(3M)
-              = 4.55\% - 5.15\% = -60\text{bps}
+  \Delta\text{NII} = \text{Gap}^{12m} \times \Delta r \approx +\$6.8B/\text{yr}
 \end{equation}
 
-In the current inverted curve, the carry is negative, making it advantageous
-to issue long-term and hold short-dated assets — the opposite of the normal regime.
+\begin{mdframed}[style=plainenglish]
+A bank with a zero duration gap would capture nothing from the hiking cycle.
+A bank over-hedged to a negative gap would actually \emph{lose} NII as rates
+rose.  Apex's +0.41yr gap, maintained through disciplined ALM, generated
+an extra \$6.8B per year in NII while most peers scrambled to manage their
+inverted net interest margins.
+\end{mdframed}
 
-\subsubsection{XVA Optimization: KVA and FVA Pricing}
+The other side of the bet: if rates had instead fallen 200bps,
+Apex would have given up \$5.9B in NII.  The gap positioning is not
+a free lunch --- it is a deliberate rate view.  The discipline is in
+choosing the size of the bet and not over-concentrating.
 
-The bank can generate revenue by correctly pricing XVA charges into derivatives
-trades at inception.  If the XVA charge is not priced, the bank delivers P\&L
-upfront but accumulates a long-dated liability as the XVA is realized.
+\subsection{Lever 3 --- Turning HQLA Into a Revenue Centre}
 
-\textbf{KVA (Capital Valuation Adjustment):} The cost of holding regulatory
-capital against the trade over its lifetime:
+Holding \$45B in emergency liquidity is mandatory.  But \emph{how} you hold
+it is a choice.  The difference between holding it all in zero-yield Fed
+reserves versus a duration-managed Treasury and Agency portfolio:
+
+\begin{equation}
+  \text{HQLA yield gain} = (4.65\% - 0\%) \times \$45B = \$2.1B/\text{yr}
+\end{equation}
+
+\begin{mdframed}[style=plainenglish]
+This is not a theoretical gain.  Banks that parked hundreds of billions
+in excess reserves at the Fed from 2010 to 2021 while rates were zero
+sacrificed almost nothing.  But as reserves accumulated in the post-COVID
+quantitative easing era, those same banks could have held Treasuries at 4.5\%
+instead --- and earned over \$2 billion per year with no additional risk.
+\end{mdframed}
+
+\subsection{Lever 4 --- XVA Pricing: Charging the True Cost of Derivatives}
+
+When a bank enters into a derivatives trade with a client, the trade costs
+the bank capital (for regulatory requirements), funding (for posting initial
+margin), and carries credit risk (if the counterparty defaults).  These costs
+are bundled into XVA adjustments.
+
+The KVA (Capital Valuation Adjustment) is the present value of the capital
+cost over the trade's lifetime:
 
 \begin{equation}
   \text{KVA} = h \cdot \int_0^T \E[\text{EC}(t)] \cdot \text{df}(t)\, dt
 \end{equation}
 
-where $h$ is the hurdle rate and $\text{EC}(t)$ is expected economic capital
-at time $t$.  KVA is typically 5--15bps on notional for a 5-year IRS.
+\begin{mdframed}[style=plainenglish]
+KVA answers: ``If I have to hold capital against this trade every day for
+the next 5 years, what is the total present value of what that capital
+\emph{could} have earned if deployed elsewhere?''  Pricing KVA into the
+trade upfront means the desk is compensated for that long-dated capital
+consumption the moment the trade is done.  Banks that do not price KVA
+look profitable today but are accumulating invisible long-dated liabilities.
+\end{mdframed}
 
-Pricing KVA into derivatives trades means the desk charges the client the full
-cost of the trade, including the capital cost — generating an immediate
-revenue recognition that compensates for the long-dated capital consumption.
+Typical KVA is 5--15 basis points on notional for a 5-year IRS.
+On a \$500B derivatives book, that is \$250--750M per year in value
+correctly priced into trades.
 
-\subsubsection{Regulatory Arbitrage: Cleared vs.\ Bilateral}
+\subsection{Lever 5 --- Clearing and Regulatory Arbitrage}
 
-Clearing eligible derivatives via a CCP (LCH, CME) attracts lower SA-CCR and
-IM requirements:
+Interest rate swaps and credit default swaps can be executed either
+bilaterally (between the bank and a single counterparty) or via a central
+clearing house (LCH, CME).  Cleared derivatives attract dramatically lower
+initial margin requirements:
 
 \begin{align}
   \text{IM (bilateral SIMM)} &\approx \$70M \\
   \text{IM (LCH cleared)} &\approx \$25M \\
-  \text{IM savings} &= \$45M
+  \text{IM saving} &= \$45M
 \end{align}
 
-At a funding cost of 5.25\%, the IM saving generates an annual FVA/MVA saving
-of $\$45M \times 5.25\% = \$2.4M/\text{yr}$ per portfolio of this size.
-For a large derivatives book (\$500B notional), clearing-driven IM reduction
-can generate \$50--150M/yr in FVA/MVA savings.
+At a funding cost of 5.25\%, the \$45M margin saving generates
+$\$45M \times 5.25\% = \$2.4M$ per year in FVA/MVA savings on \emph{this
+single portfolio}.  Scaled to a \$500B notional derivatives book, the
+clearing-driven IM reduction saves \$50--150M per year.
 
-\subsubsection{HQLA Yield Optimization}
-
-Within the LCR/NSFR constraints, optimizing the HQLA portfolio composition
-generates incremental yield:
-
-\begin{equation}
-  \text{HQLA yield gain} = (r^{\text{optimal}} - r^{\text{cash}}) \times \text{HQLA balance}
-                         = (4.65\% - 0\%) \times \$45B = \$2.1B/\text{yr}
-\end{equation}
-
-Replacing non-earning excess reserves with a duration-matched portfolio of
-Treasuries and Agency bonds earns 4.5--4.7\% on \$45B = $\sim$\$2.1B/yr with
-no reduction in LCR compliance.
-
-\subsection{Summary: Revenue Impact of Balance Sheet Optimization}
+\subsection{The Full Revenue Picture}
 
 \begin{table}[H]
   \centering
   \caption{Estimated Annual Revenue Impact (Apex Scale, \$285B Balance Sheet)}
   \begin{tabular}{lrr}
     \toprule
-    Optimization Lever & Annual P\&L Impact & Key Model / Engine \\
+    Optimization Lever & Annual P\&L Impact & Key Model \\
     \midrule
     HQLA yield optimization & +\$2.1B & ALM Engine \\
-    NII duration positioning (\$+200bps scenario) & +\$6.8B & ALM Engine \\
+    NII duration positioning (+200bps scenario) & +\$6.8B & ALM Engine \\
     Clearing-driven IM reduction (MVA/FVA saving) & +\$50--150M & SIMM / XVA \\
     KVA pricing into new derivatives & +\$100--250M & XVA Suite \\
     CET1 release via lower-RWA assets & +\$200--500M (redeployed) & Capital Engine \\
@@ -1096,99 +1452,563 @@ no reduction in LCR compliance.
   \end{tabular}
 \end{table}
 
-The cumulative revenue uplift from a mature balance sheet optimization program
-relative to an unoptimized baseline is typically 15--40bps on total assets, or
-\$0.4--1.1B/yr at Apex scale.  At JPMorgan scale (\$3.9T balance sheet),
-the program generates \$3--8B/yr in incremental returns.
+The cumulative uplift from a mature balance sheet optimization program ---
+relative to an unoptimized baseline where a bank simply grows loans and
+ignores these levers --- is typically 15--40 basis points on total assets,
+or \$0.4--1.1B per year at Apex's scale.  At JPMorgan's \$3.9 trillion
+balance sheet, a mature optimization program generates an estimated
+\$3--8 billion per year in incremental returns.
+
+To put that in perspective: the entire engineering, quant research, and
+technology investment needed to build and maintain the calculator stack
+described in Section~9 costs perhaps \$200--400M per year all-in.
+The return on that investment, just from the HQLA optimization and FTP
+governance alone, is 5--10x.
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Governance and Model Risk}
+\section{Governance: Keeping the Machine Honest}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\subsection{SR 11-7 Governance for Optimization Models}
+The most sophisticated optimization program is worthless if the models driving
+it are wrong and nobody notices.  SR 11-7 model risk governance exists
+precisely to prevent this.
 
-Every quantitative model used in balance sheet optimization is subject to
-SR 11-7 model risk governance:
+\subsection{Every Model Needs an Independent Reviewer}
+
+Under the Federal Reserve's SR 11-7 guidance, every quantitative model used
+in a material risk or capital decision must be:
 
 \begin{itemize}[noitemsep]
-  \item \textbf{Model Development Document (MDD):} Each calculator (VaR, DFAST,
-        ALM, FTP, SIMM, XVA) requires a complete MDD including theoretical
-        basis, implementation, validation, limitations, use authorization, and
-        open findings.
-  \item \textbf{Independent validation:} All Tier 1 models must be validated
-        by a Model Validation Officer independent of the model developer.
-  \item \textbf{Ongoing monitoring:} Model KRIs (key risk indicators) tracked
-        monthly: VaR backtesting exception rate, SIMM vs.\ actual IM
-        reconciliation, DFAST vs.\ actual CET1 variance, NII model vs.\ actual
-        NII error.
-  \item \textbf{Use authorization:} Each model's Section 7 specifies authorized
-        uses, prohibited uses, and the approval chain.
+  \item \textbf{Documented} in a Model Development Document (MDD): what
+        assumptions it makes, what it cannot do, who is allowed to use it
+        and for what.
+  \item \textbf{Independently validated} by a Model Validation Officer who
+        did not build the model --- replicating key calculations, checking
+        the math, and stress-testing the assumptions.
+  \item \textbf{Monitored}: model KRIs (Key Risk Indicators) tracked monthly.
+        VaR exception rates.  SIMM vs.\ actual IM reconciliation.
+        DFAST vs.\ actual CET1 variance.  ALM model vs.\ actual NII error.
+  \item \textbf{Use-authorized}: every model's Section 7 specifies what it
+        can be used for, what it cannot be used for, and who may use it.
 \end{itemize}
 
-\subsection{ALM Committee Governance}
+\subsection{The ALM Committee: Where Strategy Gets Made}
 
-The ALM Committee is the governing body for balance sheet optimization
+The ALM Committee is the governing body for all balance sheet optimization
 decisions.  Membership:
 
 \begin{itemize}[noitemsep]
   \item CRO (Chair)
   \item CFO / Treasurer
-  \item Head of Trading (business line representative)
+  \item Head of Trading
   \item Head of Commercial Banking
   \item Head of Model Validation (advisory)
   \item Chief Risk Economist (macro forecasting)
 \end{itemize}
 
 The Committee meets monthly and reviews: NII sensitivity, EVE sensitivity,
-duration gap vs.\ target, LCR/NSFR ratios, FTP rates, and any proposed
-balance sheet transactions above materiality thresholds.
+duration gap, LCR/NSFR, FTP rates, and any proposed balance sheet
+transaction above materiality thresholds.  No major balance sheet move
+happens without the Committee's sign-off.
 
 \subsection{The Three Lines of Defence}
 
+No single team can both operate a model and audit it objectively.
+The three-lines framework separates these roles clearly:
+
 \begin{enumerate}[noitemsep]
-  \item \textbf{First line (Treasury / business lines):} Runs the ALM engine,
-        FTP, and RAROC calculations.  Originates hedging recommendations.
-  \item \textbf{Second line (Risk / Model Validation):} Independent review of
-        ALM models and FTP rates.  Validates DFAST projections.  Monitors
-        model KRIs.
-  \item \textbf{Third line (Internal Audit):} Annual audit of the balance sheet
-        optimization program; testing of governance controls, data integrity,
-        and regulatory compliance.
+  \item \textbf{First line (Treasury / business lines)}: Build and run the
+        models.  Own the P\&L implications.  Bring proposals to the ALM
+        Committee.
+  \item \textbf{Second line (Risk / Model Validation)}: Independent of the
+        first line.  Cannot be overruled by them.  Validates models, sets
+        risk limits, monitors KRIs, and challenges assumptions.
+  \item \textbf{Third line (Internal Audit)}: Annual independent review of
+        whether the governance framework itself is working.  Tests that the
+        first and second lines are actually doing what they claim.
 \end{enumerate}
 
 % ══════════════════════════════════════════════════════════════════════════════
-\section{Conclusion}
+\section{Conclusion: The Highest-Leverage Discipline in Banking}
 % ══════════════════════════════════════════════════════════════════════════════
 
-Balance sheet optimization is the highest-leverage quantitative discipline
-in banking.  Its scope encompasses capital structure, liquidity management,
-interest rate risk, pricing discipline, and regulatory strategy.  It is not
-a single model or a single optimization problem — it is an integrated system
-of models, calculators, governance processes, and strategic decisions that
-operates continuously over the life of the bank.
+You began this document without a financial background.  Let us close with the
+core intuitions you should take away.
 
-The key insight is that the regulatory constraints (capital ratios, LCR, NSFR,
-DFAST) are not merely compliance requirements — they are \emph{priced inputs}
-to the optimization.  A bank that treats them as binding constraints to be
-minimally satisfied leaves significant value on the table.  A bank that treats
-them as the efficient frontier of the feasible set, and optimizes within it,
-can generate several hundred basis points of incremental RORWA relative to
-peers.
+A bank is simultaneously solving several hard problems at once: earning a
+return on capital, surviving a 30-day liquidity crisis, surviving a two-year
+recession, not betting the house on a single borrower, and doing all of this
+while navigating a dense maze of regulation.  Balance sheet optimization is
+the discipline of navigating all of those constraints simultaneously ---
+and finding, within the feasible space, the position that earns the most.
 
-At Apex Global Bank, the infrastructure described in this document — the ALM
-engine, FTP engine, DFAST engine, XVA suite, SIMM collateral engine, and
-regulatory capital engine — provides the quantitative foundation for this
-optimization program.  The SR 11-7 model governance framework ensures that
-the outputs of these models are reliable, independently validated, and used
-only within their authorized scope.
+The key insight that separates world-class practitioners from average ones
+is this: \textbf{the regulatory constraints are not obstacles to profitability
+--- they are the map of the efficient frontier.}  A bank that treats capital
+ratios, LCR, and DFAST as boxes to tick will always earn less than one that
+treats them as inputs to a rigorous optimization.
 
-The next frontier is dynamic balance sheet optimization: replacing the current
-static quarterly cycle with a continuous, model-driven optimization that
-updates recommendations in real-time as market conditions change.  This requires
+A 7\% CET1 floor is not just a compliance number.  It tells you precisely
+how much risk-weighted lending capacity you have.  An NSFR requirement is
+not paperwork.  It forces you to match asset maturities with liability
+maturities, which eliminates the most dangerous source of bank failure.
+A DFAST trough projection is not just a regulatory filing.  It is the
+forward-looking constraint that prevents a bank from growing into a future
+recession it cannot survive.
+
+Banks that truly internalize these constraints --- building them into every
+loan pricing decision, every derivative trade, every funding transaction ---
+consistently outperform peers on both profitability and resilience.
+At Apex Global Bank, the infrastructure described in this document provides
+the quantitative foundation for that program.
+
+The next frontier is continuous, real-time balance sheet optimization:
+moving from a quarterly planning cycle to a model-driven optimization
+that updates recommendations as market conditions change.  This requires
 AAD (Adjoint Algorithmic Differentiation) sensitivities across all models,
 GPU-accelerated Monte Carlo, and reinforcement learning for the hedging
-decision layer — capabilities that are commercially available and being
-deployed at G-SIBs today.
+decision layer --- capabilities commercially available and being deployed
+at G-SIBs today.  The banks that build this capability next will have
+a structural advantage in the decade ahead.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
+\section*{Glossary of Abbreviations}
+\addcontentsline{toc}{section}{Glossary of Abbreviations}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{longtable}{p{3.2cm} p{10.8cm}}
+  \toprule
+  \textbf{Abbreviation} & \textbf{Full Term and Brief Description} \\
+  \midrule
+  \endhead
+  \midrule
+  \multicolumn{2}{r}{\small\itshape continued on next page} \\
+  \endfoot
+  \bottomrule
+  \endlastfoot
+
+  AAD   & \textbf{Adjoint Algorithmic Differentiation.}
+          A mathematical technique for computing derivatives of model outputs
+          with respect to all inputs simultaneously.  Used in XVA and FRTB for
+          computing ``Greeks'' (sensitivities) at GPU speed. \\[4pt]
+
+  AFS   & \textbf{Available for Sale.}
+          A balance sheet classification for securities the bank intends to
+          hold but may sell before maturity.  Unrealised gains and losses flow
+          through Other Comprehensive Income (OCI). \\[4pt]
+
+  ALM   & \textbf{Asset-Liability Management.}
+          The discipline of managing the interest rate sensitivity and
+          liquidity profile of the entire balance sheet.  Overseen by the
+          ALM Committee. \\[4pt]
+
+  AML   & \textbf{Anti-Money Laundering.}
+          Regulatory framework and internal controls designed to detect and
+          report suspicious financial activity.  Governed by the Bank Secrecy
+          Act and FinCEN guidance in the US. \\[4pt]
+
+  ASF   & \textbf{Available Stable Funding.}
+          The numerator of the NSFR.  Liabilities weighted by their stability
+          over a one-year stress horizon --- long-term debt receives a high
+          ASF factor; overnight funding receives a low one. \\[4pt]
+
+  BCBS  & \textbf{Basel Committee on Banking Supervision.}
+          The international standard-setter for bank prudential regulation,
+          hosted at the Bank for International Settlements (BIS) in Basel,
+          Switzerland. \\[4pt]
+
+  CAPM  & \textbf{Capital Asset Pricing Model.}
+          A finance model that relates expected return to systematic risk
+          (beta).  Used to estimate the bank's cost of equity for the RAROC
+          hurdle rate calculation. \\[4pt]
+
+  CCB   & \textbf{Capital Conservation Buffer.}
+          A 2.5\% CET1 buffer above the 4.5\% minimum.  Breaching it triggers
+          restrictions on dividends and buybacks.  Together they set the
+          effective CET1 floor at 7\%. \\[4pt]
+
+  CCP   & \textbf{Central Clearing Counterparty.}
+          An exchange-like intermediary (e.g.\ LCH, CME) that sits between
+          the two sides of a derivatives trade, guaranteeing settlement and
+          netting obligations.  Attracts lower initial margin than bilateral
+          trades. \\[4pt]
+
+  CET1  & \textbf{Common Equity Tier 1.}
+          The highest-quality form of bank capital: ordinary shares plus
+          retained earnings minus regulatory deductions.  The headline capital
+          ratio reported by banks and scrutinised by regulators. \\[4pt]
+
+  CFO   & \textbf{Chief Financial Officer.}
+          The senior executive responsible for the bank's financial planning,
+          reporting, and capital management. \\[4pt]
+
+  CFP   & \textbf{Contingency Funding Plan.}
+          A documented strategy for how the bank would raise emergency liquidity
+          in a stress scenario.  The cost of maintaining CFP reserves is a
+          component of the FTP liquidity premium. \\[4pt]
+
+  CHIPS & \textbf{Clearing House Interbank Payments System.}
+          The US private large-value payment system handling the majority of
+          USD cross-border and domestic wholesale transactions. \\[4pt]
+
+  CME   & \textbf{Chicago Mercantile Exchange.}
+          One of the world's largest derivatives exchanges and clearing houses. \\[4pt]
+
+  CMS   & \textbf{Constant Maturity Swap.}
+          An interest rate swap where one leg pays a floating rate linked to a
+          constant maturity rate (e.g., the 10-year swap rate) rather than a
+          standard overnight rate. \\[4pt]
+
+  CRE   & \textbf{Commercial Real Estate.}
+          Loans and securities backed by income-producing properties
+          (offices, retail, warehouses).  High risk weight; a common
+          source of credit concentration risk. \\[4pt]
+
+  CRIF  & \textbf{Common Risk Interchange Format.}
+          The standardised file format used to exchange SIMM sensitivity data
+          between counterparties under the ISDA SIMM methodology. \\[4pt]
+
+  CRO   & \textbf{Chief Risk Officer.}
+          The senior executive responsible for the bank's risk management
+          framework, including capital, credit, market, and operational risk. \\[4pt]
+
+  CSA   & \textbf{Credit Support Annex.}
+          A legal agreement appended to an ISDA Master Agreement that governs
+          the posting and receipt of collateral (both variation margin and
+          initial margin) between two derivatives counterparties. \\[4pt]
+
+  CUSIP & \textbf{Committee on Uniform Securities Identification Procedures.}
+          A nine-character alphanumeric identifier for North American financial
+          instruments. \\[4pt]
+
+  CVA   & \textbf{Credit Valuation Adjustment.}
+          The market value of counterparty credit risk embedded in a derivatives
+          portfolio.  Represents the expected loss from counterparty default,
+          discounted to present value. \\[4pt]
+
+  DFAST & \textbf{Dodd-Frank Act Stress Test.}
+          An annual Federal Reserve supervisory exercise requiring US banks
+          to model their capital adequacy under three macroeconomic scenarios
+          (baseline, adverse, and severely adverse) over nine quarters. \\[4pt]
+
+  DRC   & \textbf{Default Risk Charge.}
+          A component of FRTB-SA capital that captures the jump-to-default
+          risk for credit instruments not captured by the sensitivity-based
+          method. \\[4pt]
+
+  DV01  & \textbf{Dollar Value of 01 (one basis point).}
+          The change in market value of a fixed-income instrument for a 1 basis
+          point (0.01\%) parallel shift in interest rates.  A fundamental
+          measure of interest rate risk. \\[4pt]
+
+  DVA   & \textbf{Debit Valuation Adjustment.}
+          The adjustment to derivatives value reflecting the bank's \emph{own}
+          credit risk --- the value the bank would capture if it defaulted on
+          its derivatives obligations. \\[4pt]
+
+  EAD   & \textbf{Exposure at Default.}
+          The estimated outstanding balance of a loan or derivative at the
+          moment a counterparty defaults.  Used in credit risk capital
+          calculations: RWA = risk weight $\times$ EAD. \\[4pt]
+
+  EC    & \textbf{Economic Capital.}
+          The bank's internal estimate of the capital needed to absorb
+          unexpected losses at a given confidence level (typically 99.9\%).
+          Distinct from regulatory capital, which follows a fixed rulebook. \\[4pt]
+
+  ECL   & \textbf{Expected Credit Loss.}
+          Under IFRS 9, the probability-weighted estimate of credit losses
+          over the life of a financial instrument.  Drives loan loss
+          provisioning. \\[4pt]
+
+  EL    & \textbf{Expected Loss.}
+          $\text{EL} = \text{PD} \times \text{LGD} \times \text{EAD}$.
+          The average annual credit loss on a loan or portfolio, incorporated
+          into pricing via the RAROC formula. \\[4pt]
+
+  EVE   & \textbf{Economic Value of Equity.}
+          The net present value of all asset and liability cash flows.
+          EVE sensitivity measures how much equity value is gained or lost
+          under a shift in interest rates. \\[4pt]
+
+  FATF  & \textbf{Financial Action Task Force.}
+          The inter-governmental body that sets international standards
+          for combating money laundering and terrorist financing.
+          Maintains the ``grey list'' of jurisdictions under increased
+          monitoring. \\[4pt]
+
+  Fed   & \textbf{Federal Reserve.}
+          The central bank of the United States; the primary prudential
+          regulator for large US bank holding companies. \\[4pt]
+
+  FHLB  & \textbf{Federal Home Loan Bank.}
+          A US government-sponsored enterprise that provides wholesale
+          funding (advances) to member banks, primarily used for mortgage
+          funding. \\[4pt]
+
+  FinCEN & \textbf{Financial Crimes Enforcement Network.}
+           A bureau of the US Treasury that administers the Bank Secrecy
+           Act and manages AML/CFT reporting. \\[4pt]
+
+  FRTB  & \textbf{Fundamental Review of the Trading Book.}
+          The Basel IV reform of market risk capital standards (finalized 2019,
+          effective 2025).  Introduces a revised SA floor and tighter IMA
+          eligibility rules. \\[4pt]
+
+  FTP   & \textbf{Fund Transfer Pricing.}
+          An internal pricing mechanism that allocates the cost and benefit
+          of funding to each business line, ensuring desks see the true
+          all-in cost of originating assets and raising liabilities. \\[4pt]
+
+  FVA   & \textbf{Funding Valuation Adjustment.}
+          The cost of funding uncollateralised derivatives exposures.
+          Reflects the bank's own credit spread applied to the unsecured
+          funding component of the derivatives book. \\[4pt]
+
+  GDP   & \textbf{Gross Domestic Product.}
+          The total monetary value of goods and services produced in an
+          economy.  A primary driver variable in DFAST macroeconomic
+          scenario design. \\[4pt]
+
+  G-SIB & \textbf{Global Systemically Important Bank.}
+          Banks designated by the FSB as posing systemic risk to the global
+          financial system.  Subject to additional capital surcharges
+          (1--3.5\% of RWA) and enhanced supervision. \\[4pt]
+
+  GPU   & \textbf{Graphics Processing Unit.}
+          Massively parallel processor originally designed for graphics
+          rendering.  Widely adopted for Monte Carlo simulation in XVA and
+          VaR, where thousands of paths can run simultaneously. \\[4pt]
+
+  HQLA  & \textbf{High-Quality Liquid Assets.}
+          Assets that can be quickly converted to cash with minimal loss of
+          value in a stress scenario.  Level 1 (cash, Treasuries), Level 2A
+          (Agency debt, covered bonds), and Level 2B (equities, corporate
+          bonds) receive progressively lower credit in LCR. \\[4pt]
+
+  HTM   & \textbf{Held to Maturity.}
+          A balance sheet classification for securities the bank intends to
+          hold until they mature.  Not marked to market --- which is why SVB's
+          HTM bond losses did not immediately appear in its capital ratios. \\[4pt]
+
+  IFRS 9 & \textbf{International Financial Reporting Standard 9.}
+           The accounting standard governing the classification and measurement
+           of financial instruments, including the three-stage expected credit
+           loss model for loan provisioning. \\[4pt]
+
+  IM    & \textbf{Initial Margin.}
+          Collateral posted at the outset of a derivatives trade (and
+          dynamically adjusted) to cover potential future exposure.
+          Computed under SIMM for bilateral trades; exchange-defined
+          for cleared trades. \\[4pt]
+
+  IMA   & \textbf{Internal Models Approach.}
+          The Basel/FRTB method that allows banks with regulatory approval
+          to compute market risk capital using their own VaR models rather
+          than the standardised rulebook --- typically producing 30--60\%
+          less capital for diversified books. \\[4pt]
+
+  IRS   & \textbf{Interest Rate Swap.}
+          A derivatives contract in which two parties exchange a stream of
+          fixed-rate payments for floating-rate payments (or vice versa) on
+          a notional principal.  The primary instrument used by ALM desks
+          to manage duration gaps. \\[4pt]
+
+  ISIN  & \textbf{International Securities Identification Number.}
+          A 12-character alphanumeric code that uniquely identifies
+          securities globally. \\[4pt]
+
+  ISDA  & \textbf{International Swaps and Derivatives Association.}
+          The industry body that publishes standard legal documentation
+          (Master Agreements, CSAs) and quantitative methodologies (SIMM)
+          for over-the-counter derivatives markets. \\[4pt]
+
+  KRI   & \textbf{Key Risk Indicator.}
+          A metric tracked continuously to signal that a model or process
+          may be degrading.  Examples: VaR backtesting exception rate,
+          SIMM vs.\ actual IM reconciliation error. \\[4pt]
+
+  KVA   & \textbf{Capital Valuation Adjustment.}
+          The present value of the cost of holding regulatory capital against
+          a derivatives trade over its lifetime.  Equal to the hurdle rate
+          times the expected capital requirement, discounted to today. \\[4pt]
+
+  LCH   & \textbf{London Clearing House (LCH Group).}
+          One of the world's largest central clearing counterparties,
+          handling the majority of cleared interest rate swap volume globally. \\[4pt]
+
+  LCR   & \textbf{Liquidity Coverage Ratio.}
+          A Basel III requirement: HQLA must cover at least 100\% of net
+          stressed cash outflows over a 30-day horizon.  Ensures banks can
+          survive a short-term liquidity crisis without central bank support. \\[4pt]
+
+  LGD   & \textbf{Loss Given Default.}
+          The fraction of an exposure that is lost when a borrower defaults,
+          after recovery from collateral and other sources.  Typically
+          35--65\% for unsecured corporate loans. \\[4pt]
+
+  LMM   & \textbf{LIBOR Market Model (also known as the BGM model).}
+          A term-structure model that directly models the evolution of
+          forward LIBOR/SOFR rates.  Used for pricing callable derivatives
+          and path-dependent instruments. \\[4pt]
+
+  MBS   & \textbf{Mortgage-Backed Securities.}
+          Securities backed by pools of mortgage loans.  Exhibit negative
+          convexity due to borrower prepayment optionality, complicating
+          ALM hedging. \\[4pt]
+
+  MDD   & \textbf{Model Development Document.}
+          The SR 11-7 documentation artefact that captures a model's
+          theoretical basis, implementation, validation results, limitations,
+          use authorization, and open findings. \\[4pt]
+
+  MVA   & \textbf{Margin Valuation Adjustment.}
+          The funding cost associated with posting initial margin over the
+          life of a cleared or bilateral derivatives trade.
+          Cleared trades generally attract lower MVA than bilateral. \\[4pt]
+
+  NII   & \textbf{Net Interest Income.}
+          The difference between interest earned on assets and interest paid
+          on liabilities.  The primary revenue line for most commercial banks. \\[4pt]
+
+  NIM   & \textbf{Net Interest Margin.}
+          NII expressed as a percentage of average earning assets.  The
+          headline profitability metric for comparing banks of different sizes.
+          Typical range: 2--4\% for US commercial banks. \\[4pt]
+
+  NLP   & \textbf{Nonlinear Program (Nonlinear Programming).}
+          An optimisation problem where the objective function or constraints
+          are nonlinear.  The full balance sheet optimisation is an NLP with
+          stochastic and integer components. \\[4pt]
+
+  NSFR  & \textbf{Net Stable Funding Ratio.}
+          A Basel III requirement: Available Stable Funding must exceed
+          Required Stable Funding.  Ensures that long-term assets are funded
+          with long-term liabilities, not short-term borrowing. \\[4pt]
+
+  OCI   & \textbf{Other Comprehensive Income.}
+          A component of equity that records unrealised gains and losses on
+          AFS securities, derivatives designated as hedges, and other items
+          not yet recognised in profit and loss. \\[4pt]
+
+  OIS   & \textbf{Overnight Indexed Swap.}
+          An interest rate swap referencing an overnight rate (SOFR in the US,
+          €STR in Europe).  The OIS curve is the risk-free term structure used
+          as the base for FTP rates and derivatives discounting. \\[4pt]
+
+  OMS   & \textbf{Order Management System.}
+          The system that records, routes, and tracks trading orders and
+          resulting positions.  The real-time positions feed for the VaR
+          and FRTB calculators. \\[4pt]
+
+  OpRisk & \textbf{Operational Risk.}
+           The risk of loss from inadequate or failed internal processes,
+           people, systems, or external events (including fraud, fines, and
+           cyber incidents). \\[4pt]
+
+  PD    & \textbf{Probability of Default.}
+          The estimated likelihood that a borrower will fail to meet its
+          debt obligations within a given horizon (typically one year).
+          Combined with LGD to compute EL and with EAD for RWA. \\[4pt]
+
+  PEP   & \textbf{Politically Exposed Person.}
+          An individual who holds or has held a prominent public function.
+          Subject to enhanced AML due diligence under FATF standards. \\[4pt]
+
+  PPNR  & \textbf{Pre-Provision Net Revenue.}
+          Revenue before loan loss provisions --- NII plus non-interest income
+          minus operating expenses.  Used in DFAST projections to estimate the
+          income buffer available to absorb stressed losses. \\[4pt]
+
+  RAROC & \textbf{Risk-Adjusted Return on Capital.}
+          Net income (after funding costs and expected losses) divided by
+          economic capital.  The primary metric for comparing profitability
+          across business lines with different risk profiles. \\[4pt]
+
+  ROA   & \textbf{Return on Assets.}
+          Net income divided by total assets.  A high-level profitability
+          metric; at JPMorgan scale, 5 basis points of ROA improvement is
+          worth approximately \$2 billion per year. \\[4pt]
+
+  RORWA & \textbf{Return on Risk-Weighted Assets.}
+          Net income divided by RWA.  Preferred over ROA by bank management
+          because it accounts for capital intensity --- a business that earns
+          the same income on lower RWA is more efficient. \\[4pt]
+
+  RSA   & \textbf{Rate-Sensitive Assets.}
+          Assets whose yield will reprice within a given period (typically
+          12 months) when interest rates change.  Includes floating-rate
+          loans, maturing fixed-rate instruments, and short-dated securities. \\[4pt]
+
+  RSF   & \textbf{Required Stable Funding.}
+          The denominator of the NSFR.  Assets weighted by their need for
+          stable funding over a one-year horizon --- long-term loans receive
+          a high RSF factor; short-dated liquid assets receive a low one. \\[4pt]
+
+  RSL   & \textbf{Rate-Sensitive Liabilities.}
+          Liabilities whose cost will reprice when interest rates change.
+          Variable-rate deposits and short-term wholesale borrowings are
+          highly rate-sensitive. \\[4pt]
+
+  RWA   & \textbf{Risk-Weighted Assets.}
+          Assets multiplied by their regulatory risk weights.  The denominator
+          of all capital ratios.  A measure of economic risk, not raw balance
+          sheet size. \\[4pt]
+
+  SA    & \textbf{Standardised Approach.}
+          The Basel regulatory method for computing capital charges using
+          prescribed risk weights.  Less capital-intensive to operate than IMA
+          but typically produces higher capital requirements for diversified
+          portfolios. \\[4pt]
+
+  SIMM  & \textbf{Standard Initial Margin Model.}
+          The ISDA industry-standard model for computing initial margin on
+          bilateral (uncleared) OTC derivatives.  Version 2.6 covers six
+          risk classes: IR, CRQ, CRNQ, EQ, FX, and Commodity. \\[4pt]
+
+  SLR   & \textbf{Supplementary Leverage Ratio.}
+          A leverage ratio that uses total leverage exposure (assets plus
+          off-balance-sheet items plus derivative add-ons) rather than
+          RWA as the denominator.  Catches banks that game risk weights. \\[4pt]
+
+  SOFR  & \textbf{Secured Overnight Financing Rate.}
+          The US dollar risk-free rate based on overnight repo transactions
+          secured by US Treasuries.  Replaced LIBOR as the primary USD
+          reference rate from June 2023. \\[4pt]
+
+  SR 11-7 & \textbf{Federal Reserve Supervisory Guidance on Model Risk Management (2011).}
+            The foundational US regulatory guidance requiring banks to maintain
+            rigorous model development, independent validation, and ongoing
+            monitoring for all quantitative models used in material decisions. \\[4pt]
+
+  SVaR  & \textbf{Stressed Value at Risk.}
+          VaR computed using a historical stress window (typically the 2007--2009
+          financial crisis).  Added to regular VaR in the Basel 2.5 market risk
+          capital formula to ensure capital does not fall too low in benign
+          periods. \\[4pt]
+
+  SVB   & \textbf{Silicon Valley Bank.}
+          A US regional bank that collapsed in March 2023, illustrating the
+          consequences of duration mismatch (long HTM bonds funded by
+          rate-sensitive deposits) and weak NSFR management. \\[4pt]
+
+  VaR   & \textbf{Value at Risk.}
+          The maximum expected loss on a portfolio over a given horizon at a
+          given confidence level.  At 99\% over 1 day: there is a 1\% chance
+          of losing more than VaR on any given day. \\[4pt]
+
+  VM    & \textbf{Variation Margin.}
+          Daily cash collateral exchanged between derivatives counterparties
+          to reflect changes in the mark-to-market value of outstanding trades.
+          Eliminates the accumulation of unrealised losses. \\[4pt]
+
+  XVA   & \textbf{X-Valuation Adjustment (collective term).}
+          The family of valuation adjustments applied to derivatives to
+          capture counterparty credit risk (CVA), own credit (DVA), funding
+          (FVA), margin funding (MVA), capital (KVA), and collateral (ColVA). \\
+
+\end{longtable}
 
 % ── Bibliography ──────────────────────────────────────────────────────────────
 \newpage
@@ -1199,59 +2019,59 @@ deployed at G-SIBs today.
   Bank for International Settlements.
 
 \bibitem{frtb}
-  Basel Committee on Banking Supervision (2016).
-  \textit{Minimum capital requirements for market risk (FRTB)}, d352.
+  Basel Committee on Banking Supervision (2019).
+  \textit{Minimum capital requirements for market risk (FRTB)}.
   Bank for International Settlements.
-
-\bibitem{sr117}
-  Federal Reserve (2011).
-  \textit{Supervisory Guidance on Model Risk Management}, SR 11-7.
-
-\bibitem{sr1217}
-  Federal Reserve (2012).
-  \textit{Supervisory Guidance on Stress Testing for Banking Organizations with More than \$10 Billion in Total Consolidated Assets}, SR 12-7.
-
-\bibitem{dfast}
-  Federal Reserve (2022).
-  \textit{Dodd-Frank Act Stress Tests: Final Rule}, 12 CFR 252.
 
 \bibitem{lcr}
   Basel Committee on Banking Supervision (2013).
-  \textit{Basel III: The Liquidity Coverage Ratio and liquidity risk monitoring tools}.
+  \textit{Basel III: The Liquidity Coverage Ratio and liquidity risk
+  monitoring tools}.
+  Bank for International Settlements.
 
 \bibitem{nsfr}
   Basel Committee on Banking Supervision (2014).
   \textit{Basel III: The Net Stable Funding Ratio}.
+  Bank for International Settlements.
+
+\bibitem{sr117}
+  Board of Governors of the Federal Reserve System (2011).
+  \textit{SR 11-7: Guidance on Model Risk Management}.
+  Federal Reserve.
+
+\bibitem{dfast}
+  Board of Governors of the Federal Reserve System (2022).
+  \textit{Dodd-Frank Act Stress Test 2022: Supervisory Stress Test Results}.
+  Federal Reserve.
 
 \bibitem{simm}
-  ISDA (2023).
-  \textit{ISDA SIMM Methodology, Version 2.6}.
+  ISDA (2021).
+  \textit{ISDA SIMM Methodology, version 2.6}.
   International Swaps and Derivatives Association.
 
 \bibitem{hull}
-  Hull, J.\ C.\ (2022).
-  \textit{Options, Futures, and Other Derivatives}, 11th ed.
+  Hull, J.C.\ (2018).
+  \textit{Options, Futures, and Other Derivatives}, 10th ed.
   Pearson.
 
-\bibitem{fabozzi}
-  Fabozzi, F., Mann, S.\ V.\ (2011).
-  \textit{The Handbook of Fixed Income Securities}, 8th ed.
-  McGraw-Hill.
-
 \bibitem{saunders}
-  Saunders, A., Cornett, M.\ M.\ (2018).
-  \textit{Financial Institutions Management: A Risk Management Approach}, 9th ed.
-  McGraw-Hill.
+  Saunders, A.\ \& Cornett, M.M.\ (2019).
+  \textit{Financial Institutions Management: A Risk Management Approach},
+  9th ed.\ McGraw-Hill.
 
-\bibitem{choudhry}
-  Choudhry, M.\ (2012).
-  \textit{The Principles of Banking}.
+\bibitem{bessis}
+  Bessis, J.\ (2015).
+  \textit{Risk Management in Banking}, 4th ed.\ Wiley.
+
+\bibitem{green}
+  Green, A.\ (2015).
+  \textit{XVA: Credit, Funding and Capital Valuation Adjustments}.
   Wiley.
 
-\bibitem{iwanowski}
-  Iwanowski, R., Harrington, B.\ (2007).
-  ``Balance Sheet Optimization for Financial Institutions,''
-  \textit{Journal of Applied Finance}, 17(1), 28--45.
+\bibitem{brigo}
+  Brigo, D., Morini, M.\ \& Pallavicini, A.\ (2013).
+  \textit{Counterparty Credit Risk, Collateral and Funding}.
+  Wiley.
 \end{thebibliography}
 
 \end{document}

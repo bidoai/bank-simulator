@@ -66,15 +66,14 @@ def _resolve_doc_path(filename: str) -> Path:
 
 
 def _resolve_pdf_path(model: dict[str, Any]) -> Path:
-    short = model.get("short", "")
+    short = model.get("short_name", model.get("short", ""))
     version = model.get("version", "")
-    if not short:
-        raise HTTPException(status_code=404, detail=f"No PDF available for model '{model['id']}'")
 
     candidate_names: list[str] = []
-    if version:
-        candidate_names.append(f"mdd_{short}_v{version}.pdf")
-    candidate_names.append(f"mdd_{short}_v1.0.pdf")
+    if short:
+        if version:
+            candidate_names.append(f"mdd_{short}_v{version}.pdf")
+        candidate_names.append(f"mdd_{short}_v1.0.pdf")
 
     for doc_name in model.get("doc_files", []):
         stem, suffix = os.path.splitext(doc_name)

@@ -3,6 +3,43 @@
 All notable changes to Apex Global Bank Simulator are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1.0] - 2026-04-05
+
+### Added
+- **Agency MBS Analytics Engine**: PSA prepayment model (100% PSA baseline, adjustable speed), Ho-Lee short-rate paths (100 paths), OAS bisection solver, effective duration + convexity (bump-and-reprice ±50bps), 7-scenario analysis (±50/100/200bps). `GET /api/securitized/mbs-analytics` (`infrastructure/securitized_products/mbs_analytics.py`)
+- **Securities Finance Lifecycle**: `RepoLadder` with 4-tenor book priced from live FRED rates, repricing trigger on >2bps move; `MarginEngine` with 4-counterparty VM lifecycle and shock simulation. New endpoints: repo-ladder, reprice, margin, margin/shock (`infrastructure/securities_finance/lifecycle.py`)
+- **IMA Backtesting Endpoints**: `POST /api/risk/backtesting/observation` records daily P&L vs VaR; `GET /api/risk/ima-status` returns IMA approval status (GREEN/YELLOW/RED) with SA revert recommendation on RED zone (Basel 2.5 MAR99)
+- **OMS Concurrency Hardening**: `asyncio.Lock` serialises concurrent `submit_order` calls; `oms.submit_order` offloaded to `run_in_executor`; `_persist_trade` awaited (no longer fire-and-forget)
+
+### Fixed
+- MBS analytics `get_pipeline()` now shows Agency MBS OAS engine as LIVE
+
+## [0.3.0.0] - 2026-04-05
+
+### Added
+- **Live XVA Service**: `SimulationXVAService` wires OMS blotter fills to pyxva pipeline. `XVABroadcaster` streams live CVA/DVA/FVA updates via `/ws/xva`. Dashboard badge switches DEMO → LIVE (`infrastructure/xva/`)
+- **MDD Suite (SR 11-7 compliant)**: 12 Model Development Documents covering VaR, SVaR, FRTB-SA, Black-Scholes, Hull-White 1F, SOFR/LMM, IFRS 9 ECL, AML, Correlation Regime, DFAST, Collateral/SIMM, and ALM/FTP. All include SR 11-7 Section 7 (Use Authorization). LaTeX sources + compiled PDFs in `model_docs/`
+- **Model Governance Registry**: updated `registry.json` with 17 Tier-1 models, open findings reconciliation, and `POST /api/models/chat` multi-persona Q&A (Dr. Tanaka / Dr. Achebe)
+- **DFAST/CCAR Stress Engine**: 9-quarter CET1 projection under baseline/adverse/severely-adverse scenarios with 2025 official Fed parameters loaded from FRED at startup. DFAST panel with Plotly CET1 chart in scenarios dashboard (`infrastructure/stress/`)
+- **Collateral Simulation Module**: VM engine with daily margin call lifecycle, SIMM 2.6 IM (IR + CRQ risk classes), three named stress scenarios (COVID Week, Lehman Event, Gilt Crisis). Five seeded CSAs. 45 tests (`infrastructure/collateral/`)
+- **Liquidity Risk**: LCR, NSFR, intraday monitoring, liquidity ladder with survival horizon. Five stress scenarios. Full liquidity dashboard at `/dashboard/liquidity.html` (`infrastructure/liquidity/`)
+- **Treasury Expansion**: NMD behavioural model, dynamic FTP with OIS+liquidity premium, ALM hedging, RAROC engine, balance sheet optimizer. Treasury dashboard with 8 panels (`infrastructure/treasury/`)
+- **Basel 4 Capital Expansion**: SA-CCR counterparty credit, OpRisk BIA, capital buffers/MDA, large exposures (500% Tier 1 limit), output floor (72.5%). Full capital dashboard (`infrastructure/risk/`)
+- **Securities Finance & Securitized Products**: repo/securities-lending desk shell, agency MBS analytics surface with OAS and effective duration (`infrastructure/securities_finance/`, `infrastructure/securitized_products/`)
+- **Live Market Data**: `MarketDataFeed` seeded from live Yahoo Finance prices at startup. UST/SOFR yield curve and BBB OAS credit spreads loaded from FRED and wired into FTP, stressed VaR, and LCR (`infrastructure/market_data/`)
+- **3LoD CQRS**: `RiskPositionReader` replays `TradeBooked` events for independent second-line read path. `/api/risk/independence-check` compares PositionManager vs RiskPositionReader notionals
+- **Legal Entity Registry**: four Apex booking entities with jurisdiction, netting flags, and desk mappings
+- **Balance Sheet Optimization Paper**: 36-page quantitative reference (LaTeX + PDF) covering multi-period NLP, RAROC, LCR/NSFR, ALM, FTP, and DFAST integration
+- **Bank Quant Operating Model**: reference document covering quant infrastructure and model lifecycle
+
+### Changed
+- DFAST scenario parameters updated to 2025 official Fed supervisory scenarios calibrated against live FRED macro
+- PDF endpoint now resolves `short_name` field from registry (previously used non-existent `short` field)
+
+### Fixed
+- XVA service returns sample config on empty fills (regression in blotter mapping)
+- `_SCENARIOS` dictionary now populated from live FRED data with hardcoded fallback
+
 ## [0.2.0.0] - 2026-03-25
 
 ### Added

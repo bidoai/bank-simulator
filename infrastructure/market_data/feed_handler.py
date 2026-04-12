@@ -20,19 +20,20 @@ from models.market_data import Quote, OHLCV
 
 log = structlog.get_logger()
 
-# Realistic starting prices and vol parameters
+# Static fallback prices and vol/spread parameters.
+# Prices are overwritten at startup by fetch_live_seeds() where available.
 SEED_PRICES: dict[str, dict] = {
-    "AAPL":        {"price": 185.50,  "vol": 0.22,  "spread_bps": 1.5},
-    "MSFT":        {"price": 415.20,  "vol": 0.20,  "spread_bps": 1.2},
-    "SPY":         {"price": 510.80,  "vol": 0.15,  "spread_bps": 0.5},
-    "US10Y":       {"price": 97.50,   "vol": 0.05,  "spread_bps": 2.0},
-    "EURUSD":      {"price": 1.0845,  "vol": 0.07,  "spread_bps": 0.8},
-    "GBPUSD":      {"price": 1.2650,  "vol": 0.09,  "spread_bps": 1.0},
-    "AAPL_CALL_200": {"price": 3.50, "vol": 0.50,   "spread_bps": 50.0},
-    "USD_IRS_5Y":  {"price": 100.00,  "vol": 0.02,  "spread_bps": 5.0},
-    "CL1":         {"price": 78.40,   "vol": 0.30,  "spread_bps": 3.0},
-    "NVDA":        {"price": 875.00,  "vol": 0.35,  "spread_bps": 2.0},
-    "US2Y":        {"price": 99.10,   "vol": 0.02,  "spread_bps": 1.5},
+    "AAPL":          {"price": 185.50,  "vol": 0.22,  "spread_bps": 1.5},
+    "MSFT":          {"price": 415.20,  "vol": 0.20,  "spread_bps": 1.2},
+    "SPY":           {"price": 510.80,  "vol": 0.15,  "spread_bps": 0.5},
+    "US10Y":         {"price": 97.50,   "vol": 0.05,  "spread_bps": 2.0},
+    "EURUSD":        {"price": 1.0845,  "vol": 0.07,  "spread_bps": 0.8},
+    "GBPUSD":        {"price": 1.2650,  "vol": 0.09,  "spread_bps": 1.0},
+    "AAPL_CALL_200": {"price": 3.50,    "vol": 0.50,  "spread_bps": 50.0},
+    "USD_IRS_5Y":    {"price": 100.00,  "vol": 0.02,  "spread_bps": 5.0},
+    "CL1":           {"price": 78.40,   "vol": 0.30,  "spread_bps": 3.0},
+    "NVDA":          {"price": 875.00,  "vol": 0.35,  "spread_bps": 2.0},
+    "US2Y":          {"price": 99.10,   "vol": 0.02,  "spread_bps": 1.5},
 }
 
 
@@ -49,12 +50,34 @@ class MarketDataFeed:
 
     def __init__(self, tick_interval_ms: int = 500):
         self.tick_interval_ms = tick_interval_ms
+
+        # Start from static fallbacks, then overwrite with live prices where available.
         self._prices: dict[str, float] = {
             k: v["price"] for k, v in SEED_PRICES.items()
         }
+        self._apply_live_seeds()
+
         self._subscribers: dict[str, list[Callable]] = {}
         self._running = False
         self._history: dict[str, list[Quote]] = {k: [] for k in SEED_PRICES}
+
+    def _apply_live_seeds(self) -> None:
+        """Overwrite static seed prices with live Yahoo Finance quotes."""
+        try:
+            from infrastructure.market_data.live_seed import fetch_live_seeds
+            live = fetch_live_seeds()
+            for ticker, price in live.items():
+                if ticker in self._prices:
+                    old = self._prices[ticker]
+                    self._prices[ticker] = price
+                    log.info(
+                        "market_data.live_seed",
+                        ticker=ticker,
+                        old=round(old, 4),
+                        live=round(price, 4),
+                    )
+        except Exception as exc:
+            log.warning("market_data.live_seed_failed", error=str(exc))
 
     def subscribe(self, ticker: str, callback: Callable[[Quote], None]) -> None:
         """Register a callback to receive quotes for a ticker."""

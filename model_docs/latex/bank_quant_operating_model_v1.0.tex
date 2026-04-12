@@ -1,0 +1,680 @@
+\documentclass{apex_mdd}
+\modelid{APEX-WP-0001}
+\mddversion{1.0}
+\mddowner{Quantitative Research / Strategy}
+\mddvalidator{Independent Quant Reviewer}
+\mddstatus{Reviewed}
+\reviewdate{2026-03-29}
+\nextreview{2027-03-29}
+\regulatory{Educational synthesis referencing Basel-style market, credit, liquidity, and model-risk frameworks}
+
+\title{How a Global Bank Runs: A Quantitative Operating Model}
+\begin{document}
+\maketitle
+\statusbadge
+
+\tableofcontents
+\newpage
+
+\section{Purpose and Scope}
+
+This document explains how a large global bank operates from a quantitative perspective. The goal is educational: to make explicit the mathematics, data flows, compute requirements, and organizational conflicts hidden behind trading revenue, risk reports, treasury charges, and regulatory capital numbers.
+
+The emphasis is not on one single model. A bank is a coupled system of desks, legal entities, balance-sheet constraints, pricing services, risk engines, accounting rules, collateral agreements, treasury transfer pricing, and governance. The same trade is simultaneously:
+\begin{itemize}
+  \item a client relationship event for the front office,
+  \item a market-risk vector for risk management,
+  \item a future exposure profile for credit and XVA,
+  \item a funding and liquidity burden for treasury,
+  \item a reserve, capital, and ledger object for finance,
+  \item and a validation and audit subject for second and third line control functions.
+\end{itemize}
+
+This is why the bank should be viewed as a constrained optimization problem rather than a collection of isolated desks.
+
+\section{The Bank as a Constrained Optimization Problem}
+
+\subsection{Economic Objective}
+
+At a high level, management wants to maximize long-run risk-adjusted franchise value, not raw trading revenue:
+\begin{formulabox}
+\[
+  \max_{x}
+  \;\Pi(x)
+  =
+  \mathbb{E}[\mathrm{Revenue}(x)]
+  - \mathrm{EL}(x)
+  - \mathrm{FundingCost}(x)
+  - \mathrm{LiquidityCost}(x)
+  - \mathrm{OperatingCost}(x)
+  - \mathrm{CapitalCharge}(x)
+\]
+\[
+  \text{subject to market, credit, liquidity, leverage, conduct, and legal-entity constraints.}
+\]
+\end{formulabox}
+
+In practice, the bank does not solve one global optimization exactly. Instead, it decomposes the problem across desks and functions, then re-couples them through prices, limits, transfer charges, and management committees.
+
+\subsection{Balance-Sheet Identity}
+
+Every bank-level quantitative discussion starts from the identity
+\begin{formulabox}
+\[
+  \mathrm{Assets} = \mathrm{Liabilities} + \mathrm{Equity}.
+\]
+\end{formulabox}
+
+The front office often focuses on marginal trade economics. Treasury and finance care about how that marginal trade changes the entire right-hand side of the identity: funding mix, liquidity buffer, retained earnings, and capital ratios. This difference in viewpoint drives many of the internal conflicts discussed later.
+
+\subsection{Business Decomposition}
+
+For a universal bank, the main quant-relevant components are:
+\begin{itemize}
+  \item \textbf{Trading and market making:} equities, rates, FX, credit, commodities, securitized products, and derivatives.
+  \item \textbf{Banking book:} loans, deposits, securities portfolios, mortgage and consumer books.
+  \item \textbf{Treasury and ALM:} funding, FTP, liquidity buffer management, structural interest-rate risk.
+  \item \textbf{Credit risk:} loan default risk, counterparty risk, concentration, underwriting limits.
+  \item \textbf{XVA and collateral:} derivative exposure, margining, funding valuation, initial margin cost.
+  \item \textbf{Finance and capital:} P\&L explain, reserves, accounting classification, regulatory capital, performance measurement.
+  \item \textbf{Model risk and validation:} independent review, challenger models, backtesting, governance.
+\end{itemize}
+
+\section{Front Office Trading and Pricing}
+
+\subsection{What Trading Desks Actually Do}
+
+The front office sells liquidity and balance-sheet capacity to clients. A client trade is rarely priced as a pure textbook fair value. The executable quote includes compensation for inventory risk, hedging slippage, counterparty quality, funding consumption, collateral terms, and scarce capital.
+
+\subsection{Clean Price, Executable Price, and All-in Price}
+
+For a derivative or financing trade, a useful decomposition of the \emph{client executable price} is
+\begin{formulabox}
+\[
+  P_{\mathrm{client}}
+  =
+  P_{\mathrm{clean}}
+  + \mathrm{CVA}
+  + \mathrm{DVA}
+  + \mathrm{FVA}
+  + \mathrm{MVA}
+  + \mathrm{KVA}
+  + \mathrm{LiquidityPremium}
+  + \mathrm{BidAsk}.
+\]
+\end{formulabox}
+
+\textbf{Interpretation:}
+\begin{itemize}
+  \item $P_{\mathrm{clean}}$ is the risk-free or collateral-consistent theoretical value.
+  \item $\mathrm{CVA}$ charges for counterparty default risk.
+  \item $\mathrm{DVA}$ reflects the bank's own default risk in valuation terms; it is usually treated carefully in management reporting because it is not equivalent to cash earnings.
+  \item $\mathrm{FVA}$ charges for unsecured or partially secured funding.
+  \item $\mathrm{MVA}$ charges for the cost of funding segregated initial margin.
+  \item $\mathrm{KVA}$ allocates the economic cost of capital tied up by the trade.
+\end{itemize}
+
+This equation should \textbf{not} be read as a universal accounting fair-value identity. In many banks, $\mathrm{KVA}$, liquidity premium, and bid-ask are internal pricing or execution add-ons rather than pure accounting valuation adjustments, while sign conventions for $\mathrm{DVA}$ and $\mathrm{FVA}$ vary by policy and product set. The stable point is narrower: the executable trade price is a balance-sheet price, not just a clean model price.
+
+\subsection{Daily P\&L Mechanics}
+
+For a portfolio value $V(S,\sigma,t)$ driven by market factors $S$ and volatility state $\sigma$, daily P\&L explain is approximated by
+\begin{formulabox}
+\[
+  \Delta \mathrm{P\&L}
+  \approx
+  \sum_i \Delta_i \Delta S_i
+  + \frac{1}{2}\sum_{i,j}\Gamma_{ij}\Delta S_i \Delta S_j
+  + \sum_k \mathrm{Vega}_k \Delta \sigma_k
+  + \Theta \Delta t
+  + \mathrm{Carry}
+  + \mathrm{NewTrade}
+  + \mathrm{Fees}
+  - \mathrm{HedgeCost}.
+\]
+\end{formulabox}
+
+For simple linear products, this approximation is often enough. For structured products and large option books, the bank uses full revaluation under shocked curves, surfaces, and correlations.
+
+\subsection{Pre-trade Decision Rule}
+
+A practical desk-level optimization is
+\begin{formulabox}
+\[
+  \max_{q}
+  \;
+  \mathrm{ClientSpread}(q)
+  - \mathrm{ExpectedHedgeCost}(q)
+  - \mathrm{XVA}(q)
+  - \mathrm{FTP}(q)
+  - \mathrm{CapitalCharge}(q)
+\]
+\[
+  \text{s.t.}
+  \quad
+  \mathrm{LimitUtilization}(q) \leq 100\%,
+  \quad
+  \mathrm{CCRHeadroom}(q) \geq 0,
+  \quad
+  \mathrm{LiquidityConsumption}(q) \leq \text{budget.}
+\]
+\end{formulabox}
+
+This is where the apparent conflict between ``sales wants to win the trade'' and ``risk wants to constrain the trade'' becomes mathematically explicit.
+
+\section{Market Risk}
+
+\subsection{Sensitivities and Local Approximation}
+
+Let $S$ be the vector of market risk factors. The standard second-order local approximation is
+\begin{formulabox}
+\[
+  \Delta V
+  \approx
+  \nabla_S V \cdot \Delta S
+  + \frac{1}{2}\Delta S^\top \nabla_S^2 V \Delta S.
+\]
+\end{formulabox}
+
+This approximation is useful for intraday risk attribution, but it is not exact for strongly nonlinear books, callable structures, path-dependent exotics, or products sensitive to surface dynamics and jumps.
+
+\subsection{VaR and Expected Shortfall}
+
+For a P\&L distribution generated by scenarios $\{\mathrm{P\&L}^{(n)}\}_{n=1}^{N}$,
+\begin{formulabox}
+\[
+  \mathrm{VaR}_{\alpha}
+  =
+  -Q_{\alpha}(\mathrm{P\&L}),
+  \qquad
+  \mathrm{ES}_{\alpha}
+  =
+  -\mathbb{E}[\mathrm{P\&L}\mid \mathrm{P\&L}\leq Q_{\alpha}(\mathrm{P\&L})].
+\]
+\end{formulabox}
+
+For a linear-Gaussian approximation with exposure vector $w$ and factor covariance matrix $\Sigma$,
+\begin{formulabox}
+\[
+  \mathrm{VaR}_{\alpha}^{\mathrm{param}}
+  =
+  z_{\alpha}\sqrt{w^\top \Sigma w}.
+\]
+\end{formulabox}
+
+This is fast and useful for limit checks, but it misses skew, kurtosis, optionality, and jump-to-default effects. Large banks therefore operate several market-risk views simultaneously:
+\begin{itemize}
+  \item fast parametric approximations for pre-trade checks,
+  \item historical and filtered historical simulation for core limit reporting,
+  \item expected shortfall style tail metrics for capital and governance,
+  \item stress scenarios and reverse stress for non-local losses.
+\end{itemize}
+
+For modern trading-book capital, the important distinction is that expected shortfall with liquidity-horizon style adjustments is the regulatory tail metric in FRTB-style internal-model frameworks, while VaR remains more common for internal limits, legacy views, and fast approximations.
+
+\subsection{Aggregation Problem}
+
+Risk is measured at multiple levels:
+\begin{itemize}
+  \item trade,
+  \item trader,
+  \item desk,
+  \item business line,
+  \item legal entity,
+  \item and group.
+\end{itemize}
+
+Aggregation is not trivial because diversification, concentration, liquidity horizons, and legal-entity restrictions all matter. The key failure mode is believing firm-wide diversification is fully usable when the actual constraint binds at desk or entity level.
+
+\subsection{Stress Testing}
+
+If $x^{(0)}$ is the current market state and $x^{(s)}$ a stressed state, scenario loss is
+\begin{formulabox}
+\[
+  L^{(s)} = V(x^{(0)}) - V(x^{(s)}).
+\]
+\end{formulabox}
+
+Useful scenarios are not just historical replays. A bank typically uses:
+\begin{itemize}
+  \item \textbf{historical scenarios} such as crisis snapshots,
+  \item \textbf{hypothetical scenarios} such as sovereign spread blowouts,
+  \item \textbf{reverse stress} to find the smallest shock set that breaks a limit or ratio.
+\end{itemize}
+
+The organizational importance is that stress outputs propagate beyond market risk into liquidity, collateral, and capital planning.
+
+\section{Counterparty Credit Risk, XVA, and Collateral}
+
+\subsection{Exposure Profiles}
+
+For a future netting-set value $V(t)$, positive exposure is
+\begin{formulabox}
+\[
+  E(t) = \max(V(t),0).
+\]
+\end{formulabox}
+
+Expected exposure and expected positive exposure are then
+\begin{formulabox}
+\[
+  \mathrm{EE}(t) = \mathbb{E}[E(t)],
+  \qquad
+  \mathrm{EPE} = \frac{1}{T}\int_0^T \mathrm{EE}(t)\,dt
+\]
+\end{formulabox}
+
+and potential future exposure at confidence level $\alpha$ is
+\begin{formulabox}
+\[
+  \mathrm{PFE}_{\alpha}(t) = Q_{\alpha}(E(t)).
+\]
+\end{formulabox}
+
+These objects drive limit monitoring, collateral calls, initial margin calibration, and pricing adjustments.
+
+\subsection{CVA and Related Adjustments}
+
+At global-bank scale, counterparty risk is managed primarily at the \emph{netting-set} level, not trade by trade. The exposure object used for pricing and limits is therefore typically post-netting and, where relevant, post-collateral with explicit margin-period-of-risk treatment.
+
+The unilateral CVA of a counterparty netting set is commonly written as
+\begin{formulabox}
+\[
+  \mathrm{CVA}
+  =
+  (1-R_c)
+  \int_0^T
+  \mathrm{EE}^{\mathrm{net,coll}}(t)\,
+  d\mathrm{PD}_c(t)\,
+  D(t),
+\]
+\[
+  \mathrm{CVA}
+  \approx
+  \sum_{i=1}^{m}
+  (1-R_c)\,
+  \mathrm{EE}^{\mathrm{net,coll}}(t_i)\,
+  \Delta \mathrm{PD}_c(t_i)\,
+  D(t_i).
+\]
+\end{formulabox}
+
+Here $R_c$ is recovery, $\mathrm{PD}_c$ is the counterparty default curve, and $D(t)$ is the discount factor. Related adjustments include:
+\begin{itemize}
+  \item \textbf{DVA:} own-default adjustment,
+  \item \textbf{FVA:} funding cost of uncollateralized exposure,
+  \item \textbf{MVA:} funding cost of initial margin,
+  \item \textbf{ColVA:} collateral rate mismatch effects,
+  \item \textbf{KVA:} cost of capital required to support the trade.
+\end{itemize}
+
+\subsection{Collateralized Exposure}
+
+Under a CSA with variation margin $VM(t)$, threshold $TH$, and remargining frictions, a simple approximation is
+\begin{formulabox}
+\[
+  E^{\mathrm{net,coll}}(t)
+  =
+  \max\bigl(V(t)-VM(t)-TH,0\bigr) + \mathrm{MPOR\ AddOn}.
+\]
+\end{formulabox}
+
+Here $V(t)$ should be interpreted as the \emph{netting-set} mark after legally enforceable netting, not as a standalone trade mark. The margin-period-of-risk add-on captures the fact that exposure can regrow between the last successful margin exchange and closeout.
+
+\subsection{Wrong-Way Risk}
+
+Independent exposure and default are often too optimistic. If exposure tends to rise exactly when counterparty quality deteriorates, then
+\begin{formulabox}
+\[
+  \mathrm{CVA}_{\mathrm{WWR}} > \mathrm{CVA}_{\mathrm{independent}}.
+\]
+\end{formulabox}
+
+Examples include FX trades with emerging-market sovereigns and commodity exposures to producers whose credit quality co-moves with the underlying commodity.
+
+\section{Loan Credit Risk and Provisioning}
+
+\subsection{Expected Loss and Unexpected Loss}
+
+For a loan or obligor-level exposure,
+\begin{formulabox}
+\[
+  \mathrm{EL} = \mathrm{PD}\times \mathrm{LGD}\times \mathrm{EAD}.
+\]
+\end{formulabox}
+
+Expected loss is a mean quantity. Unexpected loss and tail loss drive capital, portfolio concentration limits, and stress testing.
+
+\subsection{IFRS 9 Style Provisioning}
+
+An educational stylization of lifetime expected credit loss is
+\begin{formulabox}
+\[
+  \mathrm{ECL}
+  =
+  \sum_{t=1}^{T}
+  \mathrm{PD}_t
+  \times
+  \mathrm{LGD}_t
+  \times
+  \mathrm{EAD}_t
+  \times
+  D(t).
+\]
+\end{formulabox}
+
+Stage migration matters:
+\begin{itemize}
+  \item \textbf{Stage 1:} typically 12-month loss recognition,
+  \item \textbf{Stage 2:} lifetime loss recognition after significant deterioration,
+  \item \textbf{Stage 3:} credit-impaired assets.
+\end{itemize}
+
+This means a bank can take a large provisioning hit before default has occurred. That is one reason finance, credit, and the businesses can disagree strongly during deteriorating macro conditions.
+
+\subsection{Concentration}
+
+Portfolio loss is rarely the sum of independent obligor losses. Sector, geography, sponsor, and wrong-way concentrations create convexity in bad states. A desk may look diversified by name count but still be concentrated in one macro factor.
+
+\section{Treasury, ALM, and Internal Funding}
+
+\subsection{Why Treasury Matters Quantitatively}
+
+Treasury is the internal market for balance sheet. Without treasury transfer pricing, desks would systematically overstate profitability by ignoring the cost of long-dated funding, liquidity optionality, collateral drag, and structural rate risk.
+
+\subsection{Repricing Gap and NII}
+
+For bucket $b$, repricing gap is
+\begin{formulabox}
+\[
+  \mathrm{Gap}_b = A_b - L_b,
+\]
+\[
+  \Delta \mathrm{NII}
+  \approx
+  \sum_b \mathrm{Gap}_b \Delta r_b.
+\]
+\end{formulabox}
+
+This is a first-order approximation to one-year net interest income sensitivity. It is useful but incomplete because deposits, mortgages, and prepayable assets have behavioral optionality rather than purely contractual maturity.
+
+\subsection{Economic Value of Equity}
+
+Let $CF(t)$ be net balance-sheet cashflows. Then
+\begin{formulabox}
+\[
+  \mathrm{EVE} = \sum_t D(t)CF(t).
+\]
+\end{formulabox}
+
+Under a duration-gap approximation,
+\begin{formulabox}
+\[
+  \Delta \mathrm{EVE}
+  \approx
+  -DG \times A \times \Delta y,
+\]
+\[
+  DG = D_A - \frac{L}{A}D_L,
+\]
+\end{formulabox}
+where $D_A$ and $D_L$ are asset and liability durations. This is still a simplification; embedded options and deposit betas can dominate actual outcomes.
+
+\subsection{Funds Transfer Pricing}
+
+A stylized internal FTP curve for desk $i$ at tenor $T$ is
+\begin{formulabox}
+\[
+  \mathrm{FTP}_i(T)
+  =
+  r^{\mathrm{base}}(T)
+  + \lambda^{\mathrm{liq}}(T)
+  + c_i^{\mathrm{optional}}(T)
+  + c_i^{\mathrm{capital}}(T)
+  + c_i^{\mathrm{scarcity}}(T).
+\]
+\end{formulabox}
+
+This formula makes internal economics explicit:
+\begin{itemize}
+  \item long-dated assets should not be funded as if they were overnight,
+  \item structurally illiquid products should consume a liquidity premium,
+  \item businesses that consume scarce leverage or capital should see a higher internal hurdle rate.
+\end{itemize}
+
+\subsection{Liquidity Ratios}
+
+Two stylized regulatory constraints are
+\begin{formulabox}
+\[
+  \mathrm{LCR}
+  =
+  \frac{\mathrm{HQLA}}{\mathrm{Net\ Cash\ Outflows}_{30d}},
+  \qquad
+  \mathrm{NSFR}
+  =
+  \frac{\mathrm{Available\ Stable\ Funding}}{\mathrm{Required\ Stable\ Funding}}.
+\]
+\end{formulabox}
+
+The key practical point is that liquidity can bind before solvency does. A bank can be economically solvent and still fail if it cannot meet withdrawals, roll wholesale funding, or post collateral fast enough.
+
+\section{Capital, Performance Measurement, and Limits}
+
+\subsection{Regulatory and Economic Capital}
+
+Risk managers, finance, and treasury distinguish at least four notions:
+\begin{itemize}
+  \item accounting reserves,
+  \item regulatory capital,
+  \item economic capital,
+  \item management buffers above binding minima.
+\end{itemize}
+
+Confusing these quantities is a standard source of poor decision-making.
+
+\subsection{Core Ratios}
+
+The most visible solvency metric is
+\begin{formulabox}
+\[
+  \mathrm{CET1\ Ratio} = \frac{\mathrm{CET1}}{\mathrm{RWA}}.
+\]
+\end{formulabox}
+
+A leverage-style metric is
+\begin{formulabox}
+\[
+  \mathrm{Leverage\ Ratio} = \frac{\mathrm{Tier\ 1\ Capital}}{\mathrm{Exposure\ Measure}}.
+\]
+\end{formulabox}
+
+Even when a desk believes a trade is low risk, treasury or finance may object because it expands the leverage exposure measure or consumes too much liquidity.
+
+\subsection{RAROC}
+
+A simplified economic performance metric is
+\begin{formulabox}
+\[
+  \mathrm{RAROC}
+  =
+  \frac{\mathrm{Revenue}
+  - \mathrm{ExpectedLoss}
+  - \mathrm{FundingCost}
+  - \mathrm{OperatingCost}}
+  {\mathrm{EconomicCapital}}.
+\]
+\end{formulabox}
+
+RAROC is not a law of nature, but it is a useful language for adjudicating internal trade-offs. High nominal P\&L with poor capital efficiency is often a bad business.
+
+\section{Compute, Data, and Systems at Global-Bank Scale}
+
+\subsection{Why Compute Is a First-Class Constraint}
+
+The bank's quantitative workload has two contradictory requirements:
+\begin{itemize}
+  \item \textbf{low latency} for pricing, quoting, and pre-trade checks,
+  \item \textbf{high throughput} for overnight risk, XVA, stress, finance, and regulatory production.
+\end{itemize}
+
+\subsection{Event Flow}
+
+The minimal event sequence is:
+\begin{enumerate}
+  \item market data update or client trade arrives,
+  \item trade capture normalizes terms and books the event,
+  \item pricing service marks the trade and computes sensitivities,
+  \item risk service aggregates Greeks, VaR/ES, scenarios, and breaches,
+  \item credit/XVA service updates exposures and valuation adjustments,
+  \item collateral system updates margin and dispute state,
+  \item treasury re-prices funding and balance-sheet usage,
+  \item finance consumes the same state for P\&L, reserves, and capital reporting.
+\end{enumerate}
+
+The dependency graph is the real system. The mathematics is only one layer.
+
+\subsection{Order-of-Magnitude Compute}
+
+\begin{center}
+\small
+\begin{tabular}{p{0.25\textwidth} p{0.22\textwidth} p{0.35\textwidth}}
+\toprule
+\textbf{Workload} & \textbf{Typical Scale} & \textbf{Notes} \\
+\midrule
+Vanilla pricing request & microseconds to milliseconds & used in quoting and intraday hedging \\
+Structured trade pricing & milliseconds to seconds & tree, PDE, local/stochastic vol, or nested MC approximations \\
+Desk market-risk run & $10^4$--$10^6$ revaluations & depending on scenario count and product mix \\
+Bank-wide XVA run & $10^7$--$10^9$ trade-path-date evaluations & reduced by netting, regression, and caching \\
+IFRS 9 / retail credit run & millions of accounts over multiple macro scenarios & heavily parallel batch workload \\
+Enterprise stress testing & hundreds to thousands of scenarios across books and horizons & often hybrid full revaluation plus sensitivities \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Complexity Sketches}
+
+If a bank has $N_{\mathrm{trades}}$ trades, $N_{\mathrm{scen}}$ scenarios, and $N_{\mathrm{dates}}$ future dates, then brute-force XVA-style exposure work is roughly
+\begin{formulabox}
+\[
+  O(N_{\mathrm{trades}}N_{\mathrm{scen}}N_{\mathrm{dates}}).
+\]
+\end{formulabox}
+
+If a retail credit engine has $N_{\mathrm{acct}}$ accounts, $N_{\mathrm{macro}}$ scenarios, and $N_{\mathrm{qtr}}$ forecast quarters, then a simple workload proxy is
+\begin{formulabox}
+\[
+  O(N_{\mathrm{acct}}N_{\mathrm{macro}}N_{\mathrm{qtr}}).
+\]
+\end{formulabox}
+
+That is why banks rely on:
+\begin{itemize}
+  \item distributed CPU grids and, increasingly, GPU acceleration for specific workloads,
+  \item cached curves, vol surfaces, and scenario blocks,
+  \item netting-set aggregation instead of trade-by-trade recomputation where valid,
+  \item surrogate models, regressions, and sensitivity-based approximations for non-material positions,
+  \item strict model versioning and reproducible data snapshots.
+\end{itemize}
+
+\subsection{What Fails in Practice}
+
+The hard parts are usually:
+\begin{itemize}
+  \item stale or inconsistent market data,
+  \item legal-entity mapping errors,
+  \item disagreement between front-office and risk marks,
+  \item incomplete product representation in control systems,
+  \item and non-reproducible overnight runs caused by dependency drift.
+\end{itemize}
+
+\section{How the Components Interact and Compete}
+
+\subsection{Front Office vs Market Risk}
+
+The desk wants limit headroom, higher inventory tolerance, and wider ability to warehouse basis risk. Market risk wants conservative aggregation, robust tail metrics, and faster escalation when positions become nonlinear or concentrated.
+
+\subsection{Front Office vs XVA}
+
+Sales and trading want tighter client prices. XVA wants compensation for counterparty quality, collateral asymmetry, funding tenor, and initial margin. This is not a philosophical disagreement; it is a direct dispute over whether desk-reported revenue is real after balance-sheet costs.
+
+\subsection{Front Office vs Treasury}
+
+Desks prefer cheap, long-dated internal funding and flexible balance-sheet allocation. Treasury wants stable funding, low liquidity burn, and efficient use of scarce leverage exposure. A repo desk, prime services business, and long-dated rates desk can all be profitable in isolation while competing for the same scarce balance sheet.
+
+\subsection{Credit Risk vs Markets}
+
+Credit officers focus on default, concentration, and wrong-way risk. Markets focus on spread capture and client flow. A trade can look attractive on expected spread yet be rejected because it fills a concentration bucket or creates tail exposure under a stressed collateral dispute.
+
+\subsection{Finance vs Trading}
+
+Finance needs explainable, auditable numbers and reserve frameworks that reconcile with the general ledger. Trading wants risk-sensitive fair values and timely P\&L. Disputes often arise over valuation reserves, day-one P\&L, funding transfer pricing, and whether certain gains are distributable versus purely accounting.
+
+\subsection{Model Validation vs Everyone}
+
+Model validation is structurally adversarial in a healthy way. Validators are supposed to ask whether the desk's favored model is biased, whether risk approximations understate tails, whether backtesting supports the claimed use, and whether a simpler challenger model reveals fragility. This can delay releases, but it prevents the bank from optimizing around a broken proxy.
+
+\subsection{A Useful Internal Value Equation}
+
+A stylized desk-level value equation is
+\begin{formulabox}
+\[
+  \mathrm{DeskValue}
+  \approx
+  \mathrm{ClientRevenue}
+  - \mathrm{HedgeCost}
+  - \mathrm{XVA}
+  - \mathrm{FTP}
+  - \mathrm{CapitalCharge}
+  - \mathrm{ExpectedLoss}
+  - \mathrm{OpEx}.
+\]
+\end{formulabox}
+
+The purpose of the control functions is not to eliminate disagreement. It is to force the disagreement to become measurable before it becomes a real loss.
+
+\section{An End-to-End Example}
+
+Consider a long-dated interest-rate swap with a corporate client.
+\begin{enumerate}
+  \item The rates desk computes a clean price from projected floating cashflows and discount factors.
+  \item Credit and XVA estimate expected exposure, CVA, and the cost of initial margin under the applicable netting set and CSA.
+  \item Treasury computes the FTP charge implied by tenor, currency, and balance-sheet usage.
+  \item Market risk updates DV01, curve-bucket sensitivities, stress losses, and desk limit utilization.
+  \item Credit risk checks counterparty headroom and concentration.
+  \item Finance determines booking, reserves, and the path by which the trade enters reported P\&L and capital.
+\end{enumerate}
+
+The quote that finally goes to the client reflects all of these layers. This is why ``the trader priced the trade'' is an incomplete description of what actually happened.
+
+\section{Model-Risk and Educational Caveats}
+
+Several caveats are essential for correctness:
+\begin{itemize}
+  \item no single model is valid across all products and horizons,
+  \item pricing values, management P\&L, accounting values, and regulatory capital numbers are related but not identical,
+  \item simplified formulas such as duration-gap, parametric VaR, or independent-exposure CVA are approximations rather than exact truth,
+  \item diversification is never fully free because legal entities, liquidity horizons, and concentration limits restrict its usability,
+  \item and compute scale claims depend strongly on product mix, booking architecture, scenario design, and approximation policy.
+\end{itemize}
+
+\section{Independent Review Outcome}
+
+An independent reviewer was asked to validate the document for technical correctness, with focus on the main failure modes in a bank-wide quant explanation: conflating pricing with accounting, conflating expected loss with capital, overstating diversification, understating collateral and liquidity frictions, and presenting approximate methods as exact.
+
+The review identified three material issues in the first draft and all three were corrected in this version:
+\begin{itemize}
+  \item the executable pricing formula now explicitly distinguishes accounting fair value from internal charges such as KVA and bid-ask,
+  \item the CCR/XVA section now states that exposure is netting-set and collateral aware, with margin-period-of-risk treatment,
+  \item the market-risk section now clarifies that expected shortfall, not plain VaR, is the key regulatory tail metric in FRTB-style trading-book capital.
+\end{itemize}
+
+Residual caveat: many formulas here are intentionally stylized for teaching and would need product-specific and jurisdiction-specific refinement before production use.
+
+\section{Conclusion}
+
+From a quant perspective, a global bank is a control system built on top of stochastic valuation, scenario aggregation, funding allocation, capital constraints, and governance. Trading creates revenue opportunities, but risk, treasury, credit, finance, and validation determine whether that revenue is real, fundable, survivable, and reportable.
+
+That is the curtain behind the industry: banks are not only trading machines. They are optimization machines operating under uncertainty, with capital and liquidity as scarce state variables and with mathematics serving as the language that allows competing functions to negotiate over the same balance sheet.
+
+\end{document}

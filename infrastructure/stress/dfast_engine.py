@@ -19,31 +19,51 @@ log = structlog.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Scenario definitions
+# Populated from official 2025 Fed DFAST parameters + live FRED macro data.
+# Hardcoded fallback is used if the fetch fails at startup.
 # ---------------------------------------------------------------------------
 
-SCENARIOS: dict[str, dict] = {
+_SCENARIOS_FALLBACK: dict[str, dict] = {
     "baseline": {
-        "gdp": +0.025,          # annual GDP growth rate
-        "ur_delta": 0.0,        # unemployment rate change (pp)
-        "eq_shock": 0.0,        # equity price shock (fraction)
-        "rate_bps": +25,        # interest rate shock (bps)
-        "equity_shock_pct": 0.0,
+        "gdp": +0.022,
+        "ur_delta": 0.0,
+        "eq_shock": +0.03,
+        "rate_bps": -30,
+        "equity_shock_pct": +0.03,
     },
     "adverse": {
-        "gdp": -0.010,
-        "ur_delta": 3.0,
-        "eq_shock": -0.20,
-        "rate_bps": -100,
-        "equity_shock_pct": -0.20,
+        "gdp": -0.008,
+        "ur_delta": 2.5,
+        "eq_shock": -0.15,
+        "rate_bps": -280,
+        "equity_shock_pct": -0.15,
     },
     "severely_adverse": {
-        "gdp": -0.050,
+        "gdp": -0.036,
         "ur_delta": 6.0,
-        "eq_shock": -0.50,
-        "rate_bps": -200,
-        "equity_shock_pct": -0.50,
+        "eq_shock": -0.55,
+        "rate_bps": -350,
+        "equity_shock_pct": -0.55,
     },
 }
+
+
+def _load_official_scenarios() -> dict[str, dict]:
+    """
+    Load official 2025 Fed DFAST scenarios calibrated to live macro.
+    Falls back to hardcoded parameters on any failure.
+    """
+    try:
+        from infrastructure.market_data.dfast_scenarios import build_scenarios
+        scenarios = build_scenarios()
+        log.info("dfast.scenarios_loaded", source="DFAST 2025 Official / FRED")
+        return scenarios
+    except Exception as exc:
+        log.warning("dfast.scenarios_fallback", error=str(exc))
+        return _SCENARIOS_FALLBACK
+
+
+SCENARIOS: dict[str, dict] = _load_official_scenarios()
 
 
 @dataclass

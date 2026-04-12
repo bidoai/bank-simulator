@@ -112,8 +112,32 @@ class FTPEngine:
     def _product_type(self, ticker: str) -> str:
         return self.PRODUCT_MAP.get(ticker.upper(), "default")
 
-    def calculate_desk_charges(self, positions: list[dict]) -> list[DeskFTPCharge]:
-        """Group positions by desk/book_id and compute FTP charge per desk."""
+    def calculate_desk_charges(
+        self, positions: list[dict], use_dynamic_curve: bool = False
+    ) -> list[DeskFTPCharge]:
+        """Group positions by desk/book_id and compute FTP charge per desk.
+
+        When use_dynamic_curve=True, delegates curve lookup to DynamicFTPEngine
+        (SOFR OIS + bank spread + liquidity premium). Falls back to static SwapCurve
+        when False (backward compatible).
+        """
+        if use_dynamic_curve:
+            from infrastructure.treasury.ftp_dynamic import dynamic_ftp_engine
+            dynamic_result = dynamic_ftp_engine.calculate_desk_ftp(positions)
+            now = dynamic_result["as_of"]
+            charges: list[DeskFTPCharge] = []
+            for d in dynamic_result["by_desk"]:
+                charges.append(DeskFTPCharge(
+                    desk=d["desk"],
+                    notional_funded_usd=d["notional_funded_usd"],
+                    avg_tenor_years=d["avg_tenor_years"],
+                    ftp_rate_pct=d["ftp_rate_pct"],
+                    daily_charge_usd=d["daily_charge_usd"],
+                    annual_charge_usd=d["annual_charge_usd"],
+                    as_of=now,
+                ))
+            return sorted(charges, key=lambda c: c.annual_charge_usd, reverse=True)
+
         from collections import defaultdict
         desks: dict[str, dict] = defaultdict(lambda: {"notional": 0.0, "tenor_weighted": 0.0})
 

@@ -17,6 +17,8 @@
     { path: '/xva',       label: 'XVA Analytics'   },
     { path: '/models',    label: 'Model Governance' },
     { path: '/scenarios', label: 'Scenarios'       },
+    { path: '/treasury',  label: 'Treasury'         },
+    { path: '/liquidity', label: 'Liquidity'       },
   ];
 
   var ACCENT  = '#58a6ff';
