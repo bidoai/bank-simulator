@@ -205,15 +205,18 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 
 ### TODO-050: Limit Utilization Callbacks with Actions (P4)
 **What:** Wire `LimitManager` breach callbacks to trigger real actions: YELLOW → log escalation to desk head; ORANGE → log escalation to Head of Trading; RED → auto-suspend desk (set a suspend flag OMS checks); BREACH → notify CRO. Currently callbacks are registered but do nothing.
-**Status:** Open
+**Context:** `infrastructure/risk/limit_actions.py` — `LimitActionEngine` singleton. Lazy registration on first `is_desk_suspended()` call. Status-change callback maps RED/BREACH to desk suspension, GREEN/YELLOW/ORANGE to auto-lift. OMS checks suspension at gate 0 of `_pre_trade_check`. API: `GET /api/risk/suspensions`, `POST /api/risk/suspensions/{desk}/lift`.
+**Status:** ✅ DONE — 2026-04-12
 
 ### TODO-051: Securities Finance + Securitized Products Trade Booking (P5)
 **What:** Allow OMS to book trades into SecFin and Securitized Products desks. These should draw from the SECURITIES_FINANCE capital pool, check their own notional limits, and show up in the blotter. Currently these desks have analytics but no trade booking flow.
-**Status:** Open
+**Context:** OTC price fallback dict `_OTC_PRICES` in `oms.py` — REPO_UST/MBS/EQUITY_LEND/PRIME_BROK at par, FNMA_TBA/SPEC_POOL/AUTO_ABS/CMBS_AA/CLO_AAA at market prices. `NOTIONAL_SECFIN` ($50B) and `NOTIONAL_SECURITIZED` ($10B) limits added to `limit_manager.py`. Capital allocation framework updated with SECURITIES_FINANCE and SECURITIZED desks. Notional limit updated post-booking. Booking endpoints: `POST /api/securities-finance/book-trade`, `POST /api/securitized/book-trade`.
+**Status:** ✅ DONE — 2026-04-12
 
 ### TODO-052: RAROC Gate on New Positions (P6)
 **What:** Add a RAROC pre-trade check: estimate incremental RAROC for the proposed trade (revenue = expected desk spread × notional × tenor; EC = asset class economic capital). If incremental RAROC < hurdle rate (12%) and desk is already below hurdle, require approval flag in trade request.
-**Status:** Open
+**Context:** Gate 7 in `oms._pre_trade_check()`. Incremental RAROC = (spread × notional × tenor - EL - FTP) / EC. Only blocks if BOTH incremental RAROC < 12% AND desk portfolio is already below hurdle. `override_raroc: bool = False` field on `OrderRequest` and `submit_order()` bypasses gate. Available on all booking routes including SecFin and Securitized.
+**Status:** ✅ DONE — 2026-04-12
 
 ---
 

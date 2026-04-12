@@ -16,13 +16,14 @@ Shadowed (now live):
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 import aiosqlite
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from api.trading_broadcaster import trading_broadcaster
@@ -61,6 +62,7 @@ class OrderRequest(BaseModel):
     expiry_date: Optional[str] = None       # ISO date string
     product_subtype: Optional[str] = None   # "irs","cds","fwd","option","gov_bond","spot","future"
     spread_bps: Optional[float] = None      # CDS spread at booking
+    override_raroc: bool = False            # P6: bypass RAROC gate (use when desk is below-hurdle but trade is strategically necessary)
 
 
 # ---------------------------------------------------------------------------
@@ -90,11 +92,19 @@ async def _init_db() -> None:
                 limit_status    TEXT,
                 counterparty_id TEXT,
                 product_subtype TEXT,
-                product_details TEXT
+                product_details TEXT,
+                pre_trade_message TEXT,
+                limit_headroom_pct REAL
             )
         """)
         # Migrate existing tables — SQLite ignores duplicate column errors
-        for col in ("counterparty_id TEXT", "product_subtype TEXT", "product_details TEXT"):
+        for col in (
+            "counterparty_id TEXT",
+            "product_subtype TEXT",
+            "product_details TEXT",
+            "pre_trade_message TEXT",
+            "limit_headroom_pct REAL",
+        ):
             try:
                 await db.execute(f"ALTER TABLE oms_trades ADD COLUMN {col}")
             except Exception:
@@ -109,7 +119,7 @@ async def _persist_trade(conf_dict: dict) -> None:
         async with aiosqlite.connect(_DB_PATH) as db:
             await db.execute(
                 """INSERT OR REPLACE INTO oms_trades VALUES
-                   (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     conf_dict["trade_id"],
                     conf_dict["ticker"],
@@ -128,11 +138,135 @@ async def _persist_trade(conf_dict: dict) -> None:
                     conf_dict.get("counterparty_id"),
                     conf_dict.get("product_subtype"),
                     json.dumps(conf_dict["product_details"]) if conf_dict.get("product_details") else None,
+                    conf_dict.get("pre_trade_message"),
+                    conf_dict.get("limit_headroom_pct"),
                 ),
             )
             await db.commit()
     except Exception as exc:
         log.error("oms.persist_failed", error=str(exc))
+
+
+def _safe_parse_json(raw: str | None) -> dict:
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        return {}
+
+
+def _matches_history_filters(
+    trade: dict,
+    *,
+    trade_id: str | None = None,
+    book: str | None = None,
+    instrument: str | None = None,
+) -> bool:
+    if trade_id and not (trade.get("trade_id", "").startswith(trade_id)):
+        return False
+    if book and trade.get("book_id") != book:
+        return False
+    if instrument and instrument.lower() not in (trade.get("instrument") or "").lower():
+        return False
+    return True
+
+
+def _format_trade_record(record: dict) -> dict:
+    executed_at = record.get("executed_at")
+    time_value = record.get("time")
+    if executed_at and not time_value:
+        try:
+            time_value = datetime.fromisoformat(executed_at.replace("Z", "+00:00")).strftime("%H:%M:%S")
+        except Exception:
+            time_value = executed_at
+
+    trade_id = record.get("trade_id") or record.get("id")
+    instrument = record.get("instrument") or record.get("ticker")
+    quantity = record.get("qty", record.get("quantity"))
+    price = record.get("price", record.get("fill_price"))
+    book = record.get("book") or record.get("book_id")
+
+    return {
+        "id": trade_id,
+        "trade_id": trade_id,
+        "time": time_value,
+        "executed_at": executed_at,
+        "book": book,
+        "book_id": book,
+        "desk": record.get("desk"),
+        "instrument": instrument,
+        "ticker": instrument,
+        "side": record.get("side"),
+        "qty": quantity,
+        "quantity": quantity,
+        "price": price,
+        "fill_price": price,
+        "notional": record.get("notional"),
+        "status": record.get("status", "FILLED"),
+        "limit_status": record.get("limit_status"),
+        "counterparty_id": record.get("counterparty_id"),
+        "product_subtype": record.get("product_subtype"),
+        "product_details": record.get("product_details") if isinstance(record.get("product_details"), dict) else _safe_parse_json(record.get("product_details")),
+        "greeks": record.get("greeks") if isinstance(record.get("greeks"), dict) else _safe_parse_json(record.get("greeks_json")),
+        "var_before": record.get("var_before"),
+        "var_after": record.get("var_after"),
+        "pre_trade_message": record.get("pre_trade_message"),
+        "limit_headroom_pct": record.get("limit_headroom_pct"),
+    }
+
+
+async def _query_trade_history(
+    *,
+    trade_id: str | None = None,
+    book: str | None = None,
+    instrument: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    from_ts: str | None = None,
+    to_ts: str | None = None,
+) -> list[dict]:
+    if not Path(_DB_PATH).exists():
+        return []
+
+    clauses = []
+    params: list[object] = []
+
+    if trade_id:
+        clauses.append("trade_id LIKE ?")
+        params.append(trade_id if "%" in trade_id else trade_id + "%")
+    if book:
+        clauses.append("book_id = ?")
+        params.append(book)
+    if instrument:
+        clauses.append("ticker LIKE ?")
+        params.append(instrument if "%" in instrument else "%" + instrument + "%")
+    if from_ts:
+        clauses.append("executed_at >= ?")
+        params.append(from_ts)
+    if to_ts:
+        clauses.append("executed_at <= ?")
+        params.append(to_ts)
+
+    sql = """
+        SELECT trade_id, ticker, side, quantity, fill_price, notional, desk, book_id,
+               executed_at, greeks_json, var_before, var_after, limit_status,
+               counterparty_id, product_subtype, product_details,
+               pre_trade_message, limit_headroom_pct
+        FROM oms_trades
+    """
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY executed_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    async with aiosqlite.connect(_DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(sql, params)
+        rows = await cursor.fetchall()
+
+    return [_format_trade_record(dict(row)) for row in rows]
 
 
 def _get_prices() -> dict[str, float]:
@@ -186,6 +320,7 @@ async def submit_order(order: OrderRequest) -> dict:
                     counterparty_id=order.counterparty_id,
                     product_subtype=order.product_subtype,
                     product_details=product_details,
+                    override_raroc=order.override_raroc,
                 ),
             )
         except (ValueError, RuntimeError) as exc:
@@ -209,9 +344,62 @@ async def submit_order(order: OrderRequest) -> dict:
 # ---------------------------------------------------------------------------
 
 @router.get("/trading/blotter")
-def get_blotter() -> dict:
-    trades = oms.get_blotter()
-    return {"trades": trades, "count": len(trades)}
+async def get_blotter(
+    trade_id: str | None = Query(default=None),
+    book: str | None = Query(default=None),
+    instrument: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=250),
+    offset: int = Query(default=0, ge=0),
+    from_ts: str | None = Query(default=None),
+    to_ts: str | None = Query(default=None),
+) -> dict:
+    trades = await _query_trade_history(
+        trade_id=trade_id,
+        book=book,
+        instrument=instrument,
+        limit=limit,
+        offset=offset,
+        from_ts=from_ts,
+        to_ts=to_ts,
+    )
+
+    # Fall back to in-memory blotter for live/demo use if persistence is empty.
+    if not trades:
+        memory_trades = [_format_trade_record(t) for t in oms.get_blotter(limit=1000)]
+        trades = [
+            t for t in memory_trades
+            if _matches_history_filters(t, trade_id=trade_id, book=book, instrument=instrument)
+        ]
+        trades = trades[offset:offset + limit]
+
+    return {
+        "trades": trades,
+        "count": len(trades),
+        "filters": {
+            "trade_id": trade_id,
+            "book": book,
+            "instrument": instrument,
+            "limit": limit,
+            "offset": offset,
+            "from_ts": from_ts,
+            "to_ts": to_ts,
+        },
+    }
+
+
+@router.get("/trading/trades/{trade_id}")
+async def get_trade_detail(trade_id: str) -> dict:
+    trades = await _query_trade_history(trade_id=trade_id, limit=50)
+    for trade in trades:
+        if trade["trade_id"] == trade_id:
+            return trade
+
+    for trade in oms.get_blotter(limit=1000):
+        formatted = _format_trade_record(trade)
+        if formatted["trade_id"] == trade_id:
+            return formatted
+
+    raise HTTPException(status_code=404, detail=f"Trade not found: {trade_id}")
 
 
 # ---------------------------------------------------------------------------

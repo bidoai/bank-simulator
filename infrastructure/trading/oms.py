@@ -44,6 +44,46 @@ _DESK_VOLS: dict[str, float] = {
     "COMMODITIES": 0.18,
 }
 
+# Fixed fill prices for OTC instruments not in the live feed
+# (repo priced at par; structured products use representative market values)
+_OTC_PRICES: dict[str, float] = {
+    # Securities Finance — repo and stock-borrow at par notional
+    "REPO_UST":    100.0,
+    "REPO_MBS":    100.0,
+    "EQUITY_LEND": 100.0,
+    "PRIME_BROK":  100.0,
+    # Securitized products — representative dirty prices
+    "FNMA_TBA":   98.00,
+    "SPEC_POOL":  98.81,
+    "AUTO_ABS":   99.00,
+    "CMBS_AA":    94.20,
+    "CLO_AAA":    97.50,
+}
+
+# Expected desk spread (bps) used for incremental RAROC estimation
+_DESK_SPREAD_BPS: dict[str, float] = {
+    "EQUITY":             15.0,
+    "RATES":               5.0,
+    "FX":                  3.0,
+    "CREDIT":             50.0,
+    "DERIVATIVES":        80.0,
+    "COMMODITIES":        20.0,
+    "SECURITIES_FINANCE": 20.0,
+    "SECURITIZED":        45.0,
+}
+
+# Representative tenor (years) for RAROC revenue annualisation
+_DESK_TENOR_YEARS: dict[str, float] = {
+    "EQUITY":             0.25,
+    "RATES":              5.0,
+    "FX":                 0.083,
+    "CREDIT":             3.0,
+    "DERIVATIVES":        2.0,
+    "COMMODITIES":        0.5,
+    "SECURITIES_FINANCE": 0.083,
+    "SECURITIZED":        5.0,
+}
+
 
 class OrderManagementSystem:
     """
@@ -94,14 +134,24 @@ class OrderManagementSystem:
         return max(0.01, round(price, 4))
 
     def _pre_trade_check(
-        self, desk: str, ticker: str, qty: float, price: float, counterparty_id: Optional[str] = None
+        self,
+        desk: str,
+        ticker: str,
+        qty: float,
+        price: float,
+        counterparty_id: Optional[str] = None,
+        override_raroc: bool = False,
     ) -> tuple[bool, str, float]:
         """
         Multi-dimensional pre-trade check:
-        1. VaR (incremental estimate)
+        0. Desk suspension (P4)
+        1. VaR headroom
         2. Greeks (Delta, DV01, Vega)
-        3. Concentration (Single-name % of book)
-        4. Large Exposure (Counterparty)
+        3. Single-name concentration
+        4. Large Exposure (counterparty CRE70)
+        5. RWA budget (capital allocation gate)
+        6. SecFin/Securitized notional limit (P5)
+        7. RAROC gate (P6) — bypassable with override_raroc=True
         """
         from infrastructure.risk.var_calculator import VaRCalculator
         from infrastructure.trading.greeks import GreeksCalculator
@@ -109,8 +159,19 @@ class OrderManagementSystem:
         from infrastructure.risk.large_exposures import large_exposures_engine
 
         notional = abs(qty * price)
-        checks_passed = True
         errors = []
+
+        # 0. ── Desk suspension check (P4) ────────────────────────────────────
+        try:
+            from infrastructure.risk.limit_actions import limit_action_engine
+            if limit_action_engine.is_desk_suspended(desk):
+                return False, (
+                    f"Pre-trade REJECTED [SUSPENDED]: {desk} desk is suspended due to a RED "
+                    f"limit breach. CRO approval required. "
+                    f"Use POST /api/risk/suspensions/{desk}/lift to reinstate."
+                ), 0.0
+        except Exception as exc:
+            log.warning("oms.suspension_check_skipped", error=str(exc))
 
         # 1. ── VaR Check ─────────────────────────────────────────────────────
         limit_name = _DESK_LIMIT_MAP.get(desk)
@@ -217,6 +278,50 @@ class OrderManagementSystem:
         except Exception as exc:
             log.warning("oms.rwa_budget_check_skipped", error=str(exc))
 
+        # 6. ── SecFin / Securitized notional limit (P5) ──────────────────────
+        if desk in ("SECURITIES_FINANCE", "SECURITIZED"):
+            limit_key = "NOTIONAL_SECFIN" if desk == "SECURITIES_FINANCE" else "NOTIONAL_SECURITIZED"
+            try:
+                n_lim = risk_service.limit_manager.get_limit(limit_key)
+                if n_lim.hard_limit > 0 and (abs(n_lim.current_value) + notional) >= n_lim.hard_limit:
+                    errors.append(
+                        f"Notional limit breach for {desk}: projected "
+                        f"${(abs(n_lim.current_value) + notional)/1e9:.1f}B "
+                        f"> limit ${n_lim.hard_limit/1e9:.1f}B"
+                    )
+            except KeyError:
+                pass
+
+        # 7. ── RAROC gate (P6) ────────────────────────────────────────────────
+        if not override_raroc:
+            try:
+                from infrastructure.treasury.raroc import (
+                    EC_PARAMS, HURDLE_RATE, PD_BY_RATING, LGD_BY_PRODUCT, raroc_engine,
+                )
+                desk_type = desk.upper()
+                ec_params = EC_PARAMS.get(desk_type, {})
+                ec_pct = (ec_params.get("ec_pct_notional") or ec_params.get("ec_pct_aum") or 0.08)
+                spread_bps   = _DESK_SPREAD_BPS.get(desk, 15.0)
+                tenor        = _DESK_TENOR_YEARS.get(desk, 1.0)
+
+                inc_revenue  = notional * (spread_bps / 10_000.0) * tenor
+                inc_ec       = notional * ec_pct
+                inc_el       = notional * PD_BY_RATING.get("A", 0.001) * LGD_BY_PRODUCT.get("default", 0.45)
+                inc_ftp      = notional * 0.05 * tenor          # 5% FTP rate × tenor
+                inc_net      = inc_revenue - inc_el - inc_ftp
+                inc_raroc    = inc_net / inc_ec if inc_ec > 0 else 0.0
+
+                if inc_raroc < HURDLE_RATE:
+                    desk_raroc = raroc_engine.calculate_desk_raroc(desk, [], 0.0)
+                    if not desk_raroc["above_hurdle"]:
+                        errors.append(
+                            f"RAROC gate: incremental RAROC {inc_raroc:.1%} < hurdle {HURDLE_RATE:.0%} "
+                            f"and {desk} desk portfolio RAROC ({desk_raroc['raroc_pct']:.1f}%) "
+                            f"is already below hurdle. Pass override_raroc=true to bypass."
+                        )
+            except Exception as exc:
+                log.warning("oms.raroc_check_skipped", error=str(exc))
+
         if errors:
             return False, "REJECTED: " + " | ".join(errors), est_var
 
@@ -235,6 +340,7 @@ class OrderManagementSystem:
         counterparty_id: Optional[str] = None,
         product_subtype: Optional[str] = None,
         product_details: Optional[dict] = None,
+        override_raroc: bool = False,   # P6: bypass RAROC gate when True (requires explicit flag)
     ) -> TradeConfirmation:
         """
         Execute a market order synchronously.
@@ -249,6 +355,9 @@ class OrderManagementSystem:
         if quote is None and ("_CALL_" in ticker or "_PUT_" in ticker):
             # Synthetic option ticker — price via BSM on underlying
             fill_price = self._option_fill_price(ticker, product_details)
+        elif quote is None and ticker in _OTC_PRICES:
+            # SecFin / Securitized OTC instrument — use fixed reference price
+            fill_price = _OTC_PRICES[ticker]
         elif quote is None:
             raise ValueError(f"No market data for ticker: {ticker}")
         else:
@@ -257,7 +366,9 @@ class OrderManagementSystem:
         notional = abs(signed_qty * fill_price)
 
         # --- Pre-trade check (hard enforcement — rejected orders raise 422) ---
-        approved, pre_msg, est_var = self._pre_trade_check(desk, ticker, signed_qty, fill_price, counterparty_id)
+        approved, pre_msg, est_var = self._pre_trade_check(
+            desk, ticker, signed_qty, fill_price, counterparty_id, override_raroc
+        )
         if not approved:
             log.warning("oms.pre_trade_rejected", desk=desk, ticker=ticker, qty=qty, reason=pre_msg)
             raise HTTPException(status_code=422, detail=pre_msg)
@@ -293,6 +404,19 @@ class OrderManagementSystem:
         # --- Record RWA consumption ---
         from infrastructure.risk.capital_consumption import capital_consumption
         capital_consumption.record_trade(desk, ticker, notional, counterparty_id)
+
+        # --- Update SecFin / Securitized notional limits after booking (P5) ---
+        if desk in ("SECURITIES_FINANCE", "SECURITIZED"):
+            limit_key = "NOTIONAL_SECFIN" if desk == "SECURITIES_FINANCE" else "NOTIONAL_SECURITIZED"
+            try:
+                positions = risk_service.position_manager.get_all_positions()
+                desk_notional = sum(
+                    abs(p.get("notional", abs(p.get("quantity", 0)) * p.get("avg_cost", 1.0)))
+                    for p in positions if p.get("desk") == desk
+                )
+                risk_service.limit_manager.update(limit_key, desk_notional)
+            except Exception as exc:
+                log.warning("oms.secfin_notional_update_failed", error=str(exc))
 
         # --- Snapshot VaR after ---
         var_after = 0.0

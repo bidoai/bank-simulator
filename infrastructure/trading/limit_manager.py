@@ -119,6 +119,12 @@ DEFAULT_LIMITS: list[dict] = [
          hard_limit=1_800_000_000, unit="USD", desk="FIRM"),
     dict(name="STRESS_RATES_UP", description="Max loss in +200bp rates shock",
          hard_limit=1_400_000_000, unit="USD", desk="FIRM"),
+
+    # ── SecFin / Securitized Notional Limits ─────────────────────────────────
+    dict(name="NOTIONAL_SECFIN",       description="Securities Finance total booked notional",
+         hard_limit=50_000_000_000,  unit="USD", desk="SECURITIES_FINANCE"),
+    dict(name="NOTIONAL_SECURITIZED",  description="Securitized Products total booked notional",
+         hard_limit=10_000_000_000,  unit="USD", desk="SECURITIZED"),
 ]
 
 

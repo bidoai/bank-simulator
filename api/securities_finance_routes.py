@@ -65,3 +65,45 @@ def apply_margin_shock(body: dict) -> dict:
     calls = margin_engine.apply_price_move(asset, change)
     summary = margin_engine.get_margin_summary()
     return {"margin_calls_triggered": calls, "margin_summary": summary}
+
+
+# ---------------------------------------------------------------------------
+# Trade booking — routes to the OMS (P5)
+# ---------------------------------------------------------------------------
+
+class SecFinOrderRequest(BaseModel):
+    book_id: str
+    ticker: str    # REPO_UST | REPO_MBS | EQUITY_LEND | PRIME_BROK
+    side: str      # "buy" (open/lend) | "sell" (unwind/return)
+    qty: float     # notional in USD
+    counterparty_id: str | None = None
+    override_raroc: bool = False
+
+
+from pydantic import BaseModel
+from fastapi import HTTPException
+
+@router.post("/book-trade")
+def book_secfin_trade(order: SecFinOrderRequest) -> dict:
+    """
+    Book a Securities Finance trade into the OMS.
+    Draws from the SECURITIES_FINANCE capital pool; enforces notional and RWA limits.
+    Tickers: REPO_UST, REPO_MBS, EQUITY_LEND, PRIME_BROK
+    """
+    from infrastructure.trading.oms import oms
+    try:
+        conf = oms.submit_order(
+            desk="SECURITIES_FINANCE",
+            book_id=order.book_id,
+            ticker=order.ticker.upper(),
+            side=order.side.lower(),
+            qty=order.qty,
+            counterparty_id=order.counterparty_id,
+            product_subtype="repo" if "REPO" in order.ticker.upper() else "stock_borrow",
+            override_raroc=order.override_raroc,
+        )
+        return conf.model_dump(mode="json")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc))

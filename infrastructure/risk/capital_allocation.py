@@ -49,14 +49,22 @@ _MARKETS_DESK_PCTS: dict[str, float] = {
     "COMMODITIES": 0.03,
 }
 
+# Within SECURITIES_FINANCE: desk allocations as % of SECURITIES_FINANCE CET1
+_SECFIN_DESK_PCTS: dict[str, float] = {
+    "SECURITIES_FINANCE": 0.70,   # Repo, stock lending, prime brokerage
+    "SECURITIZED":        0.30,   # Agency MBS, ABS, CMBS, CLO
+}
+
 # Desk → business line
 DESK_TO_BL: dict[str, str] = {
-    "EQUITY":      "MARKETS",
-    "RATES":       "MARKETS",
-    "FX":          "MARKETS",
-    "CREDIT":      "MARKETS",
-    "DERIVATIVES": "MARKETS",
-    "COMMODITIES": "MARKETS",
+    "EQUITY":             "MARKETS",
+    "RATES":              "MARKETS",
+    "FX":                 "MARKETS",
+    "CREDIT":             "MARKETS",
+    "DERIVATIVES":        "MARKETS",
+    "COMMODITIES":        "MARKETS",
+    "SECURITIES_FINANCE": "SECURITIES_FINANCE",
+    "SECURITIZED":        "SECURITIES_FINANCE",
 }
 
 
@@ -109,6 +117,7 @@ class CapitalAllocationFramework:
 
     def _rebuild(self) -> None:
         markets_cet1 = self._firm_cet1 * _BUSINESS_LINE_PCTS["MARKETS"]
+        secfin_cet1  = self._firm_cet1 * _BUSINESS_LINE_PCTS["SECURITIES_FINANCE"]
 
         for bl, pct in _BUSINESS_LINE_PCTS.items():
             bl_cet1 = self._firm_cet1 * pct
@@ -119,12 +128,17 @@ class CapitalAllocationFramework:
                 for desk, desk_pct in _MARKETS_DESK_PCTS.items():
                     desk_cet1 = markets_cet1 * desk_pct
                     desk_rwa  = desk_cet1 / CET1_MIN_RATIO
-                    da = DeskAllocation(
-                        desk=desk,
-                        business_line=bl,
-                        cet1_allocated_usd=desk_cet1,
-                        rwa_budget_usd=desk_rwa,
-                    )
+                    da = DeskAllocation(desk=desk, business_line=bl,
+                                        cet1_allocated_usd=desk_cet1, rwa_budget_usd=desk_rwa)
+                    desk_allocs[desk] = da
+                    self._desk_allocations[desk] = da
+
+            elif bl == "SECURITIES_FINANCE":
+                for desk, desk_pct in _SECFIN_DESK_PCTS.items():
+                    desk_cet1 = secfin_cet1 * desk_pct
+                    desk_rwa  = desk_cet1 / CET1_MIN_RATIO
+                    da = DeskAllocation(desk=desk, business_line=bl,
+                                        cet1_allocated_usd=desk_cet1, rwa_budget_usd=desk_rwa)
                     desk_allocs[desk] = da
                     self._desk_allocations[desk] = da
 
