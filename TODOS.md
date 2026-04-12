@@ -13,8 +13,8 @@
 
 ### TODO-002: XVA Position Field Mapping ✅ DONE
 **What:** Complete `XVAAdapter.from_positions()` — map `Position.symbol`, `.quantity`, `.avg_entry_price` to pyxva Trade fields
-**Context:** `SimulationXVAService._map_fills_to_pyxva_config()` in `infrastructure/xva/service.py` maps OMS blotter fills to pyxva config. Equity tickers (AAPL/MSFT/SPY/NVDA) excluded from pyxva; CVA computed analytically. Non-equity tickers routed by product type (IRS, FX forward, bond, options).
-**Completed:** v0.3.0.0
+**Context:** `SimulationXVAService._map_fills_to_pyxva_config()` in `infrastructure/xva/service.py` maps OMS blotter fills to pyxva config. Equity tickers (AAPL/MSFT/SPY/NVDA) excluded from pyxva; CVA computed analytically. Non-equity tickers routed by product type (IRS, FX forward, bond, options). `XVAAdapter.from_positions()` now fully implemented (was a dead stub returning [] — fixed in eng review remediation 2026-04-06).
+**Completed:** v0.3.0.0 / fixed 2026-04-06
 
 ### TODO-003: Model Governance AI (Quant Agent Q&A) ✅ DONE
 **What:** `/api/models/chat` endpoint + chat UI on `models.html` — multi-persona Q&A on model cards
@@ -146,6 +146,49 @@
 
 ---
 
+## v0.4.x Live Market Data Integrations (feature/v04-integration-stress-pnl-attribution)
+
+### TODO-041: Yahoo Finance Live Price Seeding ✅ DONE
+**What:** At startup, fetch live prices for all 10/11 simulation tickers from Yahoo Finance and overwrite GBM seed prices.
+**Context:** `infrastructure/market_data/live_seed.py` — `fetch_live_seeds()` maps YF symbols to internal tickers (CL=F → CL1, EURUSD=X → EURUSD, ^TNX → US10Y, ^IRX → _3M). Bond yields converted to prices via first-order DV01 (`P = 100 - ModDur × (y - c)`). US2Y derived from 3M bill × 1.06 proxy. AAPL_CALL_200 from live spot (intrinsic + time value). `MarketDataFeed._apply_live_seeds()` called in `__init__` before GBM starts. Added `yfinance>=0.2.54` to requirements.txt.
+**Completed:** 2026-04-05
+
+### TODO-042: FRED SOFR/UST Yield Curve Integration ✅ DONE
+**What:** Fetch live 12-tenor SOFR/UST yield curve from FRED public CSV endpoint; overwrite `SOFR_OIS` dict in `ftp_dynamic.py` at startup.
+**Context:** `infrastructure/market_data/fred_curve.py` — `fetch_live_curve()` hits FRED for SOFR, DTB4WK, DTB3, DTB6, DGS1–DGS30. Parses CSV backward to find last non-"." value. `ftp_dynamic._load_live_curve()` called at module import; overwrites `SOFR_OIS` in-place so existing `DynamicFTPEngine` instances pick up live values.
+**Completed:** 2026-04-05
+
+### TODO-043: FRED Credit Spreads + Dynamic Risk Calibration ✅ DONE
+**What:** Fetch ICE BofA OAS indices (AAA/AA/A/BBB/HY) from FRED; wire live spreads into FTP engine, stressed VaR calibration, and LCR stress haircuts.
+**Context:** `fred_curve.fetch_credit_spreads()` fetches BAMLC0A1CAAA/BAMLC0A2CAA/BAMLC0A3CA/BAMLC0A4CBBB/BAMLH0A0HYM2. FRED reports in percent; ×100 for bps. Three downstream effects:
+- `ftp_dynamic._load_live_credit_spreads()`: scales `BANK_SPREAD_BPS` by (AA_OAS / 35bps_historical), capped [0.5×, 3×]
+- `stressed_var._calibrate_credit_vol()`: scales `_NORMAL_VOLS["IG_CDX"]` by (BBB_OAS / 100bps), cascades to stressed vol
+- `lcr.LCREngine.calculate_stress()`: widens haircut +5% when BBB OAS > 200bps (market-wide/combined scenarios)
+Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
+**Completed:** 2026-04-05
+
+### TODO-044: DFAST 2025 Official Scenario Import + Live FRED Calibration ✅ DONE
+**What:** Replace hardcoded DFAST scenario parameters with official 2025 Fed Supervisory Scenario values, calibrated to live FRED macro (UNRATE, GDP, 3M T-bill, S&P 500).
+**Context:** `infrastructure/market_data/dfast_scenarios.py` — official 2025 parameters: ur peaks (4.1/6.4/10.0%), cumulative GDP (+5%/-1.9%/-8.2%), equity shocks (+3%/-15%/-55%), rate deltas (−30/−280/−350bps). `fetch_macro_starting_point()` fetches UNRATE, A191RL1Q225SBEA, SP500, DTB3 from FRED. `build_scenarios()` expresses ur_delta relative to live UNRATE. `dfast_engine._load_official_scenarios()` replaces hardcoded dict; fallback retained for FRED outage. `GET /api/stress/dfast/meta` returns active params + source.
+**Completed:** 2026-04-05
+
+### TODO-046: Engineering Review Remediation ✅ DONE
+**What:** Address 5 findings from external engineering review.
+**Context:**
+- Finding 1 (position_manager short lots): BUG CONFIRMED AND FIXED. `apply_trade()` opening branch was appending `[qty, price]` (with negative qty for shorts) instead of `[abs(qty), price]`. This caused `min(remaining, lot_qty)` to go negative on short covers, corrupting realised P&L, avg_cost, and flip handling. Fixed `position_manager.py:113`. Added 7 tests in `tests/test_position_manager.py` covering short open, partial/full cover, cover-at-loss, short-to-long flip, long-to-short flip, and FIFO ordering.
+- Finding 2 (OMS VaR enforcement): Fixed. `submit_order()` now raises `HTTPException(422)` when `_pre_trade_check` returns `approved=False`. Added `from fastapi import HTTPException` import. Updated README.
+- Finding 3 (XVA credit_spread dead): Fixed. Added `credit_spread: float` field to `Counterparty` dataclass, `_RATING_SPREAD` lookup table, populated all 5 seeded counterparties with rating-based spreads, and exposed `credit_spread`/`credit_spread_bps` in `to_dict()`.
+- Finding 4 (XVAAdapter.from_positions stub): Implemented. Maps non-equity positions from `PositionManager.get_all_positions()` to pyxva Trade dicts by product type with representative maturities.
+- Finding 5 (trading_routes static mock): Documented intent with module docstring explaining shadow routing pattern.
+**Completed:** 2026-04-06
+
+### TODO-045: User Manual ✅ DONE
+**What:** Comprehensive narrative reference document explaining the complete flow between all systems.
+**Context:** `USER_MANUAL.md` — ~3,200 words, 12 sections covering capital stack, live market data startup sequence, 9-step order lifecycle, risk management (VaR/correlation/limits/sVaR/FRTB/SA-CCR), collateral & XVA pipeline, treasury & ALM, liquidity (LCR 64.8% intentional breach explained), DFAST live calibration, model governance (SR 11-7, 17 models), boardroom (14 agents), dashboard reference table (11 dashboards), and complete system flow ASCII diagram.
+**Completed:** 2026-04-05
+
+---
+
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
 - Production cloud deployment (pre-v1)
@@ -188,7 +231,10 @@ All three added to registry.json.
 
 ## Phase 4 — Strategic Roadmap (from 2026-04-05 board session)
 
-### TODO-035: End-to-End Integration Stress Scenario — P1
+### TODO-035: End-to-End Integration Stress Scenario ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). 17/18 checks PASS (1 WARN: stress LCR baseline parity — expected). Fixed LCR key (`lcr_ratio_pct`→`lcr_ratio×100`) and sVaR key (`stressed_var_$M`→nested dict).
+
+### TODO-035 (archived): End-to-End Integration Stress Scenario — P1
 **What:** Design and run a single compound crisis scenario that exercises every integrated system simultaneously: equity shock → margin calls triggered → LCR breached → DFAST CET1 depleted → IMA exception counter incremented. Audit each system's output for correctness and cross-system consistency.
 **Why:** We have never run a full simulated market crisis through the integrated stack. Individual modules are tested in isolation; integration gaps are unknown until a scenario forces every pipe to flow at once.
 **Scope:**
@@ -200,7 +246,10 @@ All three added to registry.json.
 
 ---
 
-### TODO-036: Daily P&L Attribution by Greek Bucket — P1
+### TODO-036: Daily P&L Attribution by Greek Bucket ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). `PnLExplainEngine` in `infrastructure/trading/pnl_explain.py`. SOD snapshot taken at startup. `GET /api/trading/pnl-explain` + `POST /api/trading/pnl-explain/reset-sod`. Plotly waterfall chart + per-desk Greek table on `trading.html`. 10 tests.
+
+### TODO-036 (archived): Daily P&L Attribution by Greek Bucket — P1
 **What:** A P&L explain engine that decomposes each day's trading P&L into delta, gamma, vega, theta, and unexplained residual — per desk and firm-wide.
 **Why:** Without P&L explain, the trading desk is a black box. Every real desk head starts the morning with a P&L explain. This is the single most important feature for making the simulation feel like a real trading operation.
 **Scope:**
@@ -217,7 +266,10 @@ All three added to registry.json.
 
 ---
 
-### TODO-037: Credit Portfolio Model (Factor Copula → Credit VaR) — P2
+### TODO-037: Credit Portfolio Model (Factor Copula → Credit VaR) ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). `CreditPortfolioModel` in `infrastructure/credit/portfolio_model.py` — single-factor Gaussian copula, 10k MC scenarios, EL/VaR99/VaR99.9/ES/EC, marginal contributions, loss distribution. New endpoints: `GET /api/credit/portfolio-var`, `/marginal-contribution`, `/loss-distribution`, `POST /api/credit/portfolio-var/scenario`. 18 tests.
+
+### TODO-037 (archived): Credit Portfolio Model (Factor Copula → Credit VaR) — P2
 **What:** A portfolio-level credit risk model generating correlated defaults across the loan book, producing credit VaR, EC allocation, and concentration-adjusted loss distribution.
 **Why:** The IFRS 9 ECL engine computes expected loss loan-by-loan. There is no portfolio-level view of unexpected loss or credit VaR. A real bank allocates economic capital by credit portfolio — this gap means the capital dashboard cannot tie credit risk to the EC framework.
 **Scope:**
@@ -234,7 +286,10 @@ All three added to registry.json.
 
 ---
 
-### TODO-038: Real-Time Event Bus + Intraday Risk Cycle — P2
+### TODO-038: Real-Time Event Bus + Intraday Risk Cycle ✅ DONE
+**Completed:** 2026-04-06 (feature/v04-integration-stress-pnl-attribution). `EventBus` in `infrastructure/events/bus.py` — asyncio.Queue pub/sub with fan-out, 4 event types (TickEvent/TradeBookedEvent/RiskSnapshotEvent/LimitBreachEvent). `IntradayRiskCycle` in `infrastructure/risk/intraday_cycle.py` — 15s risk re-compute loop, 60-snapshot rolling timeline, publishes breach events. MarketDataFeed ticks now publish TickEvents. New endpoints: `GET /api/risk/intraday-timeline`, `GET /api/risk/event-bus`. 10 tests.
+
+### TODO-038 (archived): Real-Time Event Bus + Intraday Risk Cycle — P2
 **What:** Decouple market data ticks from risk recomputation via an in-process event bus (asyncio.Queue). Market feed publishes tick events; risk engine subscribes and recomputes on a 15-second cycle independently of API calls.
 **Why:** All risk computation is currently synchronous and API-triggered. A real bank runs intraday VaR and Greeks on a sub-minute cycle. The simulation can't yet demonstrate a live risk breach alert without a polling client.
 **Scope:**

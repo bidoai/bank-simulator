@@ -244,3 +244,23 @@ async def stressed_var_report():
         k=k,
     )
     return report
+
+
+@router.get("/intraday-timeline")
+async def intraday_timeline():
+    """
+    Rolling 60-snapshot intraday risk timeline (one entry per 15-second cycle).
+    Returns most recent first.
+    """
+    from infrastructure.risk.intraday_cycle import intraday_cycle
+    return {
+        "timeline": intraday_cycle.get_timeline(),
+        "stats":    intraday_cycle.stats(),
+    }
+
+
+@router.get("/event-bus")
+async def event_bus_stats():
+    """Event bus subscription and publication statistics."""
+    from infrastructure.events.bus import event_bus
+    return event_bus.stats()
