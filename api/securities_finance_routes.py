@@ -1,7 +1,8 @@
 """FastAPI routes for the Securities Finance dashboard."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from infrastructure.securities_finance.service import securities_finance_service
 from infrastructure.securities_finance.lifecycle import repo_ladder, margin_engine
@@ -79,9 +80,6 @@ class SecFinOrderRequest(BaseModel):
     counterparty_id: str | None = None
     override_raroc: bool = False
 
-
-from pydantic import BaseModel
-from fastapi import HTTPException
 
 @router.post("/book-trade")
 def book_secfin_trade(order: SecFinOrderRequest) -> dict:

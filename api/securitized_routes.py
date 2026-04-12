@@ -1,7 +1,8 @@
 """FastAPI routes for the Securitized Products dashboard."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from infrastructure.securitized_products.service import securitized_products_service
 
@@ -42,10 +43,6 @@ def mbs_analytics(r0: float | None = None) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Trade booking — routes to the OMS (P5)
 # ---------------------------------------------------------------------------
-
-from pydantic import BaseModel
-from fastapi import HTTPException
-
 
 class SecuritizedOrderRequest(BaseModel):
     book_id: str
