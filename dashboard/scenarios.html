@@ -71,8 +71,7 @@
       font-size: 12px;
       outline: none;
     }
-    .param-field input:read-only { color: var(--muted); cursor: default; }
-    .param-field input:focus:not(:read-only) { border-color: var(--accent); }
+    .param-field input:focus { border-color: var(--accent); }
 
     /* ── Drawer run button ─────────────────────────────────────────────────── */
     .drawer-run-btn {
@@ -177,7 +176,7 @@
     .badge-pass { background: rgba(63,185,80,0.15); color: var(--positive); border: 1px solid rgba(63,185,80,0.3); }
     .badge-fail { background: rgba(248,81,73,0.15); color: var(--negative); border: 1px solid rgba(248,81,73,0.3); }
   </style>
-  <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/shared_nav.js?v=20260411b" defer></script>
   <script src="/static/glossary.js" defer></script>
 </head>
 <body>
@@ -301,6 +300,7 @@ let scenarios      = [];
 let selectedId     = null;
 let activeScenario = null;
 let lastRunResults = null;
+let scenarioDrafts = {};
 
 const SHOCK_LABELS = {
   ir_sigma_multiplier:      'IR Vol ×',
@@ -361,6 +361,37 @@ function renderScenarioList() {
   `).join('');
 }
 
+function getScenarioDraft(id) {
+  const scenario = scenarios.find(x => x.id === id);
+  if (!scenario) return {};
+  if (!scenarioDrafts[id]) {
+    const baseShocks = scenario.shocks || {};
+    const keys = Object.keys(baseShocks).length ? Object.keys(baseShocks) : Object.keys(SHOCK_LABELS);
+    scenarioDrafts[id] = {};
+    keys.forEach(k => {
+      if (scenario.id === 'custom') scenarioDrafts[id][k] = baseShocks[k] ?? 1.0;
+      else if (baseShocks[k] != null) scenarioDrafts[id][k] = baseShocks[k];
+    });
+  }
+  return scenarioDrafts[id];
+}
+
+function collectDrawerShocks(id) {
+  const draft = getScenarioDraft(id);
+  Object.keys(SHOCK_LABELS).forEach(k => {
+    const el = document.getElementById('drawer-shock-' + k);
+    if (!el) return;
+    if (el.value === '') {
+      delete draft[k];
+      return;
+    }
+    const parsed = parseFloat(el.value);
+    if (!Number.isNaN(parsed)) draft[k] = parsed;
+  });
+  scenarioDrafts[id] = draft;
+  return { ...draft };
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Select scenario → populate drawer
 // ──────────────────────────────────────────────────────────────────────────────
@@ -373,9 +404,9 @@ function selectScenario(id) {
   const s = scenarios.find(x => x.id === id);
   if (!s) return;
 
+  const draft    = getScenarioDraft(id);
   const shocks   = s.shocks || {};
   const paramKeys = Object.keys(shocks).length ? Object.keys(shocks) : Object.keys(SHOCK_LABELS);
-  const isCustom  = s.id === 'custom';
 
   const paramHTML = paramKeys.length
     ? `<div class="param-grid">
@@ -383,8 +414,7 @@ function selectScenario(id) {
           <div class="param-field">
             <label>${SHOCK_LABELS[k] || k}</label>
             <input type="number" id="drawer-shock-${k}" step="0.01"
-              value="${isCustom ? (shocks[k] ?? 1.0) : (shocks[k] ?? '')}"
-              ${isCustom ? '' : 'readonly'}>
+              value="${draft[k] ?? ''}">
           </div>`).join('')}
       </div>`
     : `<div style="font-size:11px;color:var(--muted);">No shock parameters defined.</div>`;
@@ -400,6 +430,7 @@ function selectScenario(id) {
   document.getElementById('scenario-drawer-content').innerHTML = `
     <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;">${s.name}</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;">${s.description}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Preset scenarios now prefill recommended shocks. You can adjust them before running or activating.</div>
 
     <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">Shock Parameters</div>
     ${paramHTML}
@@ -410,7 +441,14 @@ function selectScenario(id) {
     <button class="drawer-run-btn" id="drawer-run-btn" onclick="runFromDrawer()" style="margin-top:12px;">
       &#9654; Run Scenario
     </button>
+    <button class="btn btn-primary" onclick="activateScenario('${s.id}')" style="width:100%;margin-top:8px;">Activate Scenario</button>
   `;
+
+  paramKeys.forEach(k => {
+    const el = document.getElementById('drawer-shock-' + k);
+    if (!el) return;
+    el.addEventListener('input', () => { collectDrawerShocks(id); });
+  });
 }
 
 function buildImpactHTML(results) {
@@ -433,14 +471,7 @@ async function runFromDrawer() {
   const btn = document.getElementById('drawer-run-btn');
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Running...'; }
 
-  const scenario  = scenarios.find(s => s.id === selectedId);
-  let customShocks = {};
-  if (selectedId === 'custom' && scenario) {
-    Object.keys(SHOCK_LABELS).forEach(k => {
-      const el = document.getElementById('drawer-shock-' + k);
-      if (el && el.value !== '') customShocks[k] = parseFloat(el.value);
-    });
-  }
+  const customShocks = collectDrawerShocks(selectedId);
 
   try {
     const res  = await fetch('/api/scenarios/run', {
@@ -475,12 +506,14 @@ async function activateScenario(id) {
   const s = scenarios.find(x => x.id === id);
   if (!s) return;
   try {
+    let customShocks = getScenarioDraft(id);
+    if (selectedId === id) customShocks = collectDrawerShocks(id);
     await fetch('/api/scenarios/activate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenario_id: id }),
+      body: JSON.stringify({ scenario_id: id, custom_shocks: customShocks }),
     });
-    activeScenario = s;
+    activeScenario = { ...s, shocks: customShocks };
     updateActiveUI();
   } catch (e) {
     alert('Failed to activate scenario: ' + e.message);
