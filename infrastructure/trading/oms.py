@@ -61,50 +61,166 @@ class OrderManagementSystem:
 
     # ── Pre-trade ─────────────────────────────────────────────────────────────
 
+    def _option_fill_price(self, ticker: str, product_details: dict | None) -> float:
+        """BSM mid price for a synthetic option ticker (e.g. SPY_CALL_670)."""
+        import math
+        parts = ticker.split("_")
+        opt_idx = next((i for i, p in enumerate(parts) if p in ("CALL", "PUT")), None)
+        if opt_idx is None:
+            raise ValueError(f"Cannot parse option ticker: {ticker}")
+        underlying = "_".join(parts[:opt_idx])
+        opt_type = parts[opt_idx].lower()
+        strike = float(parts[opt_idx + 1])
+
+        uq = self._feed.get_quote(underlying) if self._feed else None
+        if uq is None:
+            raise ValueError(f"No market data for underlying: {underlying}")
+        S = float(uq.mid)
+
+        T = (product_details or {}).get("tenor_years", 0.25)
+        r, sigma = 0.045, 0.30
+
+        d1 = (math.log(S / strike) + (r + 0.5 * sigma ** 2) * T) / (sigma * math.sqrt(T))
+        d2 = d1 - sigma * math.sqrt(T)
+
+        def N(x):
+            return 0.5 * (1.0 + math.erf(x / math.sqrt(2)))
+
+        if opt_type == "call":
+            price = S * N(d1) - strike * math.exp(-r * T) * N(d2)
+        else:
+            price = strike * math.exp(-r * T) * N(-d2) - S * N(-d1)
+
+        return max(0.01, round(price, 4))
+
     def _pre_trade_check(
-        self, desk: str, qty: float, price: float
+        self, desk: str, ticker: str, qty: float, price: float, counterparty_id: Optional[str] = None
     ) -> tuple[bool, str, float]:
         """
-        Estimate incremental VaR using parametric method and compare against
-        remaining limit headroom.
-        Returns (approved, message, estimated_var_impact).
+        Multi-dimensional pre-trade check:
+        1. VaR (incremental estimate)
+        2. Greeks (Delta, DV01, Vega)
+        3. Concentration (Single-name % of book)
+        4. Large Exposure (Counterparty)
         """
         from infrastructure.risk.var_calculator import VaRCalculator
+        from infrastructure.trading.greeks import GreeksCalculator
+        from infrastructure.risk.concentration_risk import concentration_monitor
+        from infrastructure.risk.large_exposures import large_exposures_engine
 
-        limit_name = _DESK_LIMIT_MAP.get(desk)
-        if not limit_name:
-            return True, "No VaR limit configured for this desk.", 0.0
-
-        vol = _DESK_VOLS.get(desk, 0.20)
         notional = abs(qty * price)
+        checks_passed = True
+        errors = []
 
-        calc = VaRCalculator(confidence=0.99, horizon_days=1)
-        var_result = calc.parametric_var(notional, vol, book_id="pre_trade")
-        est_var = float(var_result.var_amount)
+        # 1. ── VaR Check ─────────────────────────────────────────────────────
+        limit_name = _DESK_LIMIT_MAP.get(desk)
+        est_var = 0.0
+        if limit_name:
+            vol = _DESK_VOLS.get(desk, 0.20)
+            calc = VaRCalculator(confidence=0.99, horizon_days=1)
+            var_result = calc.parametric_var(notional, vol, book_id="pre_trade")
+            est_var = float(var_result.var_amount)
 
+            try:
+                lim = risk_service.limit_manager.get_limit(limit_name)
+                if lim.hard_limit > 0:
+                    projected_util = (abs(lim.current_value) + est_var) / lim.hard_limit * 100.0
+                    if projected_util >= 100.0:
+                        errors.append(f"VaR breach ({projected_util:.1f}%)")
+            except KeyError:
+                pass
+
+        # 2. ── Greeks / Sensitivity Checks ───────────────────────────────────
+        # Get all current prices for underlying lookup in BSM
+        current_prices = {}
+        if self._feed:
+            current_prices = {t: float(q.mid) for t, q in self._feed.get_all_quotes().items()}
+        
+        incremental_greeks = GreeksCalculator.compute(ticker, qty, price, current_prices)
+        
+        # Check Delta (only for Equity desk)
+        if desk == "EQUITY":
+            try:
+                lim = risk_service.limit_manager.get_limit("EQUITY_DELTA")
+                inc_delta = incremental_greeks["delta"]
+                # For net delta, we add. For gross we'd add abs. DEFAULT_LIMITS says "Net equity delta"
+                new_delta = lim.current_value + inc_delta
+                if abs(new_delta) > lim.hard_limit:
+                    errors.append(f"Equity Delta breach (${abs(new_delta)/1e6:.1f}M > ${lim.hard_limit/1e6:.1f}M)")
+            except KeyError:
+                pass
+
+        # Check DV01 (Firm-wide)
+        if incremental_greeks["dv01"] != 0:
+            try:
+                lim = risk_service.limit_manager.get_limit("DV01_FIRM")
+                new_dv01 = lim.current_value + incremental_greeks["dv01"]
+                if abs(new_dv01) > lim.hard_limit:
+                    errors.append(f"DV01 breach (${abs(new_dv01)/1e6:.1f}M > ${lim.hard_limit/1e6:.1f}M)")
+            except KeyError:
+                pass
+
+        # Check Vega (Derivatives desk)
+        if desk == "DERIVATIVES":
+            try:
+                lim = risk_service.limit_manager.get_limit("VEGA_FIRM")
+                new_vega = lim.current_value + incremental_greeks["vega"]
+                if abs(new_vega) > lim.hard_limit:
+                    errors.append(f"Vega breach (${abs(new_vega)/1e6:.1f}M > ${lim.hard_limit/1e6:.1f}M)")
+            except KeyError:
+                pass
+
+        # 3. ── Concentration Check (Single-name EQ) ──────────────────────────
+        if desk == "EQUITY":
+            try:
+                lim_pct = risk_service.limit_manager.get_limit("SINGLE_NAME_EQ_PCT")
+                # Estimate new pct: (current_name_notional + new_notional) / (total_book_notional + new_notional)
+                # This is an approximation.
+                all_pos = risk_service.position_manager.get_all_positions()
+                eq_pos = [p for p in all_pos if p["desk"] == "EQUITY"]
+                total_eq_notional = sum(abs(p["notional"]) for p in eq_pos)
+                name_notional = sum(abs(p["notional"]) for p in eq_pos if p["instrument"] == ticker)
+                
+                projected_pct = (name_notional + notional) / (total_eq_notional + notional) * 100.0
+                if projected_pct > lim_pct.hard_limit:
+                    errors.append(f"Concentration breach ({ticker}: {projected_pct:.1f}% > {lim_pct.hard_limit}%)")
+            except KeyError:
+                pass
+
+        # 4. ── Counterparty / Large Exposure Check ────────────────────────────
+        if counterparty_id:
+            from infrastructure.risk.large_exposures import TIER1_CAPITAL_USD
+            # Simple check: Incremental notional + current exposure <= 25% Tier 1
+            exposures = large_exposures_engine.calculate_exposures()
+            cp_exp = next((e for e in exposures if e["counterparty_id"] == counterparty_id), None)
+            if cp_exp:
+                current_total = cp_exp["total_exposure_usd"]
+                limit = cp_exp["limit_usd"]
+                if (current_total + notional) > limit:
+                    errors.append(f"Large Exposure breach (Cpty: {counterparty_id}, Projected ${ (current_total+notional)/1e9:.1f}B > Limit ${limit/1e9:.1f}B)")
+
+        # 5. ── RWA Budget Check (capital allocation gate) ────────────────────
         try:
-            lim = risk_service.limit_manager.get_limit(limit_name)
-            current = abs(lim.current_value)
-            if lim.hard_limit <= 0:
-                return True, f"Limit {limit_name} has no hard limit configured.", est_var
-            projected_util = (current + est_var) / lim.hard_limit * 100.0
-        except KeyError:
-            return True, f"Limit {limit_name} not found; proceeding.", est_var
+            from infrastructure.risk.capital_allocation import capital_allocation
+            from infrastructure.risk.capital_consumption import capital_consumption
+            incremental_rwa = capital_consumption.estimate_incremental_rwa(ticker, notional)
+            rwa_budget   = capital_allocation.get_desk_rwa_budget(desk)
+            rwa_consumed = capital_consumption.get_desk_rwa_consumed(desk)
+            if rwa_budget > 0 and (rwa_consumed + incremental_rwa) > rwa_budget:
+                errors.append(
+                    f"RWA budget exhausted for {desk} desk "
+                    f"(consumed ${rwa_consumed/1e9:.1f}B "
+                    f"+ est ${incremental_rwa/1e9:.2f}B "
+                    f"> budget ${rwa_budget/1e9:.1f}B; "
+                    f"request CFO reallocation via POST /api/capital/reallocate)"
+                )
+        except Exception as exc:
+            log.warning("oms.rwa_budget_check_skipped", error=str(exc))
 
-        if projected_util >= 100.0:
-            msg = (
-                f"Pre-trade REJECTED: projected {desk} VaR utilisation "
-                f"{projected_util:.1f}% would breach 100% limit "
-                f"(current ${current/1e6:.1f}M + est ${est_var/1e6:.1f}M > "
-                f"limit ${lim.hard_limit/1e6:.1f}M)."
-            )
-            return False, msg, est_var
+        if errors:
+            return False, "REJECTED: " + " | ".join(errors), est_var
 
-        msg = (
-            f"Pre-trade OK. Projected {desk} VaR utilisation: "
-            f"{projected_util:.1f}% of limit."
-        )
-        return True, msg, est_var
+        return True, "Pre-trade OK", est_var
 
     # ── Order execution ────────────────────────────────────────────────────────
 
@@ -130,15 +246,18 @@ class OrderManagementSystem:
             raise RuntimeError("MarketDataFeed not injected into OMS — call set_feed() in lifespan.")
 
         quote = self._feed.get_quote(ticker)
-        if quote is None:
+        if quote is None and ("_CALL_" in ticker or "_PUT_" in ticker):
+            # Synthetic option ticker — price via BSM on underlying
+            fill_price = self._option_fill_price(ticker, product_details)
+        elif quote is None:
             raise ValueError(f"No market data for ticker: {ticker}")
-
-        fill_price = float(quote.mid)
+        else:
+            fill_price = float(quote.mid)
         signed_qty = qty if side.lower() == "buy" else -qty
         notional = abs(signed_qty * fill_price)
 
         # --- Pre-trade check (hard enforcement — rejected orders raise 422) ---
-        approved, pre_msg, est_var = self._pre_trade_check(desk, signed_qty, fill_price)
+        approved, pre_msg, est_var = self._pre_trade_check(desk, ticker, signed_qty, fill_price, counterparty_id)
         if not approved:
             log.warning("oms.pre_trade_rejected", desk=desk, ticker=ticker, qty=qty, reason=pre_msg)
             raise HTTPException(status_code=422, detail=pre_msg)
@@ -171,6 +290,10 @@ class OrderManagementSystem:
         # --- Risk re-snapshot (updates limits) ---
         risk_service.run_snapshot()
 
+        # --- Record RWA consumption ---
+        from infrastructure.risk.capital_consumption import capital_consumption
+        capital_consumption.record_trade(desk, ticker, notional, counterparty_id)
+
         # --- Snapshot VaR after ---
         var_after = 0.0
         limit_status = "GREEN"
@@ -194,7 +317,7 @@ class OrderManagementSystem:
 
         # --- Build confirmation ---
         trade_id = str(uuid.uuid4())
-        executed_at = datetime.now(timezone.utc)
+        executed_at = datetime.now().astimezone()
 
         confirmation = TradeConfirmation(
             trade_id=trade_id,

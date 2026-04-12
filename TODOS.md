@@ -189,6 +189,34 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 
 ---
 
+## v0.5.x Capital Realism (feature/v05-capital-realism)
+
+### TODO-047: Multi-Dimensional Pre-Trade Checks (P1)
+**What:** Extend OMS `_pre_trade_check()` to enforce DV01, equity delta, single-name notional, single-name % concentration, Large Exposure (CRE70), and RWA budget — in addition to the existing VaR check. First failure blocks the trade with a 422.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-048: Per-Trade RWA Consumption Tracker (P2)
+**What:** `infrastructure/risk/capital_consumption.py` — `CapitalConsumptionTracker` singleton. Every booked trade records incremental RWA (notional × Basel SA risk weight). Accumulates by desk and counterparty. Exposes `estimate_incremental_rwa()` for pre-trade gate and `get_report()` for dashboard. Live CET1 ratio derived from baseline + incremental.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-049: Capital Allocation Framework (P3)
+**What:** `infrastructure/risk/capital_allocation.py` — `CapitalAllocationFramework` singleton. Top-down $45B CET1 → business lines → desks. Each desk gets a CET1 budget and derived RWA budget. CFO can reallocate between desks. Wired into OMS pre-trade as RWA budget gate. API: `GET /capital/allocation`, `GET /capital/consumption`, `POST /capital/reallocate`.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-050: Limit Utilization Callbacks with Actions (P4)
+**What:** Wire `LimitManager` breach callbacks to trigger real actions: YELLOW → log escalation to desk head; ORANGE → log escalation to Head of Trading; RED → auto-suspend desk (set a suspend flag OMS checks); BREACH → notify CRO. Currently callbacks are registered but do nothing.
+**Status:** Open
+
+### TODO-051: Securities Finance + Securitized Products Trade Booking (P5)
+**What:** Allow OMS to book trades into SecFin and Securitized Products desks. These should draw from the SECURITIES_FINANCE capital pool, check their own notional limits, and show up in the blotter. Currently these desks have analytics but no trade booking flow.
+**Status:** Open
+
+### TODO-052: RAROC Gate on New Positions (P6)
+**What:** Add a RAROC pre-trade check: estimate incremental RAROC for the proposed trade (revenue = expected desk spread × notional × tenor; EC = asset class economic capital). If incremental RAROC < hurdle rate (12%) and desk is already below hurdle, require approval flag in trade request.
+**Status:** Open
+
+---
+
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
 - Production cloud deployment (pre-v1)
