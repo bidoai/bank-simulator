@@ -17,7 +17,9 @@ from enum import Enum
 from typing import Callable, Optional
 import structlog
 
-log = structlog.get_logger()
+from config.settings import LIMIT_YELLOW_PCT, LIMIT_ORANGE_PCT, LIMIT_RED_PCT, LIMIT_BREACH_PCT
+
+log = structlog.get_logger(__name__)
 
 
 class LimitStatus(str, Enum):
@@ -47,13 +49,13 @@ class Limit:
     @property
     def status(self) -> LimitStatus:
         u = self.utilisation_pct
-        if u >= 120:
+        if u >= LIMIT_BREACH_PCT:
             return LimitStatus.BREACH
-        elif u >= 100:
+        elif u >= LIMIT_RED_PCT:
             return LimitStatus.RED
-        elif u >= 90:
+        elif u >= LIMIT_ORANGE_PCT:
             return LimitStatus.ORANGE
-        elif u >= 80:
+        elif u >= LIMIT_YELLOW_PCT:
             return LimitStatus.YELLOW
         return LimitStatus.GREEN
 

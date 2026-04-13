@@ -13,7 +13,7 @@ import structlog
 
 from infrastructure.risk.counterparty_registry import counterparty_registry
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 ALPHA = 1.4
 

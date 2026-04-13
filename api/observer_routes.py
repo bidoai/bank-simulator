@@ -14,8 +14,6 @@ context across requests. Its history is capped at _OBSERVER_MAX_HISTORY messages
 from __future__ import annotations
 
 import asyncio
-import os
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import structlog
@@ -39,12 +37,7 @@ def _get_observer() -> "BankAgent":
     if _observer is None:
         import anthropic
         from agents.narrator.observer import create_observer
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            try:
-                from dotenv import load_dotenv
-                load_dotenv(Path(__file__).parent.parent / ".env")
-            except ImportError:
-                pass
+        import config.settings  # noqa: F401 — ensures .env is loaded
         _observer = create_observer(anthropic.Anthropic())
         log.info("observer.singleton_created")
     return _observer

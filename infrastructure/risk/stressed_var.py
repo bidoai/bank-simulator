@@ -20,7 +20,7 @@ import structlog
 from infrastructure.risk.var_calculator import VaRCalculator
 from infrastructure.risk.correlation_regime import CorrelationRegime, regime_model
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Stressed period parameters — 2008–2009 Financial Crisis calibration

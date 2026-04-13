@@ -27,6 +27,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from api.trading_broadcaster import trading_broadcaster
+from config.settings import DB_OMS
 from infrastructure.risk.counterparty_registry import counterparty_registry
 from infrastructure.risk.risk_service import risk_service
 from infrastructure.trading.greeks import GreeksCalculator
@@ -36,7 +37,7 @@ log = structlog.get_logger(__name__)
 
 router = APIRouter()
 
-_DB_PATH = str(Path(__file__).parent.parent / "data" / "oms_trades.db")
+_DB_PATH = str(DB_OMS)
 
 # Serialise concurrent order submissions — prevents PositionManager data corruption
 # under concurrent requests. Single-user demo: contention never occurs in practice.

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 # Credit spread by rating band (fraction, e.g. 0.010 = 100bps)

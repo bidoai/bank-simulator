@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 router = APIRouter(prefix="/treasury", tags=["treasury"])
 
 

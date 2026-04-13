@@ -9,7 +9,7 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class RegulatoryCapitalEngine:

@@ -240,13 +240,7 @@ async def run_live_meeting(
     """
     import anthropic as _anthropic
 
-    # Load .env if API key not already set
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        try:
-            from dotenv import load_dotenv
-            load_dotenv(Path(__file__).parent.parent / ".env")
-        except ImportError:
-            pass
+    import config.settings  # noqa: F401 — ensures .env is loaded
 
     if client is None:
         try:

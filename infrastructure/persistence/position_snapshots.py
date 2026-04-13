@@ -7,6 +7,9 @@ from threading import Lock
 
 import structlog
 
+from config.settings import DB_POSITIONS
+from infrastructure.persistence.sqlite_base import open_db
+
 log = structlog.get_logger(__name__)
 
 _DDL = """
@@ -25,7 +28,8 @@ CREATE TABLE IF NOT EXISTS position_snapshots (
 
 
 class PositionSnapshotStore:
-    def __init__(self, db_path: str = "data/position_snapshots.db") -> None:
+    def __init__(self, db_path: str | Path = DB_POSITIONS) -> None:
+        db_path = str(db_path)
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._db_path = db_path
         self._lock = Lock()
@@ -34,9 +38,7 @@ class PositionSnapshotStore:
         log.info("position_snapshot_store.ready", db=db_path)
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._db_path, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return open_db(self._db_path)
 
     def save_snapshot(self, position_dict: dict) -> None:
         snapshot_time = datetime.now(timezone.utc).isoformat()

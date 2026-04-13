@@ -20,9 +20,11 @@ from pathlib import Path
 
 import structlog
 
+from config.settings import DB_MEETINGS
+
 log = structlog.get_logger(__name__)
 
-_DB_PATH = Path(__file__).parent.parent / "data" / "meetings.db"
+_DB_PATH = DB_MEETINGS
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS meetings (

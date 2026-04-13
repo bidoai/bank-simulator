@@ -29,7 +29,7 @@ python main.py                  # founding board meeting (costs API tokens)
 
 Full test suite:
 ```bash
-uv run --with fastapi --with pytest-asyncio --with httpx --with structlog --with numpy --with anthropic pytest -q
+uv run --with fastapi --with pytest-asyncio --with httpx --with structlog --with numpy --with anthropic --with python-dotenv --with aiosqlite --with scipy pytest -q --ignore=scenarios/
 ```
 
 ## Infrastructure layers

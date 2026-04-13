@@ -8,6 +8,7 @@ BANK_LOG=1 enables structured logs to stderr (off by default to keep output clea
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import logging
 import os
@@ -163,9 +164,10 @@ app = FastAPI(
 )
 
 # CORS — allow local dev frontends (Vite, live-server, etc.)
+from config.settings import ALLOWED_ORIGINS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:8000", "http://localhost:8000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -184,134 +186,37 @@ else:
 
 # ---------------------------------------------------------------------------
 # Route file imports (graceful degradation if not yet created)
+# oms_routes MUST precede trading_routes — it shadows /blotter, /greeks, /pnl, /ccr
 # ---------------------------------------------------------------------------
 
-try:
-    from api import boardroom_routes
-    app.include_router(boardroom_routes.router, prefix="/api")
-    log.info("boardroom_routes loaded")
-except ImportError:
-    log.warning("api.boardroom_routes not found — boardroom API endpoints unavailable")
+_ROUTE_MODULES = [
+    "boardroom_routes",
+    "xva_routes",
+    "models_routes",
+    "scenarios_routes",
+    "oms_routes",               # must be before trading_routes
+    "trading_routes",
+    "observer_routes",
+    "risk_routes",
+    "capital_routes",
+    "treasury_routes",
+    "credit_routes",
+    "compliance_routes",
+    "metrics_routes",
+    "collateral_routes",
+    "stress_routes",
+    "securities_finance_routes",
+    "securitized_routes",
+    "liquidity_routes",
+]
 
-try:
-    from api import xva_routes
-    app.include_router(xva_routes.router, prefix="/api")
-    log.info("xva_routes loaded")
-except ImportError:
-    log.warning("api.xva_routes not found — XVA API endpoints unavailable")
-
-try:
-    from api import models_routes
-    app.include_router(models_routes.router, prefix="/api")
-    log.info("models_routes loaded")
-except ImportError:
-    log.warning("api.models_routes not found — model governance API endpoints unavailable")
-
-try:
-    from api import scenarios_routes
-    app.include_router(scenarios_routes.router, prefix="/api")
-    log.info("scenarios_routes loaded")
-except ImportError:
-    log.warning("api.scenarios_routes not found — scenarios API endpoints unavailable")
-
-# oms_routes MUST be registered before trading_routes — it shadows /blotter, /greeks, /pnl, /ccr
-try:
-    from api import oms_routes
-    app.include_router(oms_routes.router, prefix="/api")
-    log.info("oms_routes loaded")
-except ImportError:
-    log.warning("api.oms_routes not found — OMS endpoints unavailable")
-
-try:
-    from api import trading_routes
-    app.include_router(trading_routes.router, prefix="/api")
-    log.info("trading_routes loaded")
-except ImportError:
-    log.warning("api.trading_routes not found — trading API endpoints unavailable")
-
-try:
-    from api import observer_routes
-    app.include_router(observer_routes.router, prefix="/api")
-    log.info("observer_routes loaded")
-except ImportError:
-    log.warning("api.observer_routes not found — Observer Q&A unavailable")
-
-try:
-    from api import risk_routes
-    app.include_router(risk_routes.router, prefix="/api")
-    log.info("risk_routes loaded")
-except ImportError:
-    log.warning("api.risk_routes not found — risk API endpoints unavailable")
-
-try:
-    from api import capital_routes
-    app.include_router(capital_routes.router, prefix="/api")
-    log.info("capital_routes loaded")
-except ImportError:
-    log.warning("api.capital_routes not found — regulatory capital API endpoints unavailable")
-
-try:
-    from api import treasury_routes
-    app.include_router(treasury_routes.router, prefix="/api")
-    log.info("treasury_routes loaded")
-except ImportError:
-    log.warning("api.treasury_routes not found — treasury FTP/ALM API endpoints unavailable")
-
-try:
-    from api import credit_routes
-    app.include_router(credit_routes.router, prefix="/api")
-    log.info("credit_routes loaded")
-except ImportError:
-    log.warning("api.credit_routes not found — credit ECL API endpoints unavailable")
-
-try:
-    from api import compliance_routes
-    app.include_router(compliance_routes.router, prefix="/api")
-    log.info("compliance_routes loaded")
-except ImportError:
-    log.warning("api.compliance_routes not found — AML compliance API endpoints unavailable")
-
-try:
-    from api import metrics_routes
-    app.include_router(metrics_routes.router, prefix="/api")
-    log.info("metrics_routes loaded")
-except ImportError:
-    log.warning("api.metrics_routes not found — metrics API endpoints unavailable")
-
-try:
-    from api import collateral_routes
-    app.include_router(collateral_routes.router, prefix="/api")
-    log.info("collateral_routes loaded")
-except ImportError:
-    log.warning("api.collateral_routes not found — collateral API endpoints unavailable")
-
-try:
-    from api import stress_routes
-    app.include_router(stress_routes.router, prefix="/api")
-    log.info("stress_routes loaded")
-except ImportError:
-    log.warning("api.stress_routes not found — DFAST stress API endpoints unavailable")
-
-try:
-    from api import securities_finance_routes
-    app.include_router(securities_finance_routes.router, prefix="/api")
-    log.info("securities_finance_routes loaded")
-except ImportError:
-    log.warning("api.securities_finance_routes not found — securities finance API endpoints unavailable")
-
-try:
-    from api import securitized_routes
-    app.include_router(securitized_routes.router, prefix="/api")
-    log.info("securitized_routes loaded")
-except ImportError:
-    log.warning("api.securitized_routes not found — securitized products API endpoints unavailable")
-
-try:
-    from api import liquidity_routes
-    app.include_router(liquidity_routes.router, prefix="/api")
-    log.info("liquidity_routes loaded")
-except ImportError:
-    log.warning("api.liquidity_routes not found — liquidity API endpoints unavailable")
+for _mod in _ROUTE_MODULES:
+    try:
+        _module = importlib.import_module(f"api.{_mod}")
+        app.include_router(_module.router, prefix="/api")
+        log.info(f"{_mod} loaded")
+    except ImportError:
+        log.warning(f"api.{_mod} not found — endpoints unavailable")
 
 # ---------------------------------------------------------------------------
 # Health check

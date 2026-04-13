@@ -1,5 +1,20 @@
 # TODOS — Apex Global Bank Simulator
 
+## Completed — Code Quality Refactor (2026-04-13)
+
+### TODO-REF: Codebase quality refactor ✅ DONE
+- `config/settings.py` — centralised env loading, DB paths, risk constants (VaR, P&L, limits, XVA)
+- `api/main.py` — 17 route try/except blocks → ordered loop; CORS from settings
+- `api/base_broadcaster.py` — shared WebSocket base; BoardroomBroadcaster + TradingBroadcaster inherit it
+- `infrastructure/persistence/sqlite_base.py` — shared `open_db()` helper; used by position_snapshots + event_log
+- Logging: 32 files fixed to `structlog.get_logger(__name__)`
+- Magic numbers replaced with settings constants in var_calculator, risk_service, pnl_calculator, limit_manager, xva/service, xva/adapter
+- Tests: `tests/test_var_calculator.py` (9 tests) + `tests/test_greeks.py` (13 tests) added → 269 total
+- Dashboard: `dashboard/js/api-client.js` shared fetch wrapper; loaded in all 11 dashboards
+- Test command updated in CLAUDE.md (added python-dotenv, aiosqlite, scipy; ignore scenarios/)
+
+---
+
 ## P1 — High Priority
 
 ### TODO-001: Agent Context Window Management ✅ DONE

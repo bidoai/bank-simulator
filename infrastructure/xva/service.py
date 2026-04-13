@@ -7,6 +7,9 @@ from infrastructure.trading.oms import oms
 from infrastructure.risk.counterparty_registry import counterparty_registry
 
 import structlog
+
+from config.settings import XVA_LGD_DEFAULT, XVA_SPREAD_DEFAULT
+
 log = structlog.get_logger(__name__)
 
 # Desk → counterparty assignment for netting sets
@@ -22,8 +25,8 @@ _EQUITY_TICKERS = {"AAPL", "MSFT", "SPY", "NVDA"}
 _FX_TICKERS = {"EURUSD", "GBPUSD"}
 _BOND_TICKERS = {"US10Y", "US2Y"}
 
-LGD_DEFAULT = 0.6
-SPREAD_DEFAULT = 0.015  # 150bps fallback
+LGD_DEFAULT = XVA_LGD_DEFAULT
+SPREAD_DEFAULT = XVA_SPREAD_DEFAULT  # 150bps fallback
 
 
 class SimulationXVAService:

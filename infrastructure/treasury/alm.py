@@ -19,7 +19,7 @@ from datetime import datetime
 import numpy as np
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 # ── Repricing buckets ──────────────────────────────────────────────────────

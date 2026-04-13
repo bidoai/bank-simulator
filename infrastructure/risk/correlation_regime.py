@@ -14,7 +14,7 @@ from typing import Optional
 import numpy as np
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class CorrelationRegime(Enum):

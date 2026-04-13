@@ -24,7 +24,7 @@ import structlog
 
 from models.trade import Trade, Side, OrderType, TradeStatus, Counterparty
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class Order:
