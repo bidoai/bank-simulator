@@ -152,7 +152,70 @@
             grid-template-columns: var(--panel-left) 1fr;
             overflow: hidden;
             min-height: 0;
+            position: relative;
         }
+
+        /* ── Sidebar tabs ───────────────────────────────────────────────────── */
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .sidebar-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 9px 6px;
+            font-family: var(--font);
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: color 0.15s, border-color 0.15s;
+            margin-bottom: -1px;
+        }
+        .sidebar-tab:hover { color: var(--text-muted); }
+        .sidebar-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+        .sidebar-tab-panel { display: none; flex: 1 1 0; min-height: 0; flex-direction: column; }
+        .sidebar-tab-panel.active { display: flex; }
+
+        /* ── Context drawer ─────────────────────────────────────────────────── */
+        .context-drawer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            display: none;
+            flex-direction: column;
+            z-index: 5;
+            overflow-y: auto;
+        }
+        .context-drawer.open { display: flex; }
+        .ctx-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+        }
+        .ctx-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); font-weight: 600; }
+        .ctx-close { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 0 2px; }
+        .ctx-close:hover { color: var(--text-muted); }
+        .ctx-section { padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); }
+        .ctx-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 8px; font-weight: 600; }
+        .ctx-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; gap: 8px; }
+        .ctx-row-label { color: var(--text-muted); flex-shrink: 0; }
+        .ctx-row-value { color: var(--text-primary); text-align: right; word-break: break-word; }
+        .ctx-scenario-name { font-size: 12px; font-weight: 600; color: var(--gold); margin-bottom: 4px; }
+        .ctx-scenario-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+        .ctx-empty { font-size: 11px; color: var(--text-dim); padding: 4px 0; }
 
         /* ── Left sidebar ──────────────────────────────────────────────────── */
         .sidebar {
@@ -799,7 +862,8 @@
             border-radius: 2px;
         }
     </style>
-    <script src="/static/shared_nav.js" defer></script>
+    <script src="/static/shared_nav.js?v=20260411b" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
 
@@ -810,6 +874,7 @@
         <div class="header-title">Boardroom</div>
         <div class="header-spacer"></div>
         <button id="btn-mute" class="btn-mute" onclick="toggleMute()" title="Toggle voice narration">🔊</button>
+        <button id="btn-ctx" class="btn-mute" onclick="toggleContextDrawer()" title="Session context">≡</button>
         <div class="header-divider"></div>
         <div id="conn-badge" class="connection-badge">
             <span class="conn-dot"></span>
@@ -823,40 +888,48 @@
         <!-- Left sidebar -->
         <aside class="sidebar">
 
-            <!-- Participants -->
-            <div class="sidebar-section">
-                <div class="section-label">Participants</div>
-                <div id="agents-list">
-                    <!-- populated by JS -->
-                </div>
-                <div class="agent-summary" id="agent-summary" aria-live="polite">
-                    <div class="agent-summary-header">
-                        <div>
-                            <div class="agent-summary-name" id="agent-summary-name">Alexandra Chen</div>
-                            <div class="agent-summary-role" id="agent-summary-role">Chief Executive Officer</div>
+            <!-- Tab bar -->
+            <div class="sidebar-tabs">
+                <button class="sidebar-tab active" data-panel="agents" onclick="switchSidebarTab('agents')">Agents</button>
+                <button class="sidebar-tab" data-panel="sessions" onclick="switchSidebarTab('sessions')">Sessions</button>
+            </div>
+
+            <!-- Agents tab panel -->
+            <div class="sidebar-tab-panel active" id="sidebar-panel-agents">
+                <div class="sidebar-section" style="border-bottom:none;flex:1 1 0;overflow-y:auto;">
+                    <div id="agents-list">
+                        <!-- populated by JS -->
+                    </div>
+                    <div class="agent-summary" id="agent-summary" aria-live="polite">
+                        <div class="agent-summary-header">
+                            <div>
+                                <div class="agent-summary-name" id="agent-summary-name">Alexandra Chen</div>
+                                <div class="agent-summary-role" id="agent-summary-role">Chief Executive Officer</div>
+                            </div>
+                            <div class="agent-summary-badge" id="agent-summary-badge">Selected</div>
                         </div>
-                        <div class="agent-summary-badge" id="agent-summary-badge">Selected</div>
-                    </div>
-                    <div class="agent-summary-text" id="agent-summary-text">
-                        Sets the strategic direction of the meeting and pushes the room toward decisions that affect franchise growth, capital allocation, and operating tempo.
-                    </div>
-                    <div class="agent-summary-focus" id="agent-summary-focus">
-                        Typical lens: strategy, accountability, and execution risk.
+                        <div class="agent-summary-text" id="agent-summary-text">
+                            Sets the strategic direction of the meeting and pushes the room toward decisions that affect franchise growth, capital allocation, and operating tempo.
+                        </div>
+                        <div class="agent-summary-focus" id="agent-summary-focus">
+                            Typical lens: strategy, accountability, and execution risk.
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sessions -->
-            <div class="sidebar-section sidebar-sessions">
-                <div class="section-label">Sessions</div>
-                <div class="sessions-scroll">
-                    <div id="sessions-list">
-                        <div style="color:var(--text-dim);font-size:11px;padding:4px 0;">Loading...</div>
+            <!-- Sessions tab panel -->
+            <div class="sidebar-tab-panel" id="sidebar-panel-sessions">
+                <div class="sidebar-section sidebar-sessions" style="border-bottom:none;">
+                    <div class="sessions-scroll">
+                        <div id="sessions-list">
+                            <div style="color:var(--text-dim);font-size:11px;padding:4px 0;">Loading...</div>
+                        </div>
                     </div>
+                    <button class="btn-new-session" id="btn-start" onclick="openModal()">
+                        New Session &rarr;
+                    </button>
                 </div>
-                <button class="btn-new-session" id="btn-start" onclick="openModal()">
-                    New Session &rarr;
-                </button>
             </div>
 
         </aside>
@@ -903,6 +976,31 @@
             </div>
 
         </main>
+
+        <!-- Context drawer (right side, toggle with ≡ button) -->
+        <aside class="context-drawer" id="context-drawer">
+            <div class="ctx-header">
+                <span class="ctx-title">Session Context</span>
+                <button class="ctx-close" onclick="toggleContextDrawer()" title="Close">✕</button>
+            </div>
+            <div class="ctx-section" id="ctx-session">
+                <div class="ctx-section-label">Current Session</div>
+                <div class="ctx-empty" id="ctx-session-content">No active session</div>
+            </div>
+            <div class="ctx-section" id="ctx-scenario-section">
+                <div class="ctx-section-label">Active Scenario</div>
+                <div id="ctx-scenario-content">
+                    <div class="ctx-empty">No scenario active</div>
+                </div>
+            </div>
+            <div class="ctx-section">
+                <div class="ctx-section-label">Participants</div>
+                <div id="ctx-participants-content">
+                    <div class="ctx-empty">—</div>
+                </div>
+            </div>
+        </aside>
+
     </div>
 </div>
 
@@ -1718,6 +1816,62 @@
         btn.textContent = muted ? "🔇" : "🔊";
         btn.title       = muted ? "Unmute voice narration" : "Mute voice narration";
         btn.classList.toggle("muted", muted);
+    }
+
+    // ── Sidebar tab switching ─────────────────────────────────────────────────
+
+    function switchSidebarTab(panel) {
+        document.querySelectorAll('.sidebar-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.panel === panel);
+        });
+        document.querySelectorAll('.sidebar-tab-panel').forEach(p => {
+            p.classList.toggle('active', p.id === 'sidebar-panel-' + panel);
+        });
+    }
+
+    // ── Context drawer ────────────────────────────────────────────────────────
+
+    function toggleContextDrawer() {
+        const drawer = document.getElementById('context-drawer');
+        const isOpen = drawer.classList.toggle('open');
+        if (isOpen) loadContextDrawer();
+    }
+
+    async function loadContextDrawer() {
+        // Active scenario
+        try {
+            const r = await fetch('/api/scenarios/active');
+            const d = await r.json();
+            const el = document.getElementById('ctx-scenario-content');
+            if (d.active) {
+                el.innerHTML =
+                    `<div class="ctx-scenario-name">${esc(d.name || d.scenario_id || 'Unknown')}</div>` +
+                    `<div class="ctx-scenario-desc">${esc(d.description || '')}</div>`;
+            } else {
+                el.innerHTML = '<div class="ctx-empty">No scenario active</div>';
+            }
+        } catch (_) {}
+
+        // Sessions / participants
+        try {
+            const r = await fetch('/api/boardroom/meetings');
+            const meetings = await r.json();
+            const latest = meetings[0];
+            const sessEl = document.getElementById('ctx-session-content');
+            if (latest) {
+                sessEl.innerHTML =
+                    `<div class="ctx-row"><span class="ctx-row-label">Title</span><span class="ctx-row-value">${esc(latest.title || '—')}</span></div>` +
+                    `<div class="ctx-row"><span class="ctx-row-label">Status</span><span class="ctx-row-value">${esc(latest.status || '—')}</span></div>` +
+                    `<div class="ctx-row"><span class="ctx-row-label">Agents</span><span class="ctx-row-value">${esc(String(latest.participant_count || '—'))}</span></div>`;
+                const partEl = document.getElementById('ctx-participants-content');
+                const names = (latest.agent_names || []).join(', ');
+                partEl.innerHTML = names
+                    ? `<div class="ctx-row-value" style="font-size:11px;color:var(--text-muted)">${esc(names)}</div>`
+                    : '<div class="ctx-empty">—</div>';
+            } else {
+                sessEl.innerHTML = '<div class="ctx-empty">No sessions found</div>';
+            }
+        } catch (_) {}
     }
 
     // ── Boot ──────────────────────────────────────────────────────────────────

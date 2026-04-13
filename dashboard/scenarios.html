@@ -1,726 +1,714 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stress Test Scenario Runner — Apex Global Bank</title>
-    <link rel="stylesheet" href="/static/shared.css">
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scenarios — Apex Global Bank</title>
+  <link rel="stylesheet" href="/static/shared.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body { max-width: 1520px; margin: 0 auto; padding: 20px 24px 40px; }
 
-        body {
-            font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
-            background: var(--bg, #0d1117);
-            color: var(--text, #c9d1d9);
-            padding: 20px;
-            font-size: 13px;
-        }
+    /* ── Spinner ────────────────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid rgba(13,17,23,0.3);
+      border-top-color: #0d1117;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ------------------------------------------------------------------ */
-        /* Typography                                                           */
-        /* ------------------------------------------------------------------ */
-        h1 { font-size: 16px; color: var(--accent, #58a6ff); margin-bottom: 20px; letter-spacing: 1px; }
-        h2 { font-size: 11px; color: var(--muted, #8b949e); text-transform: uppercase;
-             letter-spacing: 1.5px; margin-bottom: 12px; }
-        h3 { font-size: 12px; color: var(--accent, #58a6ff); margin-bottom: 8px; }
+    /* ── Scenario option cards (left list) ─────────────────────────────────── */
+    .scenario-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 6px;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--card);
+    }
+    .scenario-option:last-child { margin-bottom: 0; }
+    .scenario-option:hover { border-color: var(--accent); background: rgba(88,166,255,0.03); }
+    .scenario-option.selected {
+      border-color: var(--accent);
+      background: rgba(88,166,255,0.06);
+    }
+    .scenario-option-body { flex: 1; min-width: 0; }
+    .scenario-option-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .scenario-option-desc { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+    .scenario-option-actions { display: flex; gap: 6px; margin-top: 8px; }
 
-        /* ------------------------------------------------------------------ */
-        /* Layout                                                              */
-        /* ------------------------------------------------------------------ */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 16px;
-            max-width: 1400px;
-        }
+    /* ── Shock param grid ──────────────────────────────────────────────────── */
+    .param-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .param-field label {
+      display: block;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .param-field input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      padding: 5px 8px;
+      font-family: var(--font);
+      font-size: 12px;
+      outline: none;
+    }
+    .param-field input:focus { border-color: var(--accent); }
 
-        .card {
-            background: var(--card, #161b22);
-            border: 1px solid var(--border, #30363d);
-            border-radius: 6px;
-            padding: 16px;
-        }
+    /* ── Drawer run button ─────────────────────────────────────────────────── */
+    .drawer-run-btn {
+      width: 100%; padding: 8px;
+      background: var(--accent); color: #0d1117;
+      border: none; border-radius: 4px;
+      font-family: var(--font); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.06em; cursor: pointer;
+      text-transform: uppercase; transition: background 0.15s, opacity 0.15s;
+    }
+    .drawer-run-btn:hover:not(:disabled) { background: #79c0ff; }
+    .drawer-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .card.full-width { grid-column: 1 / -1; }
+    /* ── Impact preview grid ───────────────────────────────────────────────── */
+    .impact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .impact-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+    }
+    .impact-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+    .impact-value { font-size: 13px; font-weight: 600; color: var(--negative); }
+    .impact-value.neutral { color: var(--muted); }
 
-        .left-col { display: flex; flex-direction: column; gap: 16px; }
-        .right-col { display: flex; flex-direction: column; gap: 16px; }
+    /* ── KPI comparison boxes (run results) ────────────────────────────────── */
+    .kpi-compare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .kpi-compare-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+    .kpi-compare-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .kpi-compare-values { display: flex; align-items: baseline; gap: 8px; }
+    .kpi-compare-base { font-size: 13px; color: var(--muted); }
+    .kpi-compare-arrow { font-size: 10px; color: var(--muted); }
+    .kpi-compare-stressed { font-size: 13px; color: var(--negative); font-weight: 700; }
+    .kpi-compare-delta { font-size: 10px; color: var(--negative); margin-top: 3px; }
 
-        /* ------------------------------------------------------------------ */
-        /* Scenario selector                                                   */
-        /* ------------------------------------------------------------------ */
-        .scenario-option {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 10px;
-            border: 1px solid var(--border, #30363d);
-            border-radius: 4px;
-            cursor: pointer;
-            margin-bottom: 6px;
-            transition: border-color 0.15s, background 0.15s;
-        }
+    /* ── Propagation domain chips ──────────────────────────────────────────── */
+    .prop-grid {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 14px 0 4px;
+    }
+    .prop-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+    }
+    .prop-chip.active {
+      border-color: rgba(63,185,80,0.4);
+      background: rgba(63,185,80,0.06);
+      color: var(--positive);
+    }
+    .prop-chip-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
 
-        .scenario-option:hover { border-color: var(--accent, #58a6ff); }
-        .scenario-option.active {
-            border-color: var(--accent, #58a6ff);
-            background: rgba(88, 166, 255, 0.06);
-        }
+    /* ── XVA change table ──────────────────────────────────────────────────── */
+    .change-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .change-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 12px;
+    }
+    .change-table tr:last-child td { border-bottom: none; }
+    .right { text-align: right; }
 
-        .scenario-option input[type="radio"] { margin-top: 2px; accent-color: var(--accent, #58a6ff); }
-
-        .scenario-label { flex: 1; }
-        .scenario-name { color: var(--text, #c9d1d9); font-weight: 600; font-size: 12px; }
-        .scenario-desc { color: var(--muted, #8b949e); font-size: 11px; margin-top: 2px; }
-
-        /* ------------------------------------------------------------------ */
-        /* Shock parameters                                                    */
-        /* ------------------------------------------------------------------ */
-        .param-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .param-field label {
-            display: block;
-            font-size: 10px;
-            color: var(--muted, #8b949e);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-
-        .param-field input {
-            width: 100%;
-            background: #0d1117;
-            border: 1px solid var(--border, #30363d);
-            border-radius: 4px;
-            color: var(--text, #c9d1d9);
-            padding: 5px 8px;
-            font-family: inherit;
-            font-size: 12px;
-        }
-
-        .param-field input:read-only {
-            color: var(--muted, #8b949e);
-            cursor: default;
-        }
-
-        .param-field input:focus:not(:read-only) {
-            outline: none;
-            border-color: var(--accent, #58a6ff);
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Run button                                                          */
-        /* ------------------------------------------------------------------ */
-        #run-btn {
-            width: 100%;
-            padding: 10px;
-            background: var(--accent, #58a6ff);
-            color: #0d1117;
-            border: none;
-            border-radius: 4px;
-            font-family: inherit;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background 0.15s, opacity 0.15s;
-        }
-
-        #run-btn:hover:not(:disabled) { background: #79c0ff; }
-        #run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .spinner {
-            display: inline-block;
-            width: 12px; height: 12px;
-            border: 2px solid rgba(13, 17, 23, 0.3);
-            border-top-color: #0d1117;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-right: 6px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ------------------------------------------------------------------ */
-        /* KPI comparison boxes                                                */
-        /* ------------------------------------------------------------------ */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .kpi-box {
-            background: #0d1117;
-            border: 1px solid var(--border, #30363d);
-            border-radius: 4px;
-            padding: 10px 12px;
-        }
-
-        .kpi-label {
-            font-size: 10px;
-            color: var(--muted, #8b949e);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 6px;
-        }
-
-        .kpi-values {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-        }
-
-        .kpi-baseline {
-            font-size: 14px;
-            color: var(--muted, #8b949e);
-        }
-
-        .kpi-arrow { color: var(--muted, #8b949e); font-size: 11px; }
-
-        .kpi-stressed {
-            font-size: 14px;
-            color: var(--negative, #f85149);
-            font-weight: 700;
-        }
-
-        .kpi-delta {
-            font-size: 10px;
-            color: var(--negative, #f85149);
-            margin-top: 3px;
-        }
-
-        /* ------------------------------------------------------------------ */
-        /* Change table                                                        */
-        /* ------------------------------------------------------------------ */
-        table { width: 100%; border-collapse: collapse; }
-        th {
-            text-align: left;
-            color: var(--muted, #8b949e);
-            font-weight: normal;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 4px 8px;
-            border-bottom: 1px solid #21262d;
-        }
-        td { padding: 5px 8px; border-bottom: 1px solid #21262d; font-size: 12px; }
-        tr:last-child td { border-bottom: none; }
-        .positive { color: var(--positive, #3fb950); }
-        .negative { color: var(--negative, #f85149); }
-        .neutral  { color: var(--muted, #8b949e); }
-        .right    { text-align: right; }
-
-        /* ------------------------------------------------------------------ */
-        /* Library table                                                       */
-        /* ------------------------------------------------------------------ */
-        .badge {
-            display: inline-block;
-            padding: 1px 6px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-        .badge-pass { background: rgba(63, 185, 80, 0.15); color: var(--positive, #3fb950); border: 1px solid rgba(63, 185, 80, 0.3); }
-        .badge-fail { background: rgba(248, 81, 73, 0.15); color: var(--negative, #f85149); border: 1px solid rgba(248, 81, 73, 0.3); }
-
-        /* ------------------------------------------------------------------ */
-        /* Empty / waiting states                                              */
-        /* ------------------------------------------------------------------ */
-        .empty-state {
-            color: var(--muted, #8b949e);
-            text-align: center;
-            padding: 32px 20px;
-            font-size: 12px;
-        }
-
-        #results-placeholder { display: block; }
-        #results-content    { display: none; }
-    </style>
-    <script src="/static/shared_nav.js" defer></script>
+    /* ── Library table badges ──────────────────────────────────────────────── */
+    .badge-pass { background: rgba(63,185,80,0.15); color: var(--positive); border: 1px solid rgba(63,185,80,0.3); }
+    .badge-fail { background: rgba(248,81,73,0.15); color: var(--negative); border: 1px solid rgba(248,81,73,0.3); }
+  </style>
+  <script src="/static/shared_nav.js?v=20260411b" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
+<div class="page-shell">
 
-<h1>Stress Test Scenario Runner</h1>
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <div class="page-title">Scenarios</div>
+      <div class="page-subtitle">Activate, compare, and observe cross-domain effects</div>
+    </div>
+    <div class="page-header-right">
+      <span id="scenario-count" style="font-size:11px;color:var(--muted);">— available</span>
+      <span class="source-chip" data-source="SIMULATED">SIMULATED</span>
+    </div>
+  </div>
 
-<div class="main-grid">
+  <!-- ── Alert Rail ──────────────────────────────────────────────────────── -->
+  <div class="alert-rail" id="scenario-alerts" data-empty="true">
+    <span class="alert-rail-label">Alerts</span>
+  </div>
 
-    <!-- ================================================================ -->
-    <!-- LEFT COLUMN: Selector + Parameters                                -->
-    <!-- ================================================================ -->
-    <div class="left-col">
+  <!-- ── Active Scenario Banner ──────────────────────────────────────────── -->
+  <div class="scenario-banner" id="active-scenario-banner" data-active="false">
+    <div>
+      <div class="scenario-banner-label">Active Scenario</div>
+      <div class="scenario-banner-name" id="banner-name">—</div>
+      <div class="scenario-banner-desc" id="banner-desc"></div>
+    </div>
+    <button class="btn btn-danger" onclick="deactivateScenario()">Deactivate</button>
+  </div>
 
-        <!-- Scenario selector -->
-        <div class="card">
-            <h2>Scenario</h2>
-            <div id="scenario-list">
-                <!-- populated by JS -->
-            </div>
+  <!-- ── Main Panel ──────────────────────────────────────────────────────── -->
+  <div class="main-panel">
+
+    <!-- Left: scenario list -->
+    <div class="main-content">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="card-header" style="padding:10px 14px;border-bottom:1px solid var(--border-subtle);">
+          <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">Available Scenarios</span>
         </div>
-
-        <!-- Shock parameters -->
-        <div class="card">
-            <h2>Shock Parameters</h2>
-            <div class="param-grid" id="shock-params">
-                <!-- populated by JS based on selection -->
-            </div>
+        <div style="padding:12px 14px;" id="scenario-list">
+          <div class="empty-state">Loading scenarios...</div>
         </div>
-
-        <!-- Run button -->
-        <button id="run-btn" onclick="runScenario()">&#9654; Run Scenario</button>
-
+      </div>
     </div>
 
-    <!-- ================================================================ -->
-    <!-- RIGHT COLUMN: Results                                             -->
-    <!-- ================================================================ -->
-    <div class="right-col">
-
-        <!-- KPI comparison + chart -->
-        <div class="card">
-            <h2>Results</h2>
-
-            <div id="results-placeholder">
-                <p class="empty-state">Select a scenario and click Run Scenario to see results.</p>
-            </div>
-
-            <div id="results-content">
-                <!-- KPI boxes -->
-                <div class="kpi-grid" id="kpi-grid"></div>
-
-                <!-- Plotly exposure chart -->
-                <div id="exposure-chart" style="width:100%;height:280px;margin-bottom:4px;"></div>
-                <div style="font-size:10px;color:var(--muted,#8b949e);margin-bottom:16px;">
-                    PFE 97.5% profile — baseline (solid) vs stressed (dashed)
-                </div>
-
-                <!-- Change table -->
-                <h3>XVA Change Table</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th class="right">Baseline</th>
-                            <th class="right">Stressed</th>
-                            <th class="right">Δ Abs</th>
-                            <th class="right">Δ %</th>
-                        </tr>
-                    </thead>
-                    <tbody id="change-table-body"></tbody>
-                </table>
-            </div>
-        </div>
-
+    <!-- Right: detail drawer -->
+    <div class="detail-drawer" id="scenario-drawer">
+      <div class="detail-drawer-title">Scenario Detail</div>
+      <div id="scenario-drawer-content">
+        <div class="detail-drawer-empty">Select a scenario to view details</div>
+      </div>
     </div>
 
-</div>
+  </div><!-- /.main-panel -->
 
-<!-- ================================================================ -->
-<!-- SCENARIO LIBRARY (full width)                                    -->
-<!-- ================================================================ -->
-<div style="max-width:1400px;margin-top:16px;">
-    <div class="card">
-        <h2>Scenario Library — Historical Runs</h2>
-        <div id="library-container">
-            <p class="empty-state">Loading...</p>
-        </div>
+  <!-- ── Propagation Status Card ─────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">Propagation Status</span>
+      <span style="font-size:11px;color:var(--muted);" id="prop-status-label">No active scenario</span>
     </div>
-
-    <!-- DFAST Capital Stress Panel -->
-    <div class="card" style="margin-top:16px;">
-        <h2>Capital Stress (DFAST/CCAR) — 9-Quarter CET1 Projection</h2>
-        <p style="font-size:11px;color:var(--muted,#8b949e);margin-bottom:12px;">
-            3 scenarios × 9 quarters. Dashed line = Basel III 4.5% minimum CET1 floor.
-        </p>
-        <div id="dfast-container">
-            <p class="empty-state">Loading DFAST results...</p>
-        </div>
+    <div class="prop-grid" id="prop-grid">
+      <div class="prop-chip" id="prop-risk">
+        <span class="prop-chip-dot"></span>Risk
+        <span style="font-size:10px;margin-left:2px;" id="prop-risk-val">—</span>
+      </div>
+      <div class="prop-chip" id="prop-xva">
+        <span class="prop-chip-dot"></span>XVA
+        <span style="font-size:10px;margin-left:2px;" id="prop-xva-val">—</span>
+      </div>
+      <div class="prop-chip" id="prop-liquidity">
+        <span class="prop-chip-dot"></span>Liquidity
+        <span style="font-size:10px;margin-left:2px;" id="prop-liquidity-val">—</span>
+      </div>
+      <div class="prop-chip" id="prop-treasury">
+        <span class="prop-chip-dot"></span>Treasury
+        <span style="font-size:10px;margin-left:2px;" id="prop-treasury-val">—</span>
+      </div>
+      <div class="prop-chip" id="prop-boardroom">
+        <span class="prop-chip-dot"></span>Boardroom
+        <span style="font-size:10px;margin-left:2px;" id="prop-boardroom-val">—</span>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- ================================================================ -->
-<!-- JavaScript                                                        -->
-<!-- ================================================================ -->
+  <!-- ── DFAST Capital Stress Expander ───────────────────────────────────── -->
+  <div class="secondary-expander">
+    <div class="expander-header" id="dfast-expander-header">
+      DFAST Capital Stress
+      <span class="expander-caret">&#9660;</span>
+    </div>
+    <div class="expander-body" id="dfast-expander-body">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+        3 scenarios &times; 9 quarters. Dashed line = Basel III 4.5% minimum CET1 floor.
+      </div>
+      <div id="dfast-container">
+        <div class="empty-state">Loading DFAST results...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scenario Library Card ───────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">Scenario Library — Historical Runs</span>
+    </div>
+    <div id="library-container">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+
+</div><!-- /.page-shell -->
+
 <script>
-    // -----------------------------------------------------------------
-    // State
-    // -----------------------------------------------------------------
-    let scenarios = [];
-    let selectedId = 'gfc';
+// ──────────────────────────────────────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────────────────────────────────────
+let scenarios      = [];
+let selectedId     = null;
+let activeScenario = null;
+let lastRunResults = null;
+let scenarioDrafts = {};
 
-    const SHOCK_LABELS = {
-        ir_sigma_multiplier:    'IR Vol ×',
-        ir_level_shift:         'IR Level Shift',
-        fx_vol_multiplier:      'FX Vol ×',
-        eq_vol_multiplier:      'EQ Vol ×',
-        credit_spread_multiplier: 'Credit Spread ×',
-        ig_spread_multiplier:   'IG Spread ×',
-        hy_spread_multiplier:   'HY Spread ×',
+const SHOCK_LABELS = {
+  ir_sigma_multiplier:      'IR Vol ×',
+  ir_level_shift:           'IR Level Shift',
+  fx_vol_multiplier:        'FX Vol ×',
+  eq_vol_multiplier:        'EQ Vol ×',
+  credit_spread_multiplier: 'Credit Spread ×',
+  ig_spread_multiplier:     'IG Spread ×',
+  hy_spread_multiplier:     'HY Spread ×',
+};
+
+const PROP_DOMAINS = ['risk', 'xva', 'liquidity', 'treasury', 'boardroom'];
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Boot
+// ──────────────────────────────────────────────────────────────────────────────
+(async function init() {
+  await Promise.all([loadScenarios(), loadLibrary(), loadDFAST()]);
+  checkActiveScenario();
+})();
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Load scenario list
+// ──────────────────────────────────────────────────────────────────────────────
+async function loadScenarios() {
+  try {
+    const res  = await fetch('/api/scenarios/list');
+    const data = await res.json();
+    scenarios  = data.scenarios || [];
+    document.getElementById('scenario-count').textContent = `${scenarios.length} available`;
+    renderScenarioList();
+  } catch (e) {
+    document.getElementById('scenario-list').innerHTML =
+      '<div class="empty-state">Failed to load scenarios.</div>';
+  }
+}
+
+function renderScenarioList() {
+  const el = document.getElementById('scenario-list');
+  if (!scenarios.length) {
+    el.innerHTML = '<div class="empty-state">No scenarios available.</div>';
+    return;
+  }
+  el.innerHTML = scenarios.map(s => `
+    <div class="scenario-option${s.id === selectedId ? ' selected' : ''}"
+         id="opt-${s.id}" onclick="selectScenario('${s.id}')">
+      <div class="scenario-option-body">
+        <div class="scenario-option-name">${s.name}</div>
+        <div class="scenario-option-desc">${s.description}</div>
+        <div class="scenario-option-actions">
+          <button class="btn" style="font-size:10px;padding:3px 10px;"
+                  onclick="event.stopPropagation();runScenarioById('${s.id}')">&#9654; Run</button>
+          <button class="btn btn-primary" style="font-size:10px;padding:3px 10px;"
+                  onclick="event.stopPropagation();activateScenario('${s.id}')">Activate</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getScenarioDraft(id) {
+  const scenario = scenarios.find(x => x.id === id);
+  if (!scenario) return {};
+  if (!scenarioDrafts[id]) {
+    const baseShocks = scenario.shocks || {};
+    const keys = Object.keys(baseShocks).length ? Object.keys(baseShocks) : Object.keys(SHOCK_LABELS);
+    scenarioDrafts[id] = {};
+    keys.forEach(k => {
+      if (scenario.id === 'custom') scenarioDrafts[id][k] = baseShocks[k] ?? 1.0;
+      else if (baseShocks[k] != null) scenarioDrafts[id][k] = baseShocks[k];
+    });
+  }
+  return scenarioDrafts[id];
+}
+
+function collectDrawerShocks(id) {
+  const draft = getScenarioDraft(id);
+  Object.keys(SHOCK_LABELS).forEach(k => {
+    const el = document.getElementById('drawer-shock-' + k);
+    if (!el) return;
+    if (el.value === '') {
+      delete draft[k];
+      return;
+    }
+    const parsed = parseFloat(el.value);
+    if (!Number.isNaN(parsed)) draft[k] = parsed;
+  });
+  scenarioDrafts[id] = draft;
+  return { ...draft };
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Select scenario → populate drawer
+// ──────────────────────────────────────────────────────────────────────────────
+function selectScenario(id) {
+  selectedId = id;
+  document.querySelectorAll('.scenario-option').forEach(el => el.classList.remove('selected'));
+  const opt = document.getElementById('opt-' + id);
+  if (opt) opt.classList.add('selected');
+
+  const s = scenarios.find(x => x.id === id);
+  if (!s) return;
+
+  const draft    = getScenarioDraft(id);
+  const shocks   = s.shocks || {};
+  const paramKeys = Object.keys(shocks).length ? Object.keys(shocks) : Object.keys(SHOCK_LABELS);
+
+  const paramHTML = paramKeys.length
+    ? `<div class="param-grid">
+        ${paramKeys.map(k => `
+          <div class="param-field">
+            <label>${SHOCK_LABELS[k] || k}</label>
+            <input type="number" id="drawer-shock-${k}" step="0.01"
+              value="${draft[k] ?? ''}">
+          </div>`).join('')}
+      </div>`
+    : `<div style="font-size:11px;color:var(--muted);">No shock parameters defined.</div>`;
+
+  const impactHTML = lastRunResults && lastRunResults._scenarioId === id
+    ? buildImpactHTML(lastRunResults)
+    : `<div class="impact-grid">
+        <div class="impact-box"><div class="impact-label">VaR Delta</div><div class="impact-value neutral">—</div></div>
+        <div class="impact-box"><div class="impact-label">CVA Delta</div><div class="impact-value neutral">—</div></div>
+        <div class="impact-box"><div class="impact-label">LCR Delta</div><div class="impact-value neutral">—</div></div>
+      </div>`;
+
+  document.getElementById('scenario-drawer-content').innerHTML = `
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;">${s.name}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;">${s.description}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Preset scenarios now prefill recommended shocks. You can adjust them before running or activating.</div>
+
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">Shock Parameters</div>
+    ${paramHTML}
+
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px;">Impact Preview</div>
+    <div id="drawer-impact">${impactHTML}</div>
+
+    <button class="drawer-run-btn" id="drawer-run-btn" onclick="runFromDrawer()" style="margin-top:12px;">
+      &#9654; Run Scenario
+    </button>
+    <button class="btn btn-primary" onclick="activateScenario('${s.id}')" style="width:100%;margin-top:8px;">Activate Scenario</button>
+  `;
+
+  paramKeys.forEach(k => {
+    const el = document.getElementById('drawer-shock-' + k);
+    if (!el) return;
+    el.addEventListener('input', () => { collectDrawerShocks(id); });
+  });
+}
+
+function buildImpactHTML(results) {
+  const b = results.baseline;
+  const s = results.stressed;
+  const varDelta  = b && s ? ((s.pfe_peak_mm - b.pfe_peak_mm) / Math.abs(b.pfe_peak_mm) * 100).toFixed(1) + '%' : '—';
+  const cvaDelta  = b && s ? ((s.cva - b.cva) / Math.abs(b.cva) * 100).toFixed(1) + '%'         : '—';
+  return `<div class="impact-grid">
+    <div class="impact-box"><div class="impact-label">Peak PFE Δ</div><div class="impact-value">${varDelta}</div></div>
+    <div class="impact-box"><div class="impact-label">CVA Δ</div><div class="impact-value">${cvaDelta}</div></div>
+    <div class="impact-box"><div class="impact-label">LCR Δ</div><div class="impact-value neutral">—</div></div>
+  </div>`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Run
+// ──────────────────────────────────────────────────────────────────────────────
+async function runFromDrawer() {
+  if (!selectedId) return;
+  const btn = document.getElementById('drawer-run-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Running...'; }
+
+  const customShocks = collectDrawerShocks(selectedId);
+
+  try {
+    const res  = await fetch('/api/scenarios/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_id: selectedId, custom_shocks: customShocks }),
+    });
+    const data = await res.json();
+    data._scenarioId = selectedId;
+    lastRunResults   = data;
+    if (document.getElementById('drawer-impact')) {
+      document.getElementById('drawer-impact').innerHTML = buildImpactHTML(data);
+    }
+  } catch (e) {
+    alert('Failed to run scenario: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '&#9654; Run Scenario'; }
+  }
+}
+
+async function runScenarioById(id) {
+  selectedId = id;
+  renderScenarioList();
+  selectScenario(id);
+  await runFromDrawer();
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Activate / Deactivate
+// ──────────────────────────────────────────────────────────────────────────────
+async function activateScenario(id) {
+  const s = scenarios.find(x => x.id === id);
+  if (!s) return;
+  try {
+    let customShocks = getScenarioDraft(id);
+    if (selectedId === id) customShocks = collectDrawerShocks(id);
+    await fetch('/api/scenarios/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_id: id, custom_shocks: customShocks }),
+    });
+    activeScenario = { ...s, shocks: customShocks };
+    updateActiveUI();
+  } catch (e) {
+    alert('Failed to activate scenario: ' + e.message);
+  }
+}
+
+async function deactivateScenario() {
+  try {
+    await fetch('/api/scenarios/activate', { method: 'DELETE' });
+    activeScenario = null;
+    updateActiveUI();
+  } catch (e) {
+    alert('Failed to deactivate scenario: ' + e.message);
+  }
+}
+
+async function checkActiveScenario() {
+  try {
+    const res = await fetch('/api/scenarios/active');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.id) {
+        activeScenario = data;
+        updateActiveUI();
+      }
+    }
+  } catch {}
+}
+
+function updateActiveUI() {
+  const banner = document.getElementById('active-scenario-banner');
+  const rail   = document.getElementById('scenario-alerts');
+
+  if (activeScenario) {
+    banner.setAttribute('data-active', 'true');
+    document.getElementById('banner-name').textContent = activeScenario.name;
+    document.getElementById('banner-desc').textContent = activeScenario.description || '';
+
+    rail.removeAttribute('data-empty');
+    rail.innerHTML = `<span class="alert-rail-label">Alerts</span>
+      <span class="alert-item info"><span class="alert-item-dot"></span>Scenario active — propagated to Risk, XVA, Boardroom</span>`;
+
+    document.getElementById('prop-status-label').textContent = `Active: ${activeScenario.name}`;
+    PROP_DOMAINS.forEach(d => {
+      document.getElementById('prop-' + d).classList.add('active');
+      document.getElementById('prop-' + d + '-val').textContent = '✓';
+    });
+  } else {
+    banner.setAttribute('data-active', 'false');
+    rail.setAttribute('data-empty', 'true');
+    document.getElementById('prop-status-label').textContent = 'No active scenario';
+    PROP_DOMAINS.forEach(d => {
+      document.getElementById('prop-' + d).classList.remove('active');
+      document.getElementById('prop-' + d + '-val').textContent = '—';
+    });
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Scenario library
+// ──────────────────────────────────────────────────────────────────────────────
+async function loadLibrary() {
+  try {
+    const res  = await fetch('/api/scenarios/library');
+    const data = await res.json();
+    renderLibrary(data.library || []);
+  } catch (e) {
+    document.getElementById('library-container').innerHTML =
+      '<div class="empty-state">Failed to load library.</div>';
+  }
+}
+
+function renderLibrary(rows) {
+  const el = document.getElementById('library-container');
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty-state">No historical runs.</div>';
+    return;
+  }
+  el.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">Date</th>
+          <th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">Scenario</th>
+          <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">CVA Delta</th>
+          <th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `<tr>
+          <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);font-size:12px;color:var(--muted);">${r.date}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);font-size:12px;">${r.scenario}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);font-size:12px;text-align:right;" class="negative">+${r.cva_change_pct.toFixed(1)}%</td>
+          <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);font-size:12px;">
+            <span class="badge ${r.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${r.status}</span>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// DFAST / CCAR Capital Stress
+// ──────────────────────────────────────────────────────────────────────────────
+async function loadDFAST() {
+  const el = document.getElementById('dfast-container');
+  try {
+    const res = await fetch('/api/stress/dfast');
+    if (!res.ok) { el.innerHTML = '<div class="empty-state">DFAST endpoint unavailable.</div>'; return; }
+    const data = await res.json();
+    renderDFAST(data);
+  } catch (e) {
+    el.innerHTML = '<div class="empty-state">Failed to load DFAST results.</div>';
+  }
+}
+
+function renderDFAST(data) {
+  const el        = document.getElementById('dfast-container');
+  const scenKeys  = ['baseline', 'adverse', 'severely_adverse'];
+  const colors    = { baseline: '#58a6ff', adverse: '#ffa657', severely_adverse: '#f85149' };
+  const labels    = { baseline: 'Baseline', adverse: 'Adverse', severely_adverse: 'Severely Adverse' };
+
+  const traces = scenKeys.map(s => {
+    const result = data[s];
+    if (!result) return null;
+    return {
+      x: result.quarters.map(q => 'Q' + q.quarter),
+      y: result.quarters.map(q => q.cet1_ratio),
+      type: 'scatter', mode: 'lines+markers',
+      name: labels[s],
+      line: { color: colors[s], width: 2 },
+      marker: { size: 5 },
     };
+  }).filter(Boolean);
 
-    // -----------------------------------------------------------------
-    // Boot
-    // -----------------------------------------------------------------
-    (async function init() {
-        await Promise.all([loadScenarios(), loadLibrary()]);
-    })();
+  traces.push({
+    x: ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9'],
+    y: Array(9).fill(4.5),
+    type: 'scatter', mode: 'lines',
+    name: 'Min CET1 (4.5%)',
+    line: { color: '#8b949e', width: 1, dash: 'dash' },
+  });
 
-    // -----------------------------------------------------------------
-    // Load scenario list
-    // -----------------------------------------------------------------
-    async function loadScenarios() {
-        try {
-            const res = await fetch('/api/scenarios/list');
-            const data = await res.json();
-            scenarios = data.scenarios || [];
-            renderScenarioList();
-            setSelected(selectedId);
-        } catch (e) {
-            document.getElementById('scenario-list').innerHTML =
-                '<p class="empty-state">Failed to load scenarios.</p>';
-        }
+  const rows = scenKeys.map(s => {
+    const result = data[s];
+    if (!result) return '';
+    const cls = result.breach_minimum ? 'negative' : 'positive';
+    return `<tr>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);color:${colors[s]};font-size:12px;">${labels[s]}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);text-align:right;font-size:12px;" class="${cls}">${result.min_cet1_ratio.toFixed(2)}%</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border-subtle);text-align:right;font-size:12px;" class="${cls}">${result.breach_minimum ? 'BREACH' : 'PASS'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div id="dfast-chart" style="width:100%;height:280px;margin-bottom:12px;"></div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">Scenario</th>
+          <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">Min CET1</th>
+          <th style="text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border-subtle);">Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  Plotly.newPlot('dfast-chart', traces, {
+    paper_bgcolor: 'transparent',
+    plot_bgcolor:  'transparent',
+    font: { color: '#c9d1d9', size: 11, family: 'SF Mono, Menlo, Monaco, monospace' },
+    xaxis: { gridcolor: '#21262d', title: { text: 'Quarter', font: { size: 10 } } },
+    yaxis: { gridcolor: '#21262d', title: { text: 'CET1 Ratio (%)', font: { size: 10 } }, ticksuffix: '%' },
+    legend: { orientation: 'h', y: -0.2, font: { size: 10 } },
+    margin: { l: 50, r: 16, t: 16, b: 60 },
+  }, { responsive: true, displayModeBar: false });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Expander toggle
+// ──────────────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.expander-header').forEach(h => {
+  h.addEventListener('click', () => {
+    const wasOpen = h.classList.contains('open');
+    h.classList.toggle('open');
+    h.nextElementSibling.classList.toggle('open');
+    // Re-render Plotly chart after expander opens (it needs a reflow)
+    if (!wasOpen && h.id === 'dfast-expander-header') {
+      setTimeout(() => {
+        const chart = document.getElementById('dfast-chart');
+        if (chart && chart.data) Plotly.relayout('dfast-chart', {});
+      }, 50);
     }
-
-    function renderScenarioList() {
-        const el = document.getElementById('scenario-list');
-        el.innerHTML = scenarios.map(s => `
-            <label class="scenario-option${s.id === selectedId ? ' active' : ''}" id="opt-${s.id}" onclick="setSelected('${s.id}')">
-                <input type="radio" name="scenario" value="${s.id}" ${s.id === selectedId ? 'checked' : ''}>
-                <span class="scenario-label">
-                    <span class="scenario-name">${s.name}</span>
-                    <span class="scenario-desc">${s.description}</span>
-                </span>
-            </label>
-        `).join('');
-    }
-
-    function setSelected(id) {
-        selectedId = id;
-        // Update active state
-        document.querySelectorAll('.scenario-option').forEach(el => el.classList.remove('active'));
-        const opt = document.getElementById('opt-' + id);
-        if (opt) {
-            opt.classList.add('active');
-            opt.querySelector('input[type="radio"]').checked = true;
-        }
-        // Populate shock params
-        const scenario = scenarios.find(s => s.id === id);
-        if (scenario) renderShockParams(scenario);
-    }
-
-    function renderShockParams(scenario) {
-        const isCustom = scenario.id === 'custom';
-        const shocks = scenario.shocks || {};
-        const allKeys = isCustom
-            ? Object.keys(SHOCK_LABELS)
-            : Object.keys(shocks);
-
-        if (!allKeys.length && !isCustom) {
-            document.getElementById('shock-params').innerHTML =
-                '<p class="neutral" style="font-size:11px;grid-column:1/-1">No shock parameters defined for this scenario.</p>';
-            return;
-        }
-
-        const keys = isCustom ? Object.keys(SHOCK_LABELS) : allKeys;
-        document.getElementById('shock-params').innerHTML = keys.map(k => `
-            <div class="param-field">
-                <label>${SHOCK_LABELS[k] || k}</label>
-                <input
-                    type="number"
-                    id="shock-${k}"
-                    step="0.01"
-                    value="${isCustom ? (shocks[k] ?? 1.0) : (shocks[k] ?? '')}"
-                    ${isCustom ? '' : 'readonly'}
-                >
-            </div>
-        `).join('');
-    }
-
-    // -----------------------------------------------------------------
-    // Run scenario
-    // -----------------------------------------------------------------
-    async function runScenario() {
-        const btn = document.getElementById('run-btn');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span>Running...';
-
-        const scenario = scenarios.find(s => s.id === selectedId);
-        let customShocks = {};
-
-        if (selectedId === 'custom' && scenario) {
-            Object.keys(SHOCK_LABELS).forEach(k => {
-                const el = document.getElementById('shock-' + k);
-                if (el && el.value !== '') customShocks[k] = parseFloat(el.value);
-            });
-        }
-
-        try {
-            const res = await fetch('/api/scenarios/run', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scenario_id: selectedId, custom_shocks: customShocks }),
-            });
-            const data = await res.json();
-            renderResults(data);
-        } catch (e) {
-            alert('Failed to run scenario: ' + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '&#9654; Run Scenario';
-        }
-    }
-
-    // -----------------------------------------------------------------
-    // Render results
-    // -----------------------------------------------------------------
-    function renderResults(data) {
-        document.getElementById('results-placeholder').style.display = 'none';
-        document.getElementById('results-content').style.display = 'block';
-
-        const b = data.baseline;
-        const s = data.stressed;
-
-        // KPI boxes
-        const kpis = [
-            { label: 'CVA',         base: b.cva,         stressed: s.cva,         fmt: v => v.toFixed(4) + 'MM' },
-            { label: 'FVA',         base: b.fva,         stressed: s.fva,         fmt: v => v.toFixed(4) + 'MM' },
-            { label: 'DVA',         base: b.dva,         stressed: s.dva,         fmt: v => v.toFixed(4) + 'MM' },
-            { label: 'Peak PFE',    base: b.pfe_peak_mm, stressed: s.pfe_peak_mm, fmt: v => '$' + v.toFixed(2) + 'MM' },
-            { label: 'EEPE',        base: b.eepe_mm,     stressed: s.eepe_mm,     fmt: v => '$' + v.toFixed(2) + 'MM' },
-        ];
-
-        document.getElementById('kpi-grid').innerHTML = kpis.map(k => {
-            const deltaPct = k.base !== 0 ? ((k.stressed - k.base) / Math.abs(k.base) * 100) : 0;
-            const worse = k.stressed < k.base; // more negative = worse for CVA/FVA; larger = worse for PFE
-            const cls = 'negative';
-            return `
-                <div class="kpi-box">
-                    <div class="kpi-label">${k.label}</div>
-                    <div class="kpi-values">
-                        <span class="kpi-baseline">${k.fmt(k.base)}</span>
-                        <span class="kpi-arrow">→</span>
-                        <span class="kpi-stressed">${k.fmt(k.stressed)}</span>
-                    </div>
-                    <div class="kpi-delta ${cls}">Δ ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}%</div>
-                </div>`;
-        }).join('');
-
-        // Plotly chart
-        renderChart(b.time_grid, b.pfe_profile, s.pfe_profile, data.scenario_name);
-
-        // Change table
-        document.getElementById('change-table-body').innerHTML = (data.change_table || []).map(row => {
-            const pct = row.delta_pct != null ? (row.delta_pct >= 0 ? '+' : '') + row.delta_pct.toFixed(1) + '%' : '—';
-            const cls = row.delta_pct != null && row.delta_pct > 0 ? 'negative' : (row.delta_pct < 0 ? 'positive' : 'neutral');
-            return `<tr>
-                <td><strong>${row.metric}</strong></td>
-                <td class="right neutral">${formatNum(row.baseline)}</td>
-                <td class="right negative">${formatNum(row.stressed)}</td>
-                <td class="right ${cls}">${formatNum(row.delta_abs)}</td>
-                <td class="right ${cls}">${pct}</td>
-            </tr>`;
-        }).join('');
-    }
-
-    function formatNum(v) {
-        if (v == null) return '—';
-        if (Math.abs(v) >= 1) return v.toFixed(2);
-        return v.toFixed(4);
-    }
-
-    function renderChart(timeGrid, basePfe, stressedPfe, scenarioName) {
-        const layout = {
-            template: 'plotly_dark',
-            paper_bgcolor: '#0d1117',
-            plot_bgcolor: '#0d1117',
-            margin: { t: 28, r: 16, b: 36, l: 48 },
-            xaxis: {
-                title: { text: 'Years', font: { size: 10, color: '#8b949e' } },
-                color: '#8b949e',
-                gridcolor: '#21262d',
-                zeroline: false,
-            },
-            yaxis: {
-                title: { text: 'PFE 97.5% (MM USD)', font: { size: 10, color: '#8b949e' } },
-                color: '#8b949e',
-                gridcolor: '#21262d',
-                zeroline: false,
-            },
-            legend: { font: { size: 10 }, bgcolor: 'rgba(0,0,0,0)' },
-            title: {
-                text: 'PFE Profile — Baseline vs ' + scenarioName,
-                font: { size: 11, color: '#8b949e' },
-                x: 0,
-            },
-        };
-
-        const traces = [
-            {
-                x: timeGrid,
-                y: basePfe,
-                name: 'Baseline',
-                mode: 'lines',
-                line: { color: '#58a6ff', width: 2, dash: 'solid' },
-                fill: 'tozeroy',
-                fillcolor: 'rgba(88,166,255,0.06)',
-            },
-            {
-                x: timeGrid,
-                y: stressedPfe,
-                name: 'Stressed',
-                mode: 'lines',
-                line: { color: '#f85149', width: 2, dash: 'dash' },
-                fill: 'tozeroy',
-                fillcolor: 'rgba(248,81,73,0.04)',
-            },
-        ];
-
-        Plotly.react('exposure-chart', traces, layout, { displayModeBar: false, responsive: true });
-    }
-
-    // -----------------------------------------------------------------
-    // Scenario library
-    // -----------------------------------------------------------------
-    async function loadLibrary() {
-        try {
-            const res = await fetch('/api/scenarios/library');
-            const data = await res.json();
-            renderLibrary(data.library || []);
-        } catch (e) {
-            document.getElementById('library-container').innerHTML =
-                '<p class="empty-state">Failed to load library.</p>';
-        }
-    }
-
-    function renderLibrary(rows) {
-        const el = document.getElementById('library-container');
-        if (!rows.length) { el.innerHTML = '<p class="empty-state">No historical runs.</p>'; return; }
-        el.innerHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Run ID</th>
-                        <th>Date</th>
-                        <th>Scenario</th>
-                        <th class="right">Peak PFE (MM)</th>
-                        <th class="right">CVA Δ%</th>
-                        <th>Status</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rows.map(r => `<tr>
-                        <td class="neutral">${r.run_id}</td>
-                        <td>${r.date}</td>
-                        <td>${r.scenario}</td>
-                        <td class="right">$${r.peak_pfe_mm.toFixed(2)}</td>
-                        <td class="right negative">+${r.cva_change_pct.toFixed(1)}%</td>
-                        <td><span class="badge ${r.status === 'PASS' ? 'badge-pass' : 'badge-fail'}">${r.status}</span></td>
-                        <td class="neutral" style="font-size:11px">${r.notes}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>`;
-    }
-
-    // -----------------------------------------------------------------
-    // DFAST / CCAR Capital Stress
-    // -----------------------------------------------------------------
-    async function loadDFAST() {
-        const el = document.getElementById('dfast-container');
-        try {
-            const res = await fetch('/api/stress/dfast');
-            if (!res.ok) { el.innerHTML = '<p class="empty-state">DFAST endpoint unavailable.</p>'; return; }
-            const data = await res.json();
-            renderDFAST(data);
-        } catch (e) {
-            el.innerHTML = '<p class="empty-state">Failed to load DFAST results.</p>';
-        }
-    }
-
-    function renderDFAST(data) {
-        const el = document.getElementById('dfast-container');
-        const scenarios = ['baseline', 'adverse', 'severely_adverse'];
-        const colors = { baseline: '#58a6ff', adverse: '#ffa657', severely_adverse: '#f85149' };
-        const labels = { baseline: 'Baseline', adverse: 'Adverse', severely_adverse: 'Severely Adverse' };
-
-        const traces = scenarios.map(s => {
-            const result = data[s];
-            if (!result) return null;
-            return {
-                x: result.quarters.map(q => 'Q' + q.quarter),
-                y: result.quarters.map(q => q.cet1_ratio),
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: labels[s],
-                line: { color: colors[s], width: 2 },
-                marker: { size: 5 },
-            };
-        }).filter(Boolean);
-
-        // Basel III 4.5% minimum line
-        traces.push({
-            x: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9'],
-            y: Array(9).fill(4.5),
-            type: 'scatter',
-            mode: 'lines',
-            name: 'Min CET1 (4.5%)',
-            line: { color: '#8b949e', width: 1, dash: 'dash' },
-        });
-
-        Plotly.newPlot('dfast-chart', traces, {
-            paper_bgcolor: 'transparent',
-            plot_bgcolor: 'transparent',
-            font: { color: '#c9d1d9', size: 11, family: 'SF Mono, Menlo, Monaco, monospace' },
-            xaxis: { gridcolor: '#21262d', title: { text: 'Quarter', font: { size: 10 } } },
-            yaxis: { gridcolor: '#21262d', title: { text: 'CET1 Ratio (%)', font: { size: 10 } }, ticksuffix: '%' },
-            legend: { orientation: 'h', y: -0.2, font: { size: 10 } },
-            margin: { l: 50, r: 16, t: 16, b: 60 },
-        }, { responsive: true, displayModeBar: false });
-
-        // Summary table
-        const rows = scenarios.map(s => {
-            const result = data[s];
-            if (!result) return '';
-            const breachClass = result.breach_minimum ? 'negative' : 'positive';
-            return `<tr>
-                <td style="color:${colors[s]}">${labels[s]}</td>
-                <td class="right ${breachClass}">${result.min_cet1_ratio.toFixed(2)}%</td>
-                <td class="right ${breachClass}">${result.breach_minimum ? 'BREACH' : 'PASS'}</td>
-            </tr>`;
-        }).join('');
-
-        el.innerHTML = `
-            <div id="dfast-chart" style="width:100%;height:280px;margin-bottom:12px;"></div>
-            <table>
-                <thead><tr><th>Scenario</th><th class="right">Min CET1</th><th class="right">Status</th></tr></thead>
-                <tbody>${rows}</tbody>
-            </table>`;
-
-        // Re-render chart into the newly-created div
-        Plotly.newPlot('dfast-chart', traces, {
-            paper_bgcolor: 'transparent',
-            plot_bgcolor: 'transparent',
-            font: { color: '#c9d1d9', size: 11, family: 'SF Mono, Menlo, Monaco, monospace' },
-            xaxis: { gridcolor: '#21262d', title: { text: 'Quarter', font: { size: 10 } } },
-            yaxis: { gridcolor: '#21262d', title: { text: 'CET1 Ratio (%)', font: { size: 10 } }, ticksuffix: '%' },
-            legend: { orientation: 'h', y: -0.2, font: { size: 10 } },
-            margin: { l: 50, r: 16, t: 16, b: 60 },
-        }, { responsive: true, displayModeBar: false });
-    }
-
-    // Extend init to also load DFAST
-    const _origInit = window.__dfastInit;
-    (async function dfastInit() {
-        await loadDFAST();
-    })();
+  });
+});
 </script>
 </body>
 </html>

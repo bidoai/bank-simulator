@@ -65,7 +65,7 @@ class RiskService:
         calculator = VaRCalculator(confidence=0.99, horizon_days=1)
         all_positions = self.position_manager.get_all_positions()
 
-        # Group positions by desk
+        # ── Group positions by desk ──────────────────────────────────────────
         desk_positions: dict[str, dict[str, float]] = {}
         desk_vols_map: dict[str, dict[str, float]] = {}
         all_pos_notionals: dict[str, float] = {}
@@ -86,7 +86,7 @@ class RiskService:
             all_pos_notionals[instrument] = notional
             all_pos_vols[instrument] = vol
 
-        # Run VaR per desk
+        # ── Run VaR per desk and Firm ────────────────────────────────────────
         var_by_desk: dict[str, Any] = {}
         for desk, positions in desk_positions.items():
             if not positions:
@@ -103,7 +103,6 @@ class RiskService:
             if limit_name:
                 self.limit_manager.update(limit_name, float(result.var_amount))
 
-        # Firm-wide VaR
         if all_pos_notionals:
             firm_result = calculator.monte_carlo_var(
                 positions=all_pos_notionals,
@@ -112,6 +111,38 @@ class RiskService:
             )
             self.limit_manager.update("VAR_FIRM", float(firm_result.var_amount))
             var_by_desk["FIRM"] = firm_result
+
+        # ── Sensitivity Limits (DV01, Equity Delta, Vega) ─────────────────────
+        from infrastructure.trading.greeks import GreeksCalculator
+        # We need market prices for Greeks
+        # Note: In a real system we'd get this from MarketDataFeed, here we use position last_price
+        aggr = GreeksCalculator.aggregate(all_positions)
+        
+        # Update Firm DV01
+        self.limit_manager.update("DV01_FIRM", aggr["portfolio"]["dv01"])
+        
+        # Update Equity Delta (APEX_EQ_MM)
+        # Find all positions for EQUITY desk
+        eq_positions = [p for p in all_positions if p["desk"] == "EQUITY"]
+        eq_aggr = GreeksCalculator.aggregate(eq_positions)
+        self.limit_manager.update("EQUITY_DELTA", eq_aggr["portfolio"]["delta"])
+        
+        # Update Vega (APEX_DERIV)
+        deriv_positions = [p for p in all_positions if p["desk"] == "DERIVATIVES"]
+        deriv_aggr = GreeksCalculator.aggregate(deriv_positions)
+        self.limit_manager.update("VEGA_FIRM", deriv_aggr["portfolio"]["vega"])
+
+        # ── Concentration Limits ──────────────────────────────────────────────
+        from infrastructure.risk.concentration_risk import concentration_monitor
+        conc = concentration_monitor.analyze(all_positions)
+        
+        # SINGLE_NAME_EQ_PCT (Max % for any ticker in EQUITY desk)
+        eq_conc = concentration_monitor.analyze(eq_positions)
+        if eq_conc["single_name"]:
+            max_pct = max(r["pct"] * 100.0 for r in eq_conc["single_name"])
+            max_notional = max(r["notional"] for r in eq_conc["single_name"])
+            self.limit_manager.update("SINGLE_NAME_EQ_PCT", max_pct)
+            self.limit_manager.update("SINGLE_NAME_EQ_NOTIONAL", max_notional)
 
         limit_summary = self.limit_manager.get_summary()
         limit_report = self.limit_manager.get_report()

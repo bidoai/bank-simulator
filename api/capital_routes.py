@@ -235,6 +235,62 @@ def get_large_exposures() -> dict[str, Any]:
     }
 
 
+@router.get("/allocation")
+def get_capital_allocation() -> dict[str, Any]:
+    """
+    Capital allocation framework — top-down CET1 and RWA budgets by business line and desk.
+    Shows each desk's allocated CET1, derived RWA budget, and utilisation from live trades.
+    """
+    from infrastructure.risk.capital_allocation import capital_allocation
+    from infrastructure.risk.capital_consumption import capital_consumption
+
+    report = capital_allocation.get_full_report()
+    consumption = capital_consumption.get_report()
+
+    # Annotate each desk with live consumption data
+    desk_consumption = {d["desk"]: d for d in consumption["by_desk"]}
+    for desk_name, da in report["desk_allocations"].items():
+        cons = desk_consumption.get(desk_name, {})
+        da["rwa_consumed"] = cons.get("rwa_consumed", 0.0)
+        da["utilisation_pct"] = cons.get("utilisation_pct", 0.0)
+        da["rwa_headroom"] = cons.get("headroom", da["rwa_budget_usd"])
+        da["trade_count"] = cons.get("trade_count", 0)
+
+    report["live_cet1_ratio"] = consumption["live_cet1_ratio"]
+    report["live_cet1_ratio_pct"] = consumption["live_cet1_ratio_pct"]
+    return report
+
+
+@router.get("/consumption")
+def get_capital_consumption() -> dict[str, Any]:
+    """
+    Live RWA consumption tracker — incremental RWA from booked trades, by desk and counterparty.
+    Shows how much of each desk's capital budget has been consumed since startup.
+    """
+    from infrastructure.risk.capital_consumption import capital_consumption
+    return capital_consumption.get_report()
+
+
+class ReallocateRequest(BaseModel):
+    from_desk: str
+    to_desk: str
+    cet1_amount_usd: float
+
+
+@router.post("/reallocate")
+def reallocate_capital(body: ReallocateRequest) -> dict[str, Any]:
+    """
+    CFO intra-quarter capital reallocation between trading desks.
+    Transfers CET1 budget (and derived RWA budget) from one desk to another.
+    """
+    from infrastructure.risk.capital_allocation import capital_allocation
+    return capital_allocation.reallocate(
+        from_desk=body.from_desk,
+        to_desk=body.to_desk,
+        cet1_amount_usd=body.cet1_amount_usd,
+    )
+
+
 @router.get("/output-floor")
 def get_output_floor() -> dict[str, Any]:
     """Basel III 72.5% SA RWA output floor application."""

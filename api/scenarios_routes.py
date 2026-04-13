@@ -143,6 +143,58 @@ class RunRequest(BaseModel):
     custom_shocks: dict[str, float] = {}
 
 
+def _resolve_shocks(scenario_id: str, custom_shocks: dict[str, float]) -> dict[str, float]:
+    base = dict(SCENARIOS[scenario_id]["shocks"])
+    overrides = {
+        k: float(v) for k, v in (custom_shocks or {}).items()
+        if isinstance(v, (int, float))
+    }
+    if scenario_id == "custom":
+        return overrides
+    base.update(overrides)
+    return base
+
+
+def _shock_magnitude(value: float) -> float:
+    try:
+        return abs(float(value))
+    except Exception:
+        return 0.0
+
+
+def _derive_multiplier(
+    scenario_id: str,
+    resolved_shocks: dict[str, float],
+    custom_shocks: dict[str, float],
+) -> float:
+    if scenario_id == "custom":
+        vals = [_shock_magnitude(v) for v in resolved_shocks.values() if _shock_magnitude(v) > 0]
+        return round(min(sum(vals) / len(vals), 4.0), 3) if vals else 1.0
+
+    base_multiplier = float(SCENARIOS[scenario_id]["stress_multiplier"])
+    if not custom_shocks:
+        return base_multiplier
+
+    preset_shocks = SCENARIOS[scenario_id]["shocks"]
+    ratios: list[float] = []
+    for key, value in resolved_shocks.items():
+        mag = _shock_magnitude(value)
+        if mag <= 0:
+            continue
+        base_mag = _shock_magnitude(preset_shocks.get(key, 0.0))
+        if base_mag > 0:
+            ratios.append(mag / base_mag)
+
+    if not ratios:
+        vals = [_shock_magnitude(v) for v in resolved_shocks.values() if _shock_magnitude(v) > 0]
+        if not vals:
+            return base_multiplier
+        return round(min(max(sum(vals) / len(vals), 0.5), 4.0), 3)
+
+    adjustment = min(max(sum(ratios) / len(ratios), 0.5), 3.0)
+    return round(base_multiplier * adjustment, 3)
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -181,14 +233,8 @@ async def run_scenario(req: RunRequest) -> JSONResponse:
         )
 
     scenario = SCENARIOS[scenario_id]
-
-    # Resolve multiplier
-    if scenario_id == "custom" and req.custom_shocks:
-        # Simple heuristic: average of supplied shock values capped at 4×
-        vals = [v for v in req.custom_shocks.values() if isinstance(v, (int, float)) and v > 0]
-        multiplier = round(min(sum(vals) / len(vals), 4.0), 3) if vals else 1.0
-    else:
-        multiplier = scenario["stress_multiplier"]
+    resolved_shocks = _resolve_shocks(scenario_id, req.custom_shocks)
+    multiplier = _derive_multiplier(scenario_id, resolved_shocks, req.custom_shocks)
 
     baseline = {k: v for k, v in _BASELINE.items()}
     stressed = _compute_stressed(multiplier)
@@ -197,7 +243,7 @@ async def run_scenario(req: RunRequest) -> JSONResponse:
         "scenario_id": scenario_id,
         "scenario_name": scenario["name"],
         "stress_multiplier": multiplier,
-        "shocks_applied": req.custom_shocks if scenario_id == "custom" else scenario["shocks"],
+        "shocks_applied": resolved_shocks,
         "baseline": {
             "cva": baseline["cva"],
             "dva": baseline["dva"],
@@ -250,7 +296,7 @@ async def activate_scenario(req: RunRequest) -> JSONResponse:
             status_code=422,
         )
     scenario = SCENARIOS[scenario_id]
-    shocks = req.custom_shocks if scenario_id == "custom" and req.custom_shocks else scenario["shocks"]
+    shocks = _resolve_shocks(scenario_id, req.custom_shocks)
     scenario_state.activate(scenario_id, scenario["name"], shocks)
     shocks_snap = scenario_state.snapshot().get("shocks", {})
     asyncio.create_task(_run_dfast_on_scenario(shocks_snap))

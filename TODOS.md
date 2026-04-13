@@ -189,6 +189,37 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 
 ---
 
+## v0.5.x Capital Realism (feature/v05-capital-realism)
+
+### TODO-047: Multi-Dimensional Pre-Trade Checks (P1)
+**What:** Extend OMS `_pre_trade_check()` to enforce DV01, equity delta, single-name notional, single-name % concentration, Large Exposure (CRE70), and RWA budget — in addition to the existing VaR check. First failure blocks the trade with a 422.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-048: Per-Trade RWA Consumption Tracker (P2)
+**What:** `infrastructure/risk/capital_consumption.py` — `CapitalConsumptionTracker` singleton. Every booked trade records incremental RWA (notional × Basel SA risk weight). Accumulates by desk and counterparty. Exposes `estimate_incremental_rwa()` for pre-trade gate and `get_report()` for dashboard. Live CET1 ratio derived from baseline + incremental.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-049: Capital Allocation Framework (P3)
+**What:** `infrastructure/risk/capital_allocation.py` — `CapitalAllocationFramework` singleton. Top-down $45B CET1 → business lines → desks. Each desk gets a CET1 budget and derived RWA budget. CFO can reallocate between desks. Wired into OMS pre-trade as RWA budget gate. API: `GET /capital/allocation`, `GET /capital/consumption`, `POST /capital/reallocate`.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-050: Limit Utilization Callbacks with Actions (P4)
+**What:** Wire `LimitManager` breach callbacks to trigger real actions: YELLOW → log escalation to desk head; ORANGE → log escalation to Head of Trading; RED → auto-suspend desk (set a suspend flag OMS checks); BREACH → notify CRO. Currently callbacks are registered but do nothing.
+**Context:** `infrastructure/risk/limit_actions.py` — `LimitActionEngine` singleton. Lazy registration on first `is_desk_suspended()` call. Status-change callback maps RED/BREACH to desk suspension, GREEN/YELLOW/ORANGE to auto-lift. OMS checks suspension at gate 0 of `_pre_trade_check`. API: `GET /api/risk/suspensions`, `POST /api/risk/suspensions/{desk}/lift`.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-051: Securities Finance + Securitized Products Trade Booking (P5)
+**What:** Allow OMS to book trades into SecFin and Securitized Products desks. These should draw from the SECURITIES_FINANCE capital pool, check their own notional limits, and show up in the blotter. Currently these desks have analytics but no trade booking flow.
+**Context:** OTC price fallback dict `_OTC_PRICES` in `oms.py` — REPO_UST/MBS/EQUITY_LEND/PRIME_BROK at par, FNMA_TBA/SPEC_POOL/AUTO_ABS/CMBS_AA/CLO_AAA at market prices. `NOTIONAL_SECFIN` ($50B) and `NOTIONAL_SECURITIZED` ($10B) limits added to `limit_manager.py`. Capital allocation framework updated with SECURITIES_FINANCE and SECURITIZED desks. Notional limit updated post-booking. Booking endpoints: `POST /api/securities-finance/book-trade`, `POST /api/securitized/book-trade`.
+**Status:** ✅ DONE — 2026-04-12
+
+### TODO-052: RAROC Gate on New Positions (P6)
+**What:** Add a RAROC pre-trade check: estimate incremental RAROC for the proposed trade (revenue = expected desk spread × notional × tenor; EC = asset class economic capital). If incremental RAROC < hurdle rate (12%) and desk is already below hurdle, require approval flag in trade request.
+**Context:** Gate 7 in `oms._pre_trade_check()`. Incremental RAROC = (spread × notional × tenor - EL - FTP) / EC. Only blocks if BOTH incremental RAROC < 12% AND desk portfolio is already below hurdle. `override_raroc: bool = False` field on `OrderRequest` and `submit_order()` bypasses gate. Available on all booking routes including SecFin and Securitized.
+**Status:** ✅ DONE — 2026-04-12
+
+---
+
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
 - Production cloud deployment (pre-v1)
@@ -226,6 +257,19 @@ All three added to registry.json.
 **What:** 22-page quantitative reference document on bank balance sheet optimization.
 **Context:** Covers the full constrained optimization problem (multi-period NLP), capital optimization (RWA minimization, RAROC, EC allocation), liquidity optimization (LCR/NSFR, HQLA), ALM (NII/EVE, duration gap, convexity), FTP (matched-maturity, liquidity premium), stress testing (DFAST integration, reverse stress), technology requirements (calculator stack, compute, dashboards), and revenue generation mechanisms. LaTeX source: `model_docs/latex/balance_sheet_optimization_v1.0.tex`. Compiled PDF: `model_docs/pdfs/balance_sheet_optimization_v1.0.pdf`.
 **Completed:** 2026-04-04
+
+---
+
+## Phase 4 — Instrument-Aware Trading (feature/v04-integration-stress-pnl-attribution)
+
+### TODO-041: Instrument-Aware Trade Booking Ticket ✅ DONE
+**What:** Replaced the flat 4-field (Desk/Ticker/Side/Qty) Execute form with a full tab-based booking ticket covering 8 asset classes.
+**Context:**
+- Frontend: asset-class tab bar (Equity/Rates/FX/Credit/Commodities/Derivatives) with per-class sub-type selector (IRS vs Gov Bond, Spot vs Forward). Each class renders the semantically correct fields: IRS gets Tenor/Leg/Fixed Rate/Counterparty; CDS gets Reference/Protection Side/Spread/Tenor/Counterparty; FX Forward gets Tenor/Counterparty; Options get Underlying/Call-Put/Strike/Expiry. Live market context panel shows current mid price + derived metrics (notional est., DV01 est., annual CDS premium). Execute button label is contextual ("PAY FIXED $100MM 10Y @ 4.25%", "BUY PROT $50MM IG CDX 5Y", etc.).
+- Backend: `OrderRequest` extended with optional derivative fields (notional, counterparty_id, fixed_rate, tenor_years, strike, expiry_date, product_subtype, spread_bps). Side aliases normalised at route level (payer→buy, protection_buy→buy). `TradeConfirmation` extended with counterparty_id/product_subtype/product_details. DB schema migrated (ALTER TABLE ADD COLUMN). 9 new market data instruments (USD_IRS_1Y/2Y/10Y/30Y, IG_CDX, HY_CDX, XAUUSD, NG1, GOOGL). New `GET /api/trading/prices` endpoint for context panel.
+- Blotter: instrument-aware descriptions (e.g., "PAY FIXED 4.25% 10Y • JPM" for IRS, "BUY PROT IG CDX 5Y @ 65bps" for CDS).
+- 3 new demo buttons: USD IRS 10Y payer, IG CDX protection buy, XAUUSD long.
+**Completed:** 2026-04-11
 
 ---
 

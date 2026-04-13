@@ -120,6 +120,10 @@ class TradeConfirmation(BaseModel):
     limit_status: str          # GREEN / YELLOW / ORANGE / RED
     pre_trade_approved: bool
     pre_trade_message: str
+    # Derivative enrichment fields (None for plain equity/bond trades)
+    counterparty_id: Optional[str] = None
+    product_subtype: Optional[str] = None   # "irs", "cds", "fwd", "option", "gov_bond", "spot", "future"
+    product_details: Optional[dict] = None  # fixed_rate, tenor_years, spread_bps, expiry, strike, etc.
 
 
 class OrderBook(BaseModel):

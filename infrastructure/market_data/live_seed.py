@@ -20,6 +20,9 @@ _YF_DIRECT: dict[str, str] = {
     "MSFT":     "MSFT",
     "SPY":      "SPY",
     "NVDA":     "NVDA",
+    "GOOGL":    "GOOGL",
+    "GC=F":     "XAUUSD",   # Gold futures
+    "NG=F":     "NG1",      # Natural gas futures
     "CL=F":     "CL1",
     "EURUSD=X": "EURUSD",
     "GBPUSD=X": "GBPUSD",
@@ -115,5 +118,5 @@ def fetch_live_seeds() -> dict[str, float]:
 
     # USD_IRS_5Y stays at 100.0 (par swap — no direct Yahoo Finance quote)
 
-    log.info("live_seed: seeded %d/%d tickers from Yahoo Finance", len(live), 11)
+    log.info("live_seed: seeded %d tickers from Yahoo Finance", len(live))
     return live

@@ -9,91 +9,6 @@
   <style>
     body { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
 
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-
-    .page-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-
-    .page-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 760px;
-      line-height: 1.7;
-    }
-
-    .page-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .page-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--card);
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* KPI bar */
-    .kpi-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .kpi-box {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px 18px;
-      flex: 1;
-      min-width: 150px;
-    }
-    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .kpi-value { font-size: 20px; font-weight: 600; color: var(--text); margin-top: 4px; }
-    .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .kpi-value.pos { color: var(--positive); }
-    .kpi-value.neg { color: var(--negative); }
-    .kpi-value.warn{ color: var(--warning); }
-
-    /* Main grid */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .full-width { grid-column: 1 / -1; }
-
-    /* Section header */
-    .section-header {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .section-header .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent);
-    }
-
     /* Greeks table */
     .greeks-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .greeks-table th {
@@ -123,13 +38,8 @@
     .ccr-pct.ok { color: var(--positive); }
     .ccr-pct.warn { color: var(--warning); }
     .ccr-pct.breach { color: var(--negative); }
-    .gauge-bar {
-      height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
-    }
-    .gauge-fill {
-      height: 100%; border-radius: 3px;
-      transition: width 0.4s ease;
-    }
+    .gauge-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .gauge-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
     .gauge-fill.ok     { background: var(--positive); }
     .gauge-fill.warn   { background: var(--warning); box-shadow: 0 0 6px rgba(210,153,34,.5); }
     .gauge-fill.breach { background: var(--negative); box-shadow: 0 0 6px rgba(248,81,73,.5); }
@@ -156,22 +66,59 @@
       padding: 5px 8px; border-bottom: 1px solid var(--border); font-size: 10px;
       text-transform: uppercase;
     }
-    .blotter-table td {
-      padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.4);
-    }
+    .blotter-table td { padding: 6px 8px; border-bottom: 1px solid rgba(48,54,61,0.4); }
     .blotter-table td.time { color: var(--muted); font-variant-numeric: tabular-nums; }
     .blotter-table td.instrument { color: var(--text); }
+    .blotter-table tr.trade-row { cursor: pointer; transition: background 0.15s, box-shadow 0.15s; }
+    .blotter-table tr.trade-row:hover td { background: rgba(255,255,255,0.035); }
+    .blotter-table tr.trade-row.selected td { background: rgba(88,166,255,0.1); box-shadow: inset 0 0 0 1px rgba(88,166,255,0.18); }
     .side-badge {
       display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px;
       font-weight: 600; text-transform: uppercase;
     }
-    .side-badge.buy { background: rgba(63,185,80,.15); color: var(--positive); }
-    .side-badge.sell{ background: rgba(248,81,73,.15);  color: var(--negative); }
-    .side-badge.pay { background: rgba(210,153,34,.15); color: var(--warning); }
+    .side-badge.buy  { background: rgba(63,185,80,.15); color: var(--positive); }
+    .side-badge.sell { background: rgba(248,81,73,.15);  color: var(--negative); }
+    .side-badge.pay  { background: rgba(210,153,34,.15); color: var(--warning); }
     .status-chip {
       display: inline-block; padding: 1px 6px; border-radius: 3px;
       font-size: 10px; font-weight: 500;
       background: rgba(63,185,80,.12); color: var(--positive);
+    }
+    .history-toolbar {
+      display: grid; grid-template-columns: minmax(0, 1.1fr) 0.9fr 1fr auto auto; gap: 8px;
+      margin-bottom: 12px; align-items: end;
+    }
+    .history-meta {
+      display: flex; justify-content: space-between; gap: 8px; margin: 0 0 10px;
+      color: var(--muted); font-size: 11px; align-items: center; flex-wrap: wrap;
+    }
+    .history-helper {
+      color: var(--muted); font-size: 11px; margin: 0 0 12px;
+    }
+    .history-btn {
+      background: var(--accent); border: none; border-radius: 5px; color: #0d1117;
+      font-family: monospace; font-size: 11px; font-weight: 700;
+      padding: 8px 12px; cursor: pointer; white-space: nowrap;
+    }
+    .history-btn.secondary {
+      background: transparent; border: 1px solid var(--border); color: var(--text);
+    }
+    .history-btn.secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .history-btn:hover { opacity: 0.9; }
+    .drawer-link {
+      width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text); cursor: pointer; font-family: monospace;
+      font-size: 11px; padding: 8px 10px; text-align: left;
+    }
+    .drawer-link:hover { border-color: var(--accent); color: var(--accent); }
+    .drawer-list { display: flex; flex-direction: column; gap: 6px; }
+    .drawer-kicker { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .drawer-title-main { color: var(--text); font-size: 14px; font-weight: 600; }
+    .drawer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+    .drawer-grid .drawer-field { margin-bottom: 0; }
+    .helper-note {
+      color: var(--muted); font-size: 11px; margin-bottom: 10px;
+      border-left: 2px solid rgba(88,166,255,.25); padding-left: 10px;
     }
 
     /* Circuit breaker */
@@ -190,16 +137,9 @@
     .cb-state.open   { background: rgba(248,81,73,.15);  color: var(--negative); }
     .cb-pnl { font-size: 12px; font-variant-numeric: tabular-nums; }
 
-    /* Plotly chart containers */
-    #pnl-chart { height: 200px; }
-
-    /* Trade execution panel */
-    .trade-panel {
-      display: flex; flex-direction: column; gap: 12px;
-    }
-    .demo-trades {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
-    }
+    /* Trade execution */
+    .trade-panel { display: flex; flex-direction: column; gap: 12px; }
+    .demo-trades { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
     .demo-btn {
       background: var(--bg-secondary); border: 1px solid var(--border);
       border-radius: 5px; padding: 8px 10px; cursor: pointer;
@@ -207,7 +147,7 @@
       text-align: left; transition: border-color 0.2s;
     }
     .demo-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .demo-btn .btn-side  { font-weight: 600; font-size: 10px; display: block; margin-bottom: 2px; }
+    .demo-btn .btn-side { font-weight: 600; font-size: 10px; display: block; margin-bottom: 2px; }
     .demo-btn .btn-side.buy  { color: var(--positive); }
     .demo-btn .btn-side.sell { color: var(--negative); }
     .demo-btn .btn-ticker { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -230,12 +170,61 @@
     .exec-btn:hover { opacity: 0.85; }
     .exec-btn:disabled { opacity: 0.4; cursor: default; }
 
+    /* WS fills scroll area */
+    #ws-fills {
+      height: 100px; overflow-y: auto;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 5px; padding: 8px 10px;
+      font-family: monospace; font-size: 11px; color: var(--muted);
+    }
+    .ws-fill-line { margin-bottom: 2px; }
+    .ws-fill-line .fill-buy  { color: var(--positive); }
+    .ws-fill-line .fill-sell { color: var(--negative); }
+
     /* WS live indicator */
     .ws-dot {
       width: 7px; height: 7px; border-radius: 50%;
       background: var(--muted); display: inline-block; margin-right: 4px;
     }
     .ws-dot.live { background: var(--positive); box-shadow: 0 0 6px rgba(63,185,80,.6); }
+
+    /* Section label */
+    .section-header {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-header .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
+
+    /* Inner tab grid for Monitor */
+    .monitor-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 16px;
+      align-items: start;
+    }
+    .monitor-main { min-width: 0; }
+
+    /* Desk drawer detail items */
+    .drawer-field { margin-bottom: 10px; }
+    .drawer-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+    .drawer-field-value { font-size: 13px; color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .limit-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 3px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+    }
+    .limit-badge.ok   { background: rgba(63,185,80,.15); color: var(--positive); }
+    .limit-badge.warn { background: rgba(210,153,34,.15); color: var(--warning); }
+    .limit-badge.breach { background: rgba(248,81,73,.15); color: var(--negative); }
+
+    /* Analyze 2-col grid */
+    .analyze-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
 
     /* Confirmation modal */
     .modal-overlay {
@@ -253,178 +242,270 @@
     .modal-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
     .modal-field-value { font-size: 13px; color: var(--text); font-weight: 500; }
     .modal-section { font-size: 11px; color: var(--muted); margin-bottom: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
-    .var-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; }
     .modal-close {
       width: 100%; margin-top: 14px; background: var(--bg-secondary);
       border: 1px solid var(--border); border-radius: 4px; color: var(--text);
       font-family: monospace; font-size: 12px; padding: 7px; cursor: pointer;
     }
     .modal-close:hover { border-color: var(--accent); }
+
+    /* KPI pos/neg/warn */
+    .kpi-value.pos  { color: var(--positive); }
+    .kpi-value.neg  { color: var(--negative); }
+    .kpi-value.warn { color: var(--warning); }
+
+    @media (max-width: 900px) {
+      .monitor-layout { grid-template-columns: 1fr; }
+      .analyze-grid   { grid-template-columns: 1fr; }
+      .demo-trades    { grid-template-columns: 1fr 1fr; }
+      .history-toolbar { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── Instrument-aware booking ticket ──────────────────────────────────── */
+    .asset-tabs {
+      display: flex; gap: 2px; margin-bottom: 14px;
+      border-bottom: 1px solid var(--border); padding-bottom: 0;
+    }
+    .asset-tab {
+      padding: 5px 13px; font-size: 11px; font-weight: 600; font-family: monospace;
+      border: none; background: none; color: var(--muted); cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      text-transform: uppercase; letter-spacing: 0.05em; transition: color 0.15s, border-color 0.15s;
+    }
+    .asset-tab:hover { color: var(--text); }
+    .asset-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .subtype-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .subtype-btn {
+      padding: 3px 10px; border-radius: 12px; font-size: 11px; font-family: monospace;
+      border: 1px solid var(--border); background: none; color: var(--muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .subtype-btn.active {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(88,166,255,.08);
+    }
+
+    .booking-layout {
+      display: grid; grid-template-columns: 1fr 220px; gap: 16px; align-items: start;
+    }
+    .booking-fields { display: flex; flex-direction: column; gap: 8px; }
+    .booking-row { display: grid; gap: 8px; }
+    .booking-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .booking-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .booking-context {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px;
+      display: flex; flex-direction: column; gap: 10px; min-height: 120px;
+    }
+    .ctx-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .ctx-value {
+      font-size: 22px; font-weight: 600; color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .ctx-sub   { font-size: 11px; color: var(--muted); }
+    .ctx-meta  { font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; }
+    .ctx-divider { border: none; border-top: 1px solid var(--border); }
+
+    .exec-summary {
+      margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .exec-label {
+      font-size: 11px; font-family: monospace; color: var(--muted); flex: 1; min-width: 180px;
+    }
+    .exec-btn-wide {
+      background: var(--positive); border: none; border-radius: 5px; color: #0d1117;
+      font-family: monospace; font-size: 12px; font-weight: 700;
+      padding: 8px 22px; cursor: pointer; white-space: nowrap; min-width: 130px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .exec-btn-wide:hover { opacity: 0.85; }
+    .exec-btn-wide:disabled { opacity: 0.4; cursor: default; }
+    .exec-btn-wide.sell-mode { background: var(--negative); color: #fff; }
+    .exec-btn-wide.neutral-mode { background: var(--warning); color: #0d1117; }
+
+    @media (max-width: 900px) {
+      .booking-layout { grid-template-columns: 1fr; }
+    }
   </style>
-  <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/shared_nav.js?v=20260411b" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
 
+<!-- ── Page shell ─────────────────────────────────────────────────────────── -->
+<div class="page-shell">
+
+  <!-- Header -->
   <div class="page-header">
-    <div>
+    <div class="page-header-left">
       <div class="page-title">Trading Floor</div>
-      <div class="page-subtitle">
-        Live execution, book risk, and counterparty pressure in one operating view.
-        The job of this page is to compress action into a few signals: where P&amp;L is moving,
-        how exposure is changing, and whether the desk is still inside its control envelope.
-      </div>
+      <div class="page-subtitle">Front-office monitor and execution</div>
     </div>
-    <div class="page-actions">
-      <div class="page-chip">OMS + Risk Snapshot</div>
-      <div class="page-chip">Pre-trade and Post-trade Checks</div>
+    <div class="page-header-right">
+      <span class="last-refresh" id="last-refresh">—</span>
+      <span class="source-chip" data-source="LIVE">LIVE</span>
     </div>
   </div>
 
-  <!-- Confirmation modal -->
-  <div class="modal-overlay" id="confirm-modal">
-    <div class="modal-box">
-      <div class="modal-title" id="modal-title">Trade Confirmed</div>
-      <div class="modal-grid" id="modal-grid"></div>
-      <div class="modal-section">
-        VaR Impact &nbsp;
-        <span id="modal-var-before" style="color:var(--text)">—</span>
-        <span style="color:var(--muted)"> → </span>
-        <span id="modal-var-after"  style="color:var(--text)">—</span>
-        <span id="modal-limit-badge" class="status-chip" style="margin-left:8px">—</span>
-      </div>
-      <div class="modal-section" id="modal-greeks"></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px" id="modal-pretrade"></div>
-      <button class="modal-close" onclick="closeModal()">Close</button>
-    </div>
-  </div>
+  <!-- Alert rail -->
+  <div class="alert-rail" id="trading-alerts" data-empty="true"></div>
 
-  <!-- KPI bar -->
-  <div class="kpi-bar" id="kpi-bar">
-    <div class="kpi-box">
-      <div class="kpi-label">Daily P&amp;L</div>
-      <div class="kpi-value" id="kpi-daily">—</div>
-      <div class="kpi-sub">All desks</div>
-    </div>
-    <div class="kpi-box">
+  <!-- KPI strip -->
+  <div class="kpi-strip">
+    <div class="kpi-card">
       <div class="kpi-label">YTD P&amp;L</div>
       <div class="kpi-value pos" id="kpi-ytd">—</div>
       <div class="kpi-sub">All desks</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Portfolio Delta</div>
-      <div class="kpi-value" id="kpi-delta">—</div>
-      <div class="kpi-sub">Net USD</div>
+    <div class="kpi-card">
+      <div class="kpi-label">Daily P&amp;L</div>
+      <div class="kpi-value" id="kpi-daily">—</div>
+      <div class="kpi-sub">All desks</div>
     </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Portfolio Vega</div>
-      <div class="kpi-value" id="kpi-vega">—</div>
-      <div class="kpi-sub">Net USD/vol pt</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">CCR Utilisation</div>
-      <div class="kpi-value" id="kpi-ccr">—</div>
-      <div class="kpi-sub">vs. total limit</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Circuit Breaker</div>
-      <div class="kpi-value pos" id="kpi-cb">CLOSED</div>
-      <div class="kpi-sub">System-wide</div>
-    </div>
-    <div class="kpi-box">
-      <div class="kpi-label">Live Feed</div>
-      <div class="kpi-value" id="kpi-feed" style="font-size:14px">
-        <span class="ws-dot" id="ws-dot"></span><span id="ws-label">connecting…</span>
-      </div>
-      <div class="kpi-sub">WebSocket</div>
+    <div class="kpi-card">
+      <div class="kpi-label">Peak Limit Util</div>
+      <div class="kpi-value" id="kpi-peak-util">—</div>
+      <div class="kpi-sub">Max delta util% across books</div>
     </div>
   </div>
 
-  <!-- Main grid -->
-  <div class="main-grid">
+  <!-- Connection status (hidden visually but functional) -->
+  <div id="status" style="font-size:11px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+    <span class="ws-dot" id="ws-dot"></span>
+    <span id="ws-label">connecting…</span>
+  </div>
 
-    <!-- Greeks table -->
-    <div class="card">
-      <div class="section-header"><div class="dot"></div>Portfolio Greeks</div>
-      <table class="greeks-table">
-        <thead>
-          <tr>
-            <th>Book</th>
-            <th>Delta $</th>
-            <th>Gamma $k</th>
-            <th>Vega $k</th>
-            <th>Theta $</th>
-            <th>DV01 $</th>
-            <th>Δ Lim %</th>
-          </tr>
-        </thead>
-        <tbody id="greeks-tbody"></tbody>
-      </table>
+  <!-- ── Outer tab bar: Monitor | Execute | Analyze ────────────────────────── -->
+  <div class="tab-bar" style="margin-bottom:16px">
+    <button class="tab-btn active" data-tab="monitor" onclick="switchTab('monitor')">Monitor</button>
+    <button class="tab-btn" data-tab="execute"  onclick="switchTab('execute')">Execute</button>
+    <button class="tab-btn" data-tab="analyze"  onclick="switchTab('analyze')">Analyze</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       MONITOR TAB
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="monitor">
+
+    <!-- Inner tab bar: Trade History | Desks | Open Positions -->
+    <div class="tab-bar" style="margin-bottom:12px">
+      <button class="tab-btn active" data-tab="inner-blotter"   onclick="switchInnerTab('inner-blotter')">Trade History</button>
+      <button class="tab-btn"        data-tab="inner-desks"     onclick="switchInnerTab('inner-desks')">Desks</button>
+      <button class="tab-btn"        data-tab="inner-positions" onclick="switchInnerTab('inner-positions')">Open Positions</button>
     </div>
 
-    <!-- CCR Limits -->
-    <div class="card">
-      <div class="section-header"><div class="dot" style="background:var(--warning)"></div>CCR Limit Utilisation</div>
-      <div class="ccr-list" id="ccr-list"></div>
-    </div>
+    <div class="monitor-layout">
+      <div class="monitor-main">
 
-    <!-- P&L attribution -->
-    <div class="card">
-      <div class="section-header"><div class="dot" style="background:var(--positive)"></div>P&amp;L Attribution</div>
-      <div id="pnl-chart"></div>
-      <table class="pnl-table" style="margin-top:12px">
-        <thead>
-          <tr>
-            <th>Book</th>
-            <th>Daily</th>
-            <th>MTD</th>
-            <th>YTD</th>
-          </tr>
-        </thead>
-        <tbody id="pnl-tbody"></tbody>
-      </table>
-    </div>
+        <!-- Blotter inner panel -->
+        <div class="tab-panel active" id="inner-blotter">
+          <div class="card">
+            <div class="section-header"><div class="dot" style="background:#79c0ff"></div>Trade History</div>
+            <div class="history-helper">Executed fills live here. Search by trade ID, book, or instrument to inspect a specific trade.</div>
+            <div class="history-toolbar">
+              <div class="form-group">
+                <label for="trade-filter-id">Trade ID</label>
+                <input id="trade-filter-id" type="text" placeholder="TRD-0041">
+              </div>
+              <div class="form-group">
+                <label for="trade-filter-book">Book</label>
+                <input id="trade-filter-book" type="text" placeholder="EQ_BOOK_1">
+              </div>
+              <div class="form-group">
+                <label for="trade-filter-instrument">Instrument</label>
+                <input id="trade-filter-instrument" type="text" placeholder="AAPL">
+              </div>
+              <button class="history-btn" id="trade-filter-apply" type="button">Search</button>
+              <button class="history-btn secondary" id="trade-filter-reset" type="button">Reset</button>
+            </div>
+            <div class="history-meta">
+              <span id="trade-history-summary">Showing recent trades</span>
+              <span>Tip: select a row to open full trade details</span>
+            </div>
+            <table class="blotter-table">
+              <thead>
+                <tr>
+                  <th>Trade ID</th>
+                  <th>Time</th>
+                  <th>Book</th>
+                  <th>Instrument</th>
+                  <th>Side</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="blotter-tbody"></tbody>
+            </table>
+          </div>
+        </div>
 
-    <!-- P&L Explain — Greek attribution waterfall -->
-    <div class="card">
-      <div class="section-header">
-        <div class="dot" style="background:#a5d6ff"></div>P&amp;L Explain — Greek Attribution
-        <button onclick="resetSod()" style="margin-left:auto;font-size:10px;padding:2px 8px;background:var(--border);color:var(--text);border:none;border-radius:3px;cursor:pointer">Reset SOD</button>
+        <!-- Desks inner panel -->
+        <div class="tab-panel" id="inner-desks">
+          <div class="card">
+            <div class="section-header"><div class="dot" style="background:var(--positive)"></div>Desk P&amp;L</div>
+            <div class="helper-note">Desk rows summarize current P&amp;L by book. Select one to inspect performance and recent related trades.</div>
+            <table class="pnl-table">
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Daily</th>
+                  <th>MTD</th>
+                  <th>YTD</th>
+                </tr>
+              </thead>
+              <tbody id="desks-pnl-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Positions inner panel -->
+        <div class="tab-panel" id="inner-positions">
+          <div class="card">
+            <div class="section-header"><div class="dot"></div>Open Positions</div>
+            <div class="helper-note">This view shows current open book exposure, not individual fills. Select a book to see the recent trades that built that position.</div>
+            <table class="greeks-table">
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Delta $k</th>
+                  <th>Gamma $k</th>
+                  <th>Vega $k</th>
+                  <th>Theta $</th>
+                  <th>DV01 $</th>
+                  <th>Δ Lim %</th>
+                </tr>
+              </thead>
+              <tbody id="positions-greeks-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- WS fill notifications -->
+        <div style="margin-top:12px">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Live fill stream</div>
+          <div id="ws-fills"><span style="color:var(--muted)">Waiting for fills…</span></div>
+        </div>
+
+      </div><!-- .monitor-main -->
+
+      <!-- Desk detail drawer -->
+      <div class="detail-drawer" id="detail-drawer">
+        <div class="detail-drawer-title" id="detail-drawer-title">Trade Detail</div>
+        <div class="detail-drawer-empty" id="detail-drawer-empty">Select a trade, desk, or open position to view more detail.</div>
+        <div id="detail-drawer-content" style="display:none"></div>
       </div>
-      <div id="pnl-explain-chart" style="height:200px"></div>
-      <table class="pnl-table" style="margin-top:8px">
-        <thead><tr><th>Desk</th><th>Delta</th><th>Gamma</th><th>Theta</th><th>Vega</th><th>Unexpl.</th><th>Actual</th></tr></thead>
-        <tbody id="pnl-explain-tbody"></tbody>
-      </table>
-    </div>
 
-    <!-- Circuit Breaker -->
+    </div><!-- .monitor-layout -->
+  </div><!-- #monitor -->
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       EXECUTE TAB
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="execute">
     <div class="card">
-      <div class="section-header"><div class="dot" style="background:var(--negative)"></div>Circuit Breakers</div>
-      <div id="cb-list"></div>
-    </div>
-
-    <!-- Blotter -->
-    <div class="card full-width">
-      <div class="section-header"><div class="dot" style="background:#79c0ff"></div>Recent Trades</div>
-      <table class="blotter-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>ID</th>
-            <th>Book</th>
-            <th>Instrument</th>
-            <th>Side</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="blotter-tbody"></tbody>
-      </table>
-    </div>
-
-    <!-- Trade Execution panel -->
-    <div class="card full-width">
       <div class="section-header"><div class="dot" style="background:var(--accent)"></div>Trade Execution</div>
       <div class="trade-panel">
 
@@ -461,448 +542,1549 @@
             <span class="btn-ticker">SPY</span>
             <span class="btn-detail">2,000 shares — hedge, reduces delta</span>
           </button>
+          <button class="demo-btn" onclick="demoTrade(6)">
+            <span class="btn-side pay">PAY</span>
+            <span class="btn-ticker">USD IRS 10Y</span>
+            <span class="btn-detail">$100MM payer swap @ 4.25%</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(7)">
+            <span class="btn-side buy">BUY</span>
+            <span class="btn-ticker">IG CDX 5Y</span>
+            <span class="btn-detail">$50MM protection — credit hedge</span>
+          </button>
+          <button class="demo-btn" onclick="demoTrade(8)">
+            <span class="btn-side buy">BUY</span>
+            <span class="btn-ticker">XAUUSD</span>
+            <span class="btn-detail">500 lots — gold long / inflation hedge</span>
+          </button>
         </div>
 
-        <!-- Manual form -->
-        <div style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:4px">Or enter manually:</div>
-        <div class="manual-form">
-          <div class="form-group">
-            <label>Desk</label>
-            <select id="form-desk">
-              <option value="EQUITY">EQUITY</option>
-              <option value="RATES">RATES</option>
-              <option value="FX">FX</option>
-              <option value="CREDIT">CREDIT</option>
-              <option value="DERIVATIVES">DERIVATIVES</option>
-              <option value="COMMODITIES">COMMODITIES</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Ticker</label>
-            <input id="form-ticker" type="text" placeholder="AAPL" value="AAPL">
-          </div>
-          <div class="form-group">
-            <label>Side</label>
-            <select id="form-side">
-              <option value="buy">BUY</option>
-              <option value="sell">SELL</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Quantity</label>
-            <input id="form-qty" type="number" placeholder="1000" value="1000" min="1">
-          </div>
-          <button class="exec-btn" id="exec-btn" onclick="manualTrade()">Execute</button>
+        <!-- Instrument-aware booking ticket -->
+        <div style="font-size:11px;color:var(--muted);margin-top:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+          <span>Booking Ticket</span>
+          <span style="font-size:10px;color:var(--border)">|</span>
+          <span style="font-size:10px">Asset-class aware • live market context</span>
         </div>
+
+        <!-- Asset class tab bar -->
+        <div class="asset-tabs">
+          <button class="asset-tab active" data-asset="EQUITY"      onclick="setAsset('EQUITY')">Equity</button>
+          <button class="asset-tab"        data-asset="RATES"       onclick="setAsset('RATES')">Rates</button>
+          <button class="asset-tab"        data-asset="FX"          onclick="setAsset('FX')">FX</button>
+          <button class="asset-tab"        data-asset="CREDIT"      onclick="setAsset('CREDIT')">Credit</button>
+          <button class="asset-tab"        data-asset="COMMODITIES" onclick="setAsset('COMMODITIES')">Commod.</button>
+          <button class="asset-tab"        data-asset="DERIVATIVES" onclick="setAsset('DERIVATIVES')">Deriv.</button>
+        </div>
+
+        <!-- Sub-type selector (rendered by JS) -->
+        <div class="subtype-row" id="subtype-row" style="display:none"></div>
+
+        <!-- Dynamic form + context panel -->
+        <div class="booking-layout">
+          <div>
+            <div class="booking-fields" id="booking-fields"></div>
+            <div class="exec-summary">
+              <div class="exec-label" id="exec-label">—</div>
+              <button class="exec-btn-wide" id="exec-btn-new" onclick="submitBookingTicket()">Execute</button>
+            </div>
+          </div>
+          <div class="booking-context" id="booking-context">
+            <div>
+              <div class="ctx-label" id="ctx-label">Market</div>
+              <div class="ctx-value" id="ctx-price">—</div>
+              <div class="ctx-sub"   id="ctx-sub">—</div>
+            </div>
+            <hr class="ctx-divider">
+            <div id="ctx-extra" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+        </div>
+
+        <!-- Pre-trade check display -->
+        <div id="pretrade-display" style="font-size:11px;color:var(--muted);min-height:16px;margin-top:4px"></div>
 
       </div>
     </div>
+  </div><!-- #execute -->
 
-  </div><!-- main-grid -->
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       ANALYZE TAB
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="analyze">
+    <div class="analyze-grid">
 
-  <script>
-    // ── Helpers ──────────────────────────────────────────────────────────────
+      <!-- Full Greeks table -->
+      <div class="card">
+        <div class="section-header"><div class="dot"></div>Portfolio Greeks</div>
+        <table class="greeks-table">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Delta $k</th>
+              <th>Gamma $k</th>
+              <th>Vega $k</th>
+              <th>Theta $</th>
+              <th>DV01 $</th>
+              <th>Δ Lim %</th>
+            </tr>
+          </thead>
+          <tbody id="greeks-tbody"></tbody>
+        </table>
+      </div>
 
-    const fmt = (n, decimals = 0) => n == null ? '—' :
-      new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      }).format(n);
+      <!-- CCR table -->
+      <div class="card">
+        <div class="section-header"><div class="dot" style="background:var(--warning)"></div>CCR Limit Utilisation</div>
+        <div class="ccr-list" id="ccr-list"></div>
+      </div>
 
-    const fmtMM  = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
-    const fmtK   = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
-    const fmtPnl = (n) => { if (n == null) return '—'; return `${n >= 0 ? '+' : ''}${fmtMM(n)}`; };
-    const pnlClass   = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
-    const colorClass = (pct) => pct > 100 ? 'breach' : pct > 80 ? 'warn' : 'ok';
-    const statusColor = (s) => s === 'GREEN' ? 'var(--positive)' : s === 'RED' ? 'var(--negative)' : 'var(--warning)';
+      <!-- P&L attribution waterfall -->
+      <div class="card">
+        <div class="section-header">
+          <div class="dot" style="background:var(--positive)"></div>P&amp;L Attribution
+        </div>
+        <div id="pnl-chart" style="height:200px"></div>
+        <table class="pnl-table" style="margin-top:12px">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Daily</th>
+              <th>MTD</th>
+              <th>YTD</th>
+            </tr>
+          </thead>
+          <tbody id="pnl-tbody"></tbody>
+        </table>
+      </div>
 
-    // ── Fetch & render ────────────────────────────────────────────────────────
+      <!-- P&L Explain waterfall -->
+      <div class="card">
+        <div class="section-header">
+          <div class="dot" style="background:#a5d6ff"></div>P&amp;L Explain — Greek Attribution
+          <button onclick="resetSod()" style="margin-left:auto;font-size:10px;padding:2px 8px;background:var(--border);color:var(--text);border:none;border-radius:3px;cursor:pointer">Reset SOD</button>
+        </div>
+        <div id="pnl-explain-chart" style="height:200px"></div>
+        <table class="pnl-table" style="margin-top:8px">
+          <thead><tr><th>Desk</th><th>Delta</th><th>Gamma</th><th>Theta</th><th>Vega</th><th>Unexpl.</th><th>Actual</th></tr></thead>
+          <tbody id="pnl-explain-tbody"></tbody>
+        </table>
+      </div>
 
-    async function loadGreeks() {
-      const res = await fetch('/api/trading/greeks').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
+    </div><!-- .analyze-grid -->
+  </div><!-- #analyze -->
 
-      // KPI delta/vega
-      const p = data.portfolio;
-      const deltaEl = document.getElementById('kpi-delta');
-      deltaEl.textContent = fmtK(p.delta);
-      deltaEl.className = 'kpi-value ' + pnlClass(p.delta);
-      const vegaEl = document.getElementById('kpi-vega');
-      vegaEl.textContent = fmtK(p.vega);
-      vegaEl.className = 'kpi-value ' + pnlClass(p.vega);
-
-      const tbody = document.getElementById('greeks-tbody');
-      tbody.innerHTML = '';
-
-      data.books.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><div>${b.name}</div><div class="desk-label">${b.trader}</div></td>
-          <td class="${b.delta >= 0 ? 'pos' : 'neg'}">${fmtK(b.delta)}</td>
-          <td class="${b.gamma >= 0 ? 'pos' : 'neg'}">${fmtK(b.gamma)}</td>
-          <td class="${b.vega  >= 0 ? 'pos' : 'neg'}">${fmtK(b.vega)}</td>
-          <td class="${b.theta >= 0 ? 'pos' : 'neg'}">${fmtK(b.theta)}</td>
-          <td class="${b.dv01  >= 0 ? 'pos' : 'neg'}">${fmtK(b.dv01)}</td>
-          <td class="${b.delta_util_pct > 80 ? 'neg' : b.delta_util_pct > 60 ? 'warn' : 'pos'}">${b.delta_util_pct}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      // Totals row
-      const tot = data.portfolio;
-      const tr = document.createElement('tr');
-      tr.className = 'total-row';
-      tr.innerHTML = `
-        <td>Portfolio Total</td>
-        <td>${fmtK(tot.delta)}</td>
-        <td>${fmtK(tot.gamma)}</td>
-        <td>${fmtK(tot.vega)}</td>
-        <td>${fmtK(tot.theta)}</td>
-        <td>${fmtK(tot.dv01)}</td>
-        <td>—</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    async function loadCCR() {
-      const res = await fetch('/api/trading/ccr').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      // KPI
-      const ccrEl = document.getElementById('kpi-ccr');
-      ccrEl.textContent = `${data.total_util_pct}%`;
-      ccrEl.className = 'kpi-value ' + colorClass(data.total_util_pct);
-
-      const list = document.getElementById('ccr-list');
-      list.innerHTML = '';
-      data.counterparties.forEach(cp => {
-        const cls = colorClass(cp.utilization);
-        const pct = Math.min(cp.utilization, 100);
-        const div = document.createElement('div');
-        div.className = 'ccr-row';
-        div.innerHTML = `
-          <div class="ccr-header">
-            <span class="ccr-cp">${cp.counterparty} <span style="color:var(--muted);font-size:10px">${cp.rating}</span></span>
-            <span class="ccr-meta">${cp.ead_mm}MM / ${cp.limit_mm}MM lim &nbsp;
-              <span class="ccr-pct ${cls}">${cp.utilization}%</span>
-            </span>
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       ADVANCED / CIRCUIT BREAKERS — secondary expander
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="secondary-expander" style="margin-top:20px">
+    <div class="expander-header">
+      <span class="expander-caret">▾</span>
+      Advanced / Circuit Breakers
+    </div>
+    <div class="expander-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 0">
+        <div class="card">
+          <div class="section-header"><div class="dot" style="background:var(--negative)"></div>Circuit Breakers</div>
+          <div id="cb-list"></div>
+        </div>
+        <div class="card">
+          <div class="section-header"><div class="dot" style="background:#a5d6ff"></div>Historical P&amp;L Waterfall</div>
+          <div id="pnl-hist-chart" style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">
+            Load Analyze tab to render
           </div>
-          <div class="gauge-bar"><div class="gauge-fill ${cls}" style="width:${pct}%"></div></div>
-        `;
-        list.appendChild(div);
-      });
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .page-shell -->
+
+<!-- ── Trade confirmation modal (global overlay) ──────────────────────── -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Trade Confirmed</div>
+    <div class="modal-grid" id="modal-grid"></div>
+    <div class="modal-section">
+      VaR Impact &nbsp;
+      <span id="modal-var-before" style="color:var(--text)">—</span>
+      <span style="color:var(--muted)"> → </span>
+      <span id="modal-var-after"  style="color:var(--text)">—</span>
+      <span id="modal-limit-badge" class="status-chip" style="margin-left:8px">—</span>
+    </div>
+    <div class="modal-section" id="modal-greeks"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px" id="modal-pretrade"></div>
+    <button class="modal-close" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<script>
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  const fmt = (n, decimals = 0) => n == null ? '—' :
+    new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(n);
+
+  const fmtMM  = (n) => n == null ? '—' : `$${fmt(n / 1_000_000, 2)}MM`;
+  const fmtK   = (n) => n == null ? '—' : `${fmt(n / 1_000, 1)}k`;
+  const fmtPnl = (n) => { if (n == null) return '—'; return `${n >= 0 ? '+' : ''}${fmtMM(n)}`; };
+  const pnlClass   = (n) => n == null ? '' : (n >= 0 ? 'pos' : 'neg');
+  const colorClass = (pct) => pct > 100 ? 'breach' : pct > 80 ? 'warn' : 'ok';
+  const statusColor = (s) => s === 'GREEN' ? 'var(--positive)' : s === 'RED' ? 'var(--negative)' : 'var(--warning)';
+  const fmtQty = (n) => n == null ? '—' : (Math.abs(n) >= 1_000_000 ? `${fmt(n / 1_000_000, 1)}MM` : Math.abs(n) >= 1_000 ? `${fmt(n / 1_000, 1)}k` : fmt(n, 0));
+  const esc = (s) => String(s == null ? '' : s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+  let _tradeHistory = [];
+  let _tradeFilters = { trade_id: '', book: '', instrument: '' };
+  let _selectedTradeId = null;
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
+
+  function setDrawer(title, html, emptyMessage) {
+    document.getElementById('detail-drawer-title').textContent = title;
+    const empty = document.getElementById('detail-drawer-empty');
+    const content = document.getElementById('detail-drawer-content');
+    if (html) {
+      empty.style.display = 'none';
+      content.style.display = 'block';
+      content.innerHTML = html;
+    } else {
+      empty.textContent = emptyMessage;
+      empty.style.display = 'block';
+      content.style.display = 'none';
+      content.innerHTML = '';
     }
+  }
 
-    async function loadPnl() {
-      const res = await fetch('/api/trading/pnl').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
+  function syncTradeFiltersToUi() {
+    document.getElementById('trade-filter-id').value = _tradeFilters.trade_id || '';
+    document.getElementById('trade-filter-book').value = _tradeFilters.book || '';
+    document.getElementById('trade-filter-instrument').value = _tradeFilters.instrument || '';
+  }
 
-      // KPI
-      const dailyEl = document.getElementById('kpi-daily');
-      dailyEl.textContent = fmtPnl(data.total.daily);
-      dailyEl.className = 'kpi-value ' + pnlClass(data.total.daily);
-      const ytdEl = document.getElementById('kpi-ytd');
-      ytdEl.textContent = fmtPnl(data.total.ytd);
-      ytdEl.className = 'kpi-value ' + pnlClass(data.total.ytd);
-
-      // P&L bar chart
-      const books  = data.books.map(b => b.name);
-      const daily  = data.books.map(b => b.daily / 1_000);
-      const colors = daily.map(v => v >= 0 ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.75)');
-
-      Plotly.newPlot('pnl-chart', [{
-        type: 'bar', x: books, y: daily,
-        marker: { color: colors },
-        name: 'Daily P&L ($k)',
-      }], {
-        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-        margin: { t: 5, b: 50, l: 40, r: 5 },
-        font: { family: 'monospace', size: 10, color: '#8b949e' },
-        xaxis: { tickfont: { size: 9 }, tickangle: -30, gridcolor: '#21262d' },
-        yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
-        showlegend: false,
-      }, { displayModeBar: false, responsive: true });
-
-      // Table
-      const tbody = document.getElementById('pnl-tbody');
-      tbody.innerHTML = '';
-      data.books.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><div style="color:var(--text)">${b.name}</div><div style="color:var(--muted);font-size:10px">${b.desk}</div></td>
-          <td class="${pnlClass(b.daily)}">${fmtPnl(b.daily)}</td>
-          <td class="${pnlClass(b.mtd)}">${fmtPnl(b.mtd)}</td>
-          <td class="${pnlClass(b.ytd)}">${fmtPnl(b.ytd)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      const tot = data.total;
-      const tr = document.createElement('tr');
-      tr.className = 'total-row';
-      tr.innerHTML = `
-        <td>Total</td>
-        <td class="${pnlClass(tot.daily)}">${fmtPnl(tot.daily)}</td>
-        <td class="${pnlClass(tot.mtd)}">${fmtPnl(tot.mtd)}</td>
-        <td class="${pnlClass(tot.ytd)}">${fmtPnl(tot.ytd)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    async function loadPnlExplain() {
-      const res = await fetch('/api/trading/pnl-explain').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      const desks  = Object.keys(data.by_desk);
-      const p      = data.portfolio;
-      const cats   = ['Delta', 'Gamma', 'Theta', 'Vega', 'Unexpl.'];
-      const vals   = [p.delta_pnl, p.gamma_pnl, p.theta_pnl, p.vega_pnl, p.unexplained];
-      const colors = vals.map(v => v >= 0 ? 'rgba(63,185,80,0.8)' : 'rgba(248,81,73,0.8)');
-
-      Plotly.newPlot('pnl-explain-chart', [{
-        type: 'waterfall', orientation: 'v',
-        x: [...cats, 'Total'],
-        y: [...vals.map(v => v / 1e3), p.total_actual_pnl / 1e3],
-        measure: [...cats.map(() => 'relative'), 'total'],
-        connector: { line: { color: '#30363d' } },
-        increasing: { marker: { color: 'rgba(63,185,80,0.8)' } },
-        decreasing: { marker: { color: 'rgba(248,81,73,0.8)' } },
-        totals:     { marker: { color: 'rgba(88,166,255,0.8)' } },
-        texttemplate: '%{y:.1f}k', textposition: 'outside',
-      }], {
-        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-        margin: { t: 18, b: 30, l: 45, r: 5 },
-        font: { family: 'monospace', size: 10, color: '#8b949e' },
-        xaxis: { gridcolor: '#21262d' },
-        yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
-        showlegend: false,
-      }, { displayModeBar: false, responsive: true });
-
-      const tbody = document.getElementById('pnl-explain-tbody');
-      tbody.innerHTML = '';
-      desks.forEach(desk => {
-        const d = data.by_desk[desk];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="color:var(--text)">${desk}</td>
-          <td class="${pnlClass(d.delta_pnl)}">${fmtPnl(d.delta_pnl)}</td>
-          <td class="${pnlClass(d.gamma_pnl)}">${fmtPnl(d.gamma_pnl)}</td>
-          <td class="${pnlClass(d.theta_pnl)}">${fmtPnl(d.theta_pnl)}</td>
-          <td class="${pnlClass(d.vega_pnl)}">${fmtPnl(d.vega_pnl)}</td>
-          <td class="${pnlClass(d.unexplained)}">${fmtPnl(d.unexplained)}</td>
-          <td class="${pnlClass(d.total_actual_pnl)}">${fmtPnl(d.total_actual_pnl)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      // Firm total row
-      const tr = document.createElement('tr');
-      tr.className = 'total-row';
-      tr.innerHTML = `
-        <td>FIRM</td>
-        <td class="${pnlClass(p.delta_pnl)}">${fmtPnl(p.delta_pnl)}</td>
-        <td class="${pnlClass(p.gamma_pnl)}">${fmtPnl(p.gamma_pnl)}</td>
-        <td class="${pnlClass(p.theta_pnl)}">${fmtPnl(p.theta_pnl)}</td>
-        <td class="${pnlClass(p.vega_pnl)}">${fmtPnl(p.vega_pnl)}</td>
-        <td class="${pnlClass(p.unexplained)}">${fmtPnl(p.unexplained)}</td>
-        <td class="${pnlClass(p.total_actual_pnl)}">${fmtPnl(p.total_actual_pnl)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
-
-    async function resetSod() {
-      await fetch('/api/trading/pnl-explain/reset-sod', { method: 'POST' });
-      await loadPnlExplain();
-    }
-
-    async function loadCircuitBreaker() {
-      const res = await fetch('/api/trading/circuit-breaker').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      const cbKpi = document.getElementById('kpi-cb');
-      cbKpi.textContent = data.system_state;
-      cbKpi.className = 'kpi-value ' + (data.system_state === 'CLOSED' ? 'pos' : 'neg');
-
-      const list = document.getElementById('cb-list');
-      list.innerHTML = '';
-      data.desks.forEach(d => {
-        const div = document.createElement('div');
-        div.className = 'cb-row';
-        div.innerHTML = `
-          <span class="cb-desk">${d.desk}</span>
-          <span class="cb-pnl ${pnlClass(d.daily_loss)}">${fmtPnl(d.daily_loss)}</span>
-          <span class="cb-state ${d.state.toLowerCase()}">${d.state}</span>
-        `;
-        list.appendChild(div);
-      });
-    }
-
-    async function loadBlotter() {
-      const res = await fetch('/api/trading/blotter').catch(() => null);
-      if (!res || !res.ok) return;
-      const data = await res.json();
-
-      const tbody = document.getElementById('blotter-tbody');
-      tbody.innerHTML = '';
-      data.trades.forEach(t => {
-        const sideCls = t.side.toLowerCase();
-        const qty = t.qty >= 1_000_000
-          ? `${(t.qty / 1_000_000).toFixed(0)}MM`
-          : t.qty >= 1_000 ? `${(t.qty / 1_000).toFixed(0)}k` : t.qty;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="time">${t.time}</td>
-          <td style="color:var(--muted)">${t.id}</td>
-          <td style="color:var(--accent)">${t.book}</td>
-          <td class="instrument">${t.instrument}</td>
-          <td><span class="side-badge ${sideCls}">${t.side}</span></td>
-          <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${qty}</td>
-          <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${t.price}</td>
-          <td><span class="status-chip">${t.status}</span></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // ── Demo trade catalog ────────────────────────────────────────────────────
-
-    const DEMO_TRADES = [
-      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'AAPL',         side:'buy',  qty:5000},
-      {desk:'RATES',       book_id:'RATES_BOOK_1', ticker:'US10Y',        side:'sell', qty:10000},
-      {desk:'DERIVATIVES', book_id:'DERIV_BOOK_1', ticker:'AAPL_CALL_200',side:'buy',  qty:500},
-      {desk:'FX',          book_id:'FX_BOOK_1',    ticker:'EURUSD',       side:'buy',  qty:5000000},
-      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'NVDA',         side:'buy',  qty:8000},
-      {desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'SPY',          side:'sell', qty:2000},
-    ];
-
-    const DESK_BOOKS = {
-      EQUITY:'EQ_BOOK_1', RATES:'RATES_BOOK_1', FX:'FX_BOOK_1',
-      CREDIT:'CREDIT_BOOK_1', DERIVATIVES:'DERIV_BOOK_1', COMMODITIES:'COMM_BOOK_1',
+  function readTradeFiltersFromUi() {
+    _tradeFilters = {
+      trade_id: document.getElementById('trade-filter-id').value.trim(),
+      book: document.getElementById('trade-filter-book').value.trim(),
+      instrument: document.getElementById('trade-filter-instrument').value.trim(),
     };
+    return _tradeFilters;
+  }
 
-    function demoTrade(idx) {
-      const t = DEMO_TRADES[idx];
-      submitOrder(t.desk, t.book_id, t.ticker, t.side, t.qty);
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-bar:first-of-type .tab-btn, .tab-bar').forEach(() => {});
+    // Outer tabs only (first tab-bar's buttons)
+    document.querySelectorAll('[data-tab]').forEach(el => {
+      if (el.tagName === 'BUTTON' && ['monitor','execute','analyze'].includes(el.dataset.tab)) {
+        el.classList.remove('active');
+      }
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      if (['monitor','execute','analyze'].includes(p.id)) p.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+
+    // Re-render Plotly charts if switching to analyze (they need visible container)
+    if (tabId === 'analyze') {
+      Plotly.Plots.resize(document.getElementById('pnl-chart'));
+      Plotly.Plots.resize(document.getElementById('pnl-explain-chart'));
+    }
+  }
+
+  function switchInnerTab(tabId) {
+    ['inner-blotter','inner-desks','inner-positions'].forEach(id => {
+      const btn = document.querySelector(`[data-tab="${id}"]`);
+      const panel = document.getElementById(id);
+      if (btn)   btn.classList.remove('active');
+      if (panel) panel.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+
+    if (tabId === 'inner-blotter') {
+      setDrawer('Trade Detail', '', 'Select a trade to inspect full execution detail.');
+    } else if (tabId === 'inner-desks') {
+      setDrawer('Desk Detail', '', 'Select a desk row to inspect P&L and recent related trades.');
+    } else {
+      setDrawer('Position Detail', '', 'Select an open position row to inspect related trades.');
+    }
+  }
+
+  // ── Alert rail helpers ────────────────────────────────────────────────────
+
+  function addAlert(level, text) {
+    const rail = document.getElementById('trading-alerts');
+    rail.removeAttribute('data-empty');
+    const item = document.createElement('div');
+    item.className = `alert-item ${level}`;
+    item.textContent = text;
+    rail.appendChild(item);
+  }
+
+  function clearAlerts() {
+    const rail = document.getElementById('trading-alerts');
+    rail.innerHTML = '';
+    rail.setAttribute('data-empty', 'true');
+  }
+
+  // ── Fetch & render ────────────────────────────────────────────────────────
+
+  // Shared greeks data for both Analyze and Positions subtab
+  let _greeksData = null;
+
+  async function loadGreeks() {
+    const res = await fetch('/api/trading/greeks').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    _greeksData = data;
+
+    // KPI — peak limit util
+    const peakUtil = Math.max(...(data.books || []).map(b => b.delta_util_pct || 0));
+    const peakEl = document.getElementById('kpi-peak-util');
+    peakEl.textContent = `${peakUtil.toFixed(0)}%`;
+    peakEl.className = 'kpi-value ' + colorClass(peakUtil);
+
+    // Analyze tab: full greeks table
+    renderGreeksTable('greeks-tbody', data);
+    // Monitor/Positions subtab
+    renderGreeksTable('positions-greeks-tbody', data);
+  }
+
+  function renderGreeksTable(tbodyId, data) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const interactive = tbodyId === 'positions-greeks-tbody';
+    (data.books || []).forEach(b => {
+      const tr = document.createElement('tr');
+      if (interactive) tr.style.cursor = 'pointer';
+      tr.innerHTML = `
+        <td><div>${b.name}</div><div class="desk-label">${b.trader}</div></td>
+        <td class="${b.delta >= 0 ? 'pos' : 'neg'}">${fmtK(b.delta)}</td>
+        <td class="${b.gamma >= 0 ? 'pos' : 'neg'}">${fmtK(b.gamma)}</td>
+        <td class="${b.vega  >= 0 ? 'pos' : 'neg'}">${fmtK(b.vega)}</td>
+        <td class="${b.theta >= 0 ? 'pos' : 'neg'}">${fmtK(b.theta)}</td>
+        <td class="${b.dv01  >= 0 ? 'pos' : 'neg'}">${fmtK(b.dv01)}</td>
+        <td class="${b.delta_util_pct > 80 ? 'neg' : b.delta_util_pct > 60 ? 'warn' : 'pos'}">${b.delta_util_pct}%</td>
+      `;
+      if (interactive) {
+        tr.addEventListener('click', () => showPositionDrawer(b));
+      }
+      tbody.appendChild(tr);
+    });
+    // Totals row
+    const tot = data.portfolio;
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+      <td>Portfolio Total</td>
+      <td>${fmtK(tot.delta)}</td>
+      <td>${fmtK(tot.gamma)}</td>
+      <td>${fmtK(tot.vega)}</td>
+      <td>${fmtK(tot.theta)}</td>
+      <td>${fmtK(tot.dv01)}</td>
+      <td>—</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // Shared PnL data for both Analyze and Desks subtab
+  let _pnlData = null;
+
+  async function loadPnl() {
+    const res = await fetch('/api/trading/pnl').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    _pnlData = data;
+
+    // KPI
+    const dailyEl = document.getElementById('kpi-daily');
+    dailyEl.textContent = fmtPnl(data.total.daily);
+    dailyEl.className = 'kpi-value ' + pnlClass(data.total.daily);
+    const ytdEl = document.getElementById('kpi-ytd');
+    ytdEl.textContent = fmtPnl(data.total.ytd);
+    ytdEl.className = 'kpi-value ' + pnlClass(data.total.ytd);
+
+    // Analyze tab: P&L bar chart
+    const books  = data.books.map(b => b.name);
+    const daily  = data.books.map(b => b.daily / 1_000);
+    const colors = daily.map(v => v >= 0 ? 'rgba(63,185,80,0.75)' : 'rgba(248,81,73,0.75)');
+
+    Plotly.newPlot('pnl-chart', [{
+      type: 'bar', x: books, y: daily,
+      marker: { color: colors },
+      name: 'Daily P&L ($k)',
+    }], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      margin: { t: 5, b: 50, l: 40, r: 5 },
+      font: { family: 'monospace', size: 10, color: '#8b949e' },
+      xaxis: { tickfont: { size: 9 }, tickangle: -30, gridcolor: '#21262d' },
+      yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
+      showlegend: false,
+    }, { displayModeBar: false, responsive: true });
+
+    // Analyze tab: P&L table
+    renderPnlTable('pnl-tbody', data);
+    // Monitor/Desks subtab
+    renderPnlTable('desks-pnl-tbody', data);
+  }
+
+  function renderPnlTable(tbodyId, data) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    data.books.forEach(b => {
+      const tr = document.createElement('tr');
+      tr.dataset.bookName = b.name;
+      tr.dataset.deskName = b.desk;
+      tr.style.cursor = 'pointer';
+      tr.innerHTML = `
+        <td><div style="color:var(--text)">${b.name}</div><div style="color:var(--muted);font-size:10px">${b.desk}</div></td>
+        <td class="${pnlClass(b.daily)}">${fmtPnl(b.daily)}</td>
+        <td class="${pnlClass(b.mtd)}">${fmtPnl(b.mtd)}</td>
+        <td class="${pnlClass(b.ytd)}">${fmtPnl(b.ytd)}</td>
+      `;
+      tr.addEventListener('click', () => showDeskDrawer(b));
+      tbody.appendChild(tr);
+    });
+    const tot = data.total;
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+      <td>Total</td>
+      <td class="${pnlClass(tot.daily)}">${fmtPnl(tot.daily)}</td>
+      <td class="${pnlClass(tot.mtd)}">${fmtPnl(tot.mtd)}</td>
+      <td class="${pnlClass(tot.ytd)}">${fmtPnl(tot.ytd)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  async function showDeskDrawer(book) {
+    const greeksBook = (_greeksData && _greeksData.books)
+      ? _greeksData.books.find(b => b.name === book.name)
+      : null;
+
+    const deltaUtil = greeksBook ? greeksBook.delta_util_pct : null;
+    const utilCls   = deltaUtil != null ? colorClass(deltaUtil) : '';
+    const relatedTrades = await fetchTradeHistory({ book: book.book_id || book.name, limit: 8 }, false);
+
+    setDrawer('Desk Detail', `
+      <div class="drawer-kicker">${esc(book.desk)}</div>
+      <div class="drawer-title-main">${esc(book.name)}</div>
+      <div class="drawer-grid">
+        <div class="drawer-field">
+          <div class="drawer-field-label">Daily P&amp;L</div>
+          <div class="drawer-field-value ${pnlClass(book.daily)}">${fmtPnl(book.daily)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">YTD P&amp;L</div>
+          <div class="drawer-field-value ${pnlClass(book.ytd)}">${fmtPnl(book.ytd)}</div>
+        </div>
+        ${deltaUtil != null ? `
+        <div class="drawer-field">
+          <div class="drawer-field-label">Delta Util %</div>
+          <div class="drawer-field-value">${deltaUtil}%</div>
+        </div>` : ''}
+        ${greeksBook ? `
+        <div class="drawer-field">
+          <div class="drawer-field-label">Vega $k</div>
+          <div class="drawer-field-value ${pnlClass(greeksBook.vega)}">${fmtK(greeksBook.vega)}</div>
+        </div>` : ''}
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Limit Status</div>
+        <div class="drawer-field-value"><span class="limit-badge ${utilCls}">${utilCls.toUpperCase() || 'N/A'}</span></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Recent Related Trades</div>
+        ${renderTradeLinks(relatedTrades, 'No recent trades found for this book.')}
+      </div>
+    `, '');
+  }
+
+  async function showPositionDrawer(book) {
+    const relatedTrades = await fetchTradeHistory({ book: book.book_id || book.name, limit: 10 }, false);
+    const utilCls = colorClass(book.delta_util_pct || 0);
+    setDrawer('Position Detail', `
+      <div class="drawer-kicker">${esc(book.trader || book.desk || 'Book')}</div>
+      <div class="drawer-title-main">${esc(book.name)}</div>
+      <div class="drawer-grid">
+        <div class="drawer-field">
+          <div class="drawer-field-label">Delta</div>
+          <div class="drawer-field-value ${book.delta >= 0 ? 'pos' : 'neg'}">${fmtK(book.delta)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">DV01</div>
+          <div class="drawer-field-value ${book.dv01 >= 0 ? 'pos' : 'neg'}">${fmtK(book.dv01)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Vega</div>
+          <div class="drawer-field-value ${book.vega >= 0 ? 'pos' : 'neg'}">${fmtK(book.vega)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Delta Util %</div>
+          <div class="drawer-field-value"><span class="limit-badge ${utilCls}">${book.delta_util_pct}%</span></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Trades Building This Position</div>
+        ${renderTradeLinks(relatedTrades, 'No related trade history found for this open position.')}
+      </div>
+    `, '');
+  }
+
+  async function loadCCR() {
+    const res = await fetch('/api/trading/ccr').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    // Alert rail: CCR breaches
+    const breaches = (data.counterparties || []).filter(cp => cp.status === 'BREACH' || cp.utilization > 100);
+    breaches.forEach(cp => addAlert('critical', `CCR breach: ${cp.counterparty}`));
+
+    const list = document.getElementById('ccr-list');
+    list.innerHTML = '';
+    data.counterparties.forEach(cp => {
+      const cls = colorClass(cp.utilization);
+      const pct = Math.min(cp.utilization, 100);
+      const div = document.createElement('div');
+      div.className = 'ccr-row';
+      div.innerHTML = `
+        <div class="ccr-header">
+          <span class="ccr-cp">${cp.counterparty} <span style="color:var(--muted);font-size:10px">${cp.rating}</span></span>
+          <span class="ccr-meta">${cp.ead_mm}MM / ${cp.limit_mm}MM lim &nbsp;
+            <span class="ccr-pct ${cls}">${cp.utilization}%</span>
+          </span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill ${cls}" style="width:${pct}%"></div></div>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function loadPnlExplain() {
+    const res = await fetch('/api/trading/pnl-explain').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    const desks  = Object.keys(data.by_desk);
+    const p      = data.portfolio;
+    const cats   = ['Delta', 'Gamma', 'Theta', 'Vega', 'Unexpl.'];
+    const vals   = [p.delta_pnl, p.gamma_pnl, p.theta_pnl, p.vega_pnl, p.unexplained];
+
+    Plotly.newPlot('pnl-explain-chart', [{
+      type: 'waterfall', orientation: 'v',
+      x: [...cats, 'Total'],
+      y: [...vals.map(v => v / 1e3), p.total_actual_pnl / 1e3],
+      measure: [...cats.map(() => 'relative'), 'total'],
+      connector: { line: { color: '#30363d' } },
+      increasing: { marker: { color: 'rgba(63,185,80,0.8)' } },
+      decreasing: { marker: { color: 'rgba(248,81,73,0.8)' } },
+      totals:     { marker: { color: 'rgba(88,166,255,0.8)' } },
+      texttemplate: '%{y:.1f}k', textposition: 'outside',
+    }], {
+      paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+      margin: { t: 18, b: 30, l: 45, r: 5 },
+      font: { family: 'monospace', size: 10, color: '#8b949e' },
+      xaxis: { gridcolor: '#21262d' },
+      yaxis: { title: '$k', gridcolor: '#21262d', zeroline: true, zerolinecolor: '#30363d' },
+      showlegend: false,
+    }, { displayModeBar: false, responsive: true });
+
+    const tbody = document.getElementById('pnl-explain-tbody');
+    tbody.innerHTML = '';
+    desks.forEach(desk => {
+      const d = data.by_desk[desk];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--text)">${desk}</td>
+        <td class="${pnlClass(d.delta_pnl)}">${fmtPnl(d.delta_pnl)}</td>
+        <td class="${pnlClass(d.gamma_pnl)}">${fmtPnl(d.gamma_pnl)}</td>
+        <td class="${pnlClass(d.theta_pnl)}">${fmtPnl(d.theta_pnl)}</td>
+        <td class="${pnlClass(d.vega_pnl)}">${fmtPnl(d.vega_pnl)}</td>
+        <td class="${pnlClass(d.unexplained)}">${fmtPnl(d.unexplained)}</td>
+        <td class="${pnlClass(d.total_actual_pnl)}">${fmtPnl(d.total_actual_pnl)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    // Firm total row
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+      <td>FIRM</td>
+      <td class="${pnlClass(p.delta_pnl)}">${fmtPnl(p.delta_pnl)}</td>
+      <td class="${pnlClass(p.gamma_pnl)}">${fmtPnl(p.gamma_pnl)}</td>
+      <td class="${pnlClass(p.theta_pnl)}">${fmtPnl(p.theta_pnl)}</td>
+      <td class="${pnlClass(p.vega_pnl)}">${fmtPnl(p.vega_pnl)}</td>
+      <td class="${pnlClass(p.unexplained)}">${fmtPnl(p.unexplained)}</td>
+      <td class="${pnlClass(p.total_actual_pnl)}">${fmtPnl(p.total_actual_pnl)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  async function resetSod() {
+    await fetch('/api/trading/pnl-explain/reset-sod', { method: 'POST' });
+    await loadPnlExplain();
+  }
+
+  async function loadCircuitBreaker() {
+    const res = await fetch('/api/trading/circuit-breaker').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+
+    // Alert rail: system triggered
+    if (data.system_state === 'TRIGGERED') {
+      addAlert('critical', 'Circuit breaker TRIGGERED — system-wide halt');
     }
 
-    function manualTrade() {
-      const ticker  = document.getElementById('form-ticker').value.trim().toUpperCase();
-      const side    = document.getElementById('form-side').value;
-      const qty     = parseFloat(document.getElementById('form-qty').value);
-      const desk    = document.getElementById('form-desk').value;
-      if (!ticker || !qty || qty <= 0) { alert('Enter ticker and qty'); return; }
-      submitOrder(desk, DESK_BOOKS[desk] || 'EQ_BOOK_1', ticker, side, qty);
-    }
+    const list = document.getElementById('cb-list');
+    list.innerHTML = '';
+    data.desks.forEach(d => {
+      const div = document.createElement('div');
+      div.className = 'cb-row';
+      div.innerHTML = `
+        <span class="cb-desk">${d.desk}</span>
+        <span class="cb-pnl ${pnlClass(d.daily_loss)}">${fmtPnl(d.daily_loss)}</span>
+        <span class="cb-state ${d.state.toLowerCase()}">${d.state}</span>
+      `;
+      list.appendChild(div);
+    });
+  }
 
-    async function submitOrder(desk, book_id, ticker, side, qty) {
-      const btn = document.getElementById('exec-btn');
-      if (btn) btn.disabled = true;
-      try {
-        const res = await fetch('/api/trading/orders', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({desk, book_id, ticker, side, qty}),
-        }).catch(() => null);
-        if (!res) { alert('Network error'); return; }
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          alert('Order failed: ' + (err.detail || res.statusText));
-          return;
-        }
-        const conf = await res.json();
-        showConfirmation(conf);
-        // Refresh panels immediately
-        await Promise.all([loadGreeks(), loadPnl(), loadBlotter()]);
-      } finally {
-        if (btn) btn.disabled = false;
+  function blotterDescription(t) {
+    const pd = t.product_details || {};
+    switch(t.product_subtype) {
+      case 'irs': {
+        const side  = (pd.original_side || t.side).toUpperCase();
+        const rate  = pd.fixed_rate != null ? (pd.fixed_rate*100).toFixed(2)+'%' : t.price;
+        const tenor = pd.tenor_years ? `${pd.tenor_years}Y` : '';
+        const cp    = t.counterparty_id ? ` • ${t.counterparty_id.slice(0,6)}` : '';
+        return `<span style="color:var(--text)">${side === 'PAYER' ? 'PAY FIXED' : 'RCV FIXED'} ${rate}</span>` +
+               `<span style="color:var(--muted);font-size:10px"> ${tenor}${cp}</span>`;
+      }
+      case 'cds': {
+        const side   = (pd.original_side || t.side).toUpperCase();
+        const spread = pd.spread_bps != null ? `${pd.spread_bps}bps` : '';
+        const tenor  = pd.tenor_years ? `${pd.tenor_years}Y` : '';
+        const cp     = t.counterparty_id ? ` • ${t.counterparty_id.slice(0,6)}` : '';
+        return `<span style="color:var(--text)">${side.includes('BUY') ? 'BUY PROT' : 'SELL PROT'} ${t.instrument}</span>` +
+               `<span style="color:var(--muted);font-size:10px"> ${spread} ${tenor}${cp}</span>`;
+      }
+      case 'fwd': {
+        const tenor = pd.tenor_years ? `${pd.tenor_years}Y FWD` : 'FWD';
+        return `<span style="color:var(--text)">${t.instrument}</span> <span style="color:var(--muted);font-size:10px">${tenor}</span>`;
+      }
+      case 'option': {
+        const underlying = pd.underlying || t.instrument.split('_')[0];
+        return `<span style="color:var(--text)">${t.instrument}</span> <span style="color:var(--muted);font-size:10px">opt</span>`;
+      }
+      case 'future':
+        return `<span style="color:var(--text)">${t.instrument}</span> <span style="color:var(--muted);font-size:10px">fut</span>`;
+      default:
+        return `<span style="color:var(--text)">${t.instrument}</span>`;
+    }
+  }
+
+  async function fetchTradeHistory(filters = {}, updateSummary = true) {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value != null && value !== '') params.set(key, value);
+    });
+    if (!params.has('limit')) params.set('limit', '50');
+    const res = await fetch(`/api/trading/blotter?${params.toString()}`).catch(() => null);
+    if (!res || !res.ok) return [];
+    const data = await res.json();
+    if (updateSummary) {
+      const activeFilters = Object.entries(filters)
+        .filter(([, value]) => value != null && value !== '' && value !== 50)
+        .map(([key, value]) => `${key}: ${value}`);
+      document.getElementById('trade-history-summary').textContent = activeFilters.length
+        ? `Found ${data.count} trade${data.count === 1 ? '' : 's'} for ${activeFilters.join(' • ')}`
+        : `Showing ${data.count} recent trade${data.count === 1 ? '' : 's'}`;
+    }
+    return data.trades || [];
+  }
+
+  function renderTradeLinks(trades, emptyText) {
+    if (!trades || !trades.length) {
+      return `<div class="detail-row"><span class="detail-row-label">${esc(emptyText)}</span></div>`;
+    }
+    return `<div class="drawer-list">${
+      trades.map(t => `
+        <button class="drawer-link" type="button" data-trade-id="${esc(t.trade_id)}">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <span>${esc(t.trade_id)}</span>
+            <span style="color:var(--muted)">${esc(t.time || '')}</span>
+          </div>
+          <div style="margin-top:3px;color:var(--muted)">${esc(t.book)} • ${esc(t.instrument)} • ${esc((t.side || '').toUpperCase())}</div>
+        </button>
+      `).join('')
+    }</div>`;
+  }
+
+  function renderTradeDetail(trade) {
+    const productDetails = trade.product_details || {};
+    const productMeta = Object.entries(productDetails)
+      .map(([key, value]) => `<div class="detail-row"><span class="detail-row-label">${esc(key.replaceAll('_', ' '))}</span><span class="detail-row-value">${esc(value)}</span></div>`)
+      .join('');
+    const greeks = trade.greeks || {};
+    setDrawer('Trade Detail', `
+      <div class="drawer-kicker">${esc(trade.book)}${trade.desk ? ' • ' + esc(trade.desk) : ''}</div>
+      <div class="drawer-title-main">${esc(trade.trade_id)}</div>
+      <div class="drawer-grid">
+        <div class="drawer-field">
+          <div class="drawer-field-label">Executed</div>
+          <div class="drawer-field-value">${esc(trade.executed_at || trade.time || '—')}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Status</div>
+          <div class="drawer-field-value"><span class="status-chip">${esc(trade.status || 'FILLED')}</span></div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Instrument</div>
+          <div class="drawer-field-value">${esc(trade.instrument)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Side</div>
+          <div class="drawer-field-value">${esc((trade.side || '').toUpperCase())}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Quantity</div>
+          <div class="drawer-field-value">${fmtQty(trade.qty)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Price</div>
+          <div class="drawer-field-value">${fmt(trade.price, 4)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Notional</div>
+          <div class="drawer-field-value">${trade.notional != null ? fmtMM(trade.notional) : '—'}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Counterparty</div>
+          <div class="drawer-field-value">${esc(trade.counterparty_id || '—')}</div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Risk Impact</div>
+        <div class="detail-row"><span class="detail-row-label">Limit status</span><span class="detail-row-value" style="color:${statusColor(trade.limit_status || 'YELLOW')}">${esc(trade.limit_status || '—')}</span></div>
+        <div class="detail-row"><span class="detail-row-label">VaR before</span><span class="detail-row-value">${trade.var_before != null ? fmt(trade.var_before, 2) : '—'}</span></div>
+        <div class="detail-row"><span class="detail-row-label">VaR after</span><span class="detail-row-value">${trade.var_after != null ? fmt(trade.var_after, 2) : '—'}</span></div>
+        <div class="detail-row"><span class="detail-row-label">Limit headroom %</span><span class="detail-row-value">${trade.limit_headroom_pct != null ? trade.limit_headroom_pct + '%' : '—'}</span></div>
+        <div class="detail-row"><span class="detail-row-label">Incremental Greeks</span><span class="detail-row-value">Δ ${fmtK(greeks.delta)} | Γ ${fmtK(greeks.gamma)} | ν ${fmtK(greeks.vega)} | DV01 ${fmtK(greeks.dv01)}</span></div>
+      </div>
+      ${trade.pre_trade_message ? `<div class="detail-section"><div class="detail-section-label">Pre-trade Check</div><div class="detail-row"><span class="detail-row-label">${esc(trade.pre_trade_message)}</span></div></div>` : ''}
+      ${productMeta ? `<div class="detail-section"><div class="detail-section-label">Product Detail</div>${productMeta}</div>` : ''}
+    `, '');
+  }
+
+  async function showTradeDetailById(tradeId) {
+    const res = await fetch(`/api/trading/trades/${encodeURIComponent(tradeId)}`).catch(() => null);
+    if (!res || !res.ok) return;
+    const trade = await res.json();
+    _selectedTradeId = trade.trade_id;
+    renderTradeDetail(trade);
+    document.querySelectorAll('.trade-row.selected').forEach(row => row.classList.remove('selected'));
+    const selectedRow = document.querySelector(`tr[data-trade-id="${CSS.escape(trade.trade_id)}"]`);
+    if (selectedRow) selectedRow.classList.add('selected');
+  }
+
+  async function loadBlotter(filters = null) {
+    const activeFilters = filters || _tradeFilters;
+    const trades = await fetchTradeHistory(activeFilters, true);
+    _tradeHistory = trades;
+    const tbody = document.getElementById('blotter-tbody');
+    tbody.innerHTML = '';
+    trades.forEach(t => {
+      const side = t.side.toLowerCase();
+      const sideCls = side === 'buy' ? 'buy' : side === 'sell' ? 'sell' : 'pay';
+      const sideLabel = side === 'payer' ? 'PAY' : side === 'receiver' ? 'RCV' :
+                        side.startsWith('protection') ? (side.includes('buy') ? 'BUY-P' : 'SLL-P') :
+                        t.side;
+      const tr = document.createElement('tr');
+      tr.className = 'trade-row' + (_selectedTradeId === t.trade_id ? ' selected' : '');
+      tr.dataset.tradeId = t.trade_id;
+      tr.innerHTML = `
+        <td style="color:var(--accent)">${t.trade_id}</td>
+        <td class="time">${t.time}</td>
+        <td style="color:var(--accent)">${t.book}</td>
+        <td class="instrument">${blotterDescription(t)}</td>
+        <td><span class="side-badge ${sideCls}">${sideLabel}</span></td>
+        <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${fmtQty(t.qty)}</td>
+        <td style="color:var(--text);text-align:right;font-variant-numeric:tabular-nums">${t.price}</td>
+        <td><span class="status-chip">${t.status}</span></td>
+      `;
+      tr.addEventListener('click', () => showTradeDetailById(t.trade_id));
+      tbody.appendChild(tr);
+    });
+    if (!trades.length) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="8" style="color:var(--muted);padding:12px 8px">No trades matched the current filters.</td>`;
+      tbody.appendChild(tr);
+      if (document.getElementById('inner-blotter').classList.contains('active')) {
+        setDrawer('Trade Detail', '', 'No trade selected. Adjust filters or pick a trade row.');
       }
     }
+  }
 
-    // ── Confirmation modal ────────────────────────────────────────────────────
+  // ── Booking ticket ────────────────────────────────────────────────────────
 
-    function showConfirmation(conf) {
-      const fmtP = (n) => n == null ? '—' : `$${(n/1_000_000).toFixed(2)}MM`;
+  let _bookingAsset   = 'EQUITY';
+  let _bookingSubtype = null;
+  let _counterparties = [];
+  let _livePrices     = {};
 
-      const title = document.getElementById('modal-title');
-      title.textContent = `${conf.side} ${fmt(conf.quantity)} ${conf.ticker} — FILLED`;
-      title.style.color = conf.side === 'BUY' ? 'var(--positive)' : 'var(--negative)';
+  const ASSET_DESK = {
+    EQUITY:      { desk: 'EQUITY',      book: 'EQ_BOOK_1' },
+    RATES:       { desk: 'RATES',       book: { gov_bond: 'RATES_BOOK_1', irs: 'RATES_BOOK_2' } },
+    FX:          { desk: 'FX',          book: 'FX_BOOK_1' },
+    CREDIT:      { desk: 'CREDIT',      book: 'CREDIT_BOOK_1' },
+    COMMODITIES: { desk: 'COMMODITIES', book: 'COMM_BOOK_1' },
+    DERIVATIVES: { desk: 'DERIVATIVES', book: 'DERIV_BOOK_1' },
+  };
 
-      document.getElementById('modal-grid').innerHTML = `
-        <div><div class="modal-field-label">UTI</div><div class="modal-field-value" style="font-size:10px">${conf.uti.slice(0,16)}…</div></div>
-        <div><div class="modal-field-label">Fill Price</div><div class="modal-field-value">$${conf.fill_price.toFixed(4)}</div></div>
-        <div><div class="modal-field-label">Notional</div><div class="modal-field-value">${fmtP(conf.notional)}</div></div>
-        <div><div class="modal-field-label">Book</div><div class="modal-field-value">${conf.book_id}</div></div>
-      `;
+  const ASSET_SUBTYPES = {
+    RATES: [{ id: 'gov_bond', label: 'Gov Bond' }, { id: 'irs', label: 'IRS Swap' }],
+    FX:    [{ id: 'spot',    label: 'Spot'      }, { id: 'fwd', label: 'Forward' }],
+  };
 
-      document.getElementById('modal-var-before').textContent = fmtP(conf.var_before);
-      document.getElementById('modal-var-after').textContent  = fmtP(conf.var_after);
+  function cpOptions() {
+    if (!_counterparties.length) return '<option value="">— None —</option>';
+    return '<option value="">— None —</option>' + _counterparties.map(cp =>
+      `<option value="${cp.id}">${cp.counterparty}</option>`
+    ).join('');
+  }
 
-      const badge = document.getElementById('modal-limit-badge');
-      badge.textContent = conf.limit_status;
-      badge.style.color = statusColor(conf.limit_status);
+  async function loadCounterpartiesForTicket() {
+    const res = await fetch('/api/trading/ccr').catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    _counterparties = data.counterparties || [];
+    if (['irs', 'fwd', 'cds'].includes(_bookingSubtype)) renderForm(_bookingAsset, _bookingSubtype);
+  }
 
-      const g = conf.greeks || {};
-      document.getElementById('modal-greeks').innerHTML =
-        `Greeks (incremental) — Δ: ${fmtK(g.delta)} | Γ: ${fmtK(g.gamma)} | ν: ${fmtK(g.vega)} | DV01: ${fmtK(g.dv01)}`;
+  async function loadLivePrices() {
+    const res = await fetch('/api/trading/prices').catch(() => null);
+    if (!res || !res.ok) return;
+    _livePrices = await res.json();
+    updateBookingContext();
+  }
 
-      document.getElementById('modal-pretrade').textContent = conf.pre_trade_message || '';
+  function setAsset(asset) {
+    _bookingAsset = asset;
+    document.querySelectorAll('.asset-tab').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.asset === asset));
 
-      document.getElementById('confirm-modal').classList.add('active');
+    const subtypes = ASSET_SUBTYPES[asset];
+    const subtypeRow = document.getElementById('subtype-row');
+    if (subtypes) {
+      const valid = subtypes.find(s => s.id === _bookingSubtype);
+      if (!valid) _bookingSubtype = subtypes[0].id;
+      subtypeRow.style.display = 'flex';
+      subtypeRow.innerHTML = subtypes.map(s =>
+        `<button class="subtype-btn ${_bookingSubtype === s.id ? 'active' : ''}"
+           onclick="setSubtype('${s.id}')">${s.label}</button>`
+      ).join('');
+    } else {
+      _bookingSubtype = null;
+      subtypeRow.style.display = 'none';
     }
+    renderForm(asset, _bookingSubtype);
+  }
 
-    function closeModal() {
-      document.getElementById('confirm-modal').classList.remove('active');
-    }
+  function setSubtype(subtype) {
+    _bookingSubtype = subtype;
+    const subtypes = ASSET_SUBTYPES[_bookingAsset] || [];
+    document.getElementById('subtype-row').innerHTML = subtypes.map(s =>
+      `<button class="subtype-btn ${subtype === s.id ? 'active' : ''}"
+         onclick="setSubtype('${s.id}')">${s.label}</button>`
+    ).join('');
+    renderForm(_bookingAsset, subtype);
+  }
 
-    // Close modal on overlay click
-    document.getElementById('confirm-modal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
+  function renderForm(asset, subtype) {
+    const fields = document.getElementById('booking-fields');
+    if (!fields) return;
+    fields.innerHTML = buildFormHTML(asset, subtype);
+    fields.querySelectorAll('select, input').forEach(el => {
+      el.addEventListener('change', () => { updateExecLabel(); updateBookingContext(); });
+      el.addEventListener('input',  () => updateExecLabel());
     });
+    updateExecLabel();
+    loadLivePrices();
+  }
 
-    // ── WebSocket ─────────────────────────────────────────────────────────────
+  function fG(id, label, content) {
+    return `<div class="form-group"><label>${label}</label>${content}</div>`;
+  }
+  function fSel(id, label, opts) {
+    return fG(id, label, `<select id="${id}">${opts}</select>`);
+  }
+  function fInp(id, label, type, ph, val = '') {
+    return fG(id, label, `<input id="${id}" type="${type}" placeholder="${ph}" value="${val}">`);
+  }
+  function sideSel(id = 'bf-side') {
+    return fSel(id, 'Side', '<option value="buy">BUY</option><option value="sell">SELL</option>');
+  }
 
-    let ws = null;
-    function connectWS() {
-      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      ws = new WebSocket(`${proto}://${location.host}/ws/trading`);
-      const dot   = document.getElementById('ws-dot');
-      const label = document.getElementById('ws-label');
+  function buildFormHTML(asset, subtype) {
+    switch(asset) {
 
-      ws.onopen = () => {
-        dot.classList.add('live');
-        label.textContent = 'live';
-      };
-      ws.onmessage = (ev) => {
-        const msg = JSON.parse(ev.data);
-        if (msg.type === 'fill') {
-          loadBlotter();   // new trade booked
-        } else if (msg.type === 'positions') {
-          loadPnl();       // P&L moved
+      case 'EQUITY': return `
+        <div class="booking-row cols-2">
+          ${fSel('bf-ticker','Ticker',['AAPL','MSFT','NVDA','SPY','GOOGL'].map(t=>`<option value="${t}">${t}</option>`).join(''))}
+          ${sideSel()}
+        </div>
+        <div class="booking-row cols-2">
+          ${fInp('bf-qty','Shares','number','5000','5000')}
+          <div class="form-group"><label>&nbsp;</label>
+            <div style="padding:7px 0;font-size:11px;color:var(--muted)">
+              Live: <span id="bf-live-px" style="color:var(--accent);font-weight:600">—</span>
+            </div>
+          </div>
+        </div>`;
+
+      case 'RATES':
+        if (subtype === 'irs') return `
+          <div class="booking-row cols-3">
+            ${fSel('bf-ccy','Currency','<option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option>')}
+            ${fSel('bf-tenor','Tenor',`
+              <option value="USD_IRS_1Y"  data-years="1">1Y</option>
+              <option value="USD_IRS_2Y"  data-years="2">2Y</option>
+              <option value="USD_IRS_5Y"  data-years="5" selected>5Y</option>
+              <option value="USD_IRS_10Y" data-years="10">10Y</option>
+              <option value="USD_IRS_30Y" data-years="30">30Y</option>`)}
+            ${fSel('bf-side','Leg','<option value="payer">PAYER — Pay Fixed</option><option value="receiver">RECEIVER — Rec Fixed</option>')}
+          </div>
+          <div class="booking-row cols-2">
+            ${fInp('bf-qty','Notional ($)','number','100000000','100000000')}
+            ${fInp('bf-fixed-rate','Fixed Rate %','number','4.25','4.25')}
+          </div>
+          <div class="booking-row cols-2">
+            ${fSel('bf-counterparty','Counterparty',cpOptions())}
+          </div>`;
+        return `
+          <div class="booking-row cols-2">
+            ${fSel('bf-ticker','Bond',`<option value="US2Y">US 2Y Treasury</option><option value="US10Y">US 10Y Treasury</option>`)}
+            ${sideSel()}
+          </div>
+          <div class="booking-row cols-2">
+            ${fInp('bf-qty','Face Value ($)','number','10000000','10000000')}
+            <div class="form-group"><label>&nbsp;</label>
+              <div style="padding:7px 0;font-size:11px;color:var(--muted)">
+                Price: <span id="bf-live-px" style="color:var(--accent);font-weight:600">—</span>
+              </div>
+            </div>
+          </div>`;
+
+      case 'FX':
+        if (subtype === 'fwd') return `
+          <div class="booking-row cols-2">
+            ${fSel('bf-ticker','Pair','<option value="EURUSD">EUR/USD</option><option value="GBPUSD">GBP/USD</option>')}
+            ${sideSel()}
+          </div>
+          <div class="booking-row cols-2">
+            ${fInp('bf-qty','Notional','number','5000000','5000000')}
+            ${fSel('bf-tenor','Tenor',`
+              <option value="0.02">1W</option><option value="0.083">1M</option>
+              <option value="0.25" selected>3M</option><option value="0.5">6M</option>
+              <option value="1.0">1Y</option>`)}
+          </div>
+          <div class="booking-row cols-2">
+            ${fSel('bf-counterparty','Counterparty',cpOptions())}
+          </div>`;
+        return `
+          <div class="booking-row cols-2">
+            ${fSel('bf-ticker','Pair','<option value="EURUSD">EUR/USD</option><option value="GBPUSD">GBP/USD</option>')}
+            ${fSel('bf-side','Side','<option value="buy">BUY base CCY</option><option value="sell">SELL base CCY</option>')}
+          </div>
+          <div class="booking-row cols-2">
+            ${fInp('bf-qty','Notional','number','5000000','5000000')}
+            <div class="form-group"><label>&nbsp;</label>
+              <div style="padding:7px 0;font-size:11px;color:var(--muted)">
+                Spot: <span id="bf-live-px" style="color:var(--accent);font-weight:600">—</span>
+              </div>
+            </div>
+          </div>`;
+
+      case 'CREDIT': return `
+        <div class="booking-row cols-2">
+          ${fSel('bf-ticker','Reference Entity',`
+            <option value="IG_CDX">IG CDX — Investment Grade</option>
+            <option value="HY_CDX">HY CDX — High Yield</option>`)}
+          ${fSel('bf-side','Protection',`
+            <option value="protection_buy">BUY Protection</option>
+            <option value="protection_sell">SELL Protection</option>`)}
+        </div>
+        <div class="booking-row cols-3">
+          ${fInp('bf-qty','Notional ($)','number','50000000','50000000')}
+          ${fInp('bf-spread','Spread (bps)','number','65','65')}
+          ${fSel('bf-tenor','Tenor','<option value="3">3Y</option><option value="5" selected>5Y</option><option value="10">10Y</option>')}
+        </div>
+        <div class="booking-row cols-2">
+          ${fSel('bf-counterparty','Counterparty',cpOptions())}
+        </div>`;
+
+      case 'COMMODITIES': return `
+        <div class="booking-row cols-2">
+          ${fSel('bf-ticker','Contract',`
+            <option value="CL1">WTI Crude Oil (CL1)</option>
+            <option value="XAUUSD">Gold (XAU/USD)</option>
+            <option value="NG1">Natural Gas (NG1)</option>`)}
+          ${sideSel()}
+        </div>
+        <div class="booking-row cols-2">
+          ${fInp('bf-qty','Lots','number','100','100')}
+          ${fSel('bf-expiry','Expiry',`
+            <option value="front">Front Month</option>
+            <option value="m1">M+1</option>
+            <option value="m2">M+2</option>`)}
+        </div>`;
+
+      case 'DERIVATIVES': return `
+        <div class="booking-row cols-3">
+          ${fSel('bf-underlying','Underlying',['AAPL','MSFT','NVDA','SPY','GOOGL'].map(t=>`<option value="${t}">${t}</option>`).join(''))}
+          ${fSel('bf-opttype','Type','<option value="CALL">Call</option><option value="PUT">Put</option>')}
+          ${sideSel()}
+        </div>
+        <div class="booking-row cols-3">
+          ${fInp('bf-strike','Strike','number','200','200')}
+          ${fSel('bf-expiry','Expiry',`
+            <option value="2026-06-20">Jun-26</option>
+            <option value="2026-09-19">Sep-26</option>
+            <option value="2026-12-19">Dec-26</option>
+            <option value="2027-03-20">Mar-27</option>`)}
+          ${fInp('bf-qty','Contracts','number','100','100')}
+        </div>`;
+
+      default: return '<div style="color:var(--muted);font-size:12px;padding:8px 0">Select an asset class above</div>';
+    }
+  }
+
+  function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : null;
+  }
+
+  function buildPayload() {
+    const asset   = _bookingAsset;
+    const subtype = _bookingSubtype;
+    const cfg     = ASSET_DESK[asset];
+    const desk    = cfg.desk;
+    const book_id = typeof cfg.book === 'string'
+      ? cfg.book
+      : (cfg.book[subtype] || Object.values(cfg.book)[0]);
+
+    switch(asset) {
+      case 'EQUITY':
+        return { desk, book_id, ticker: getVal('bf-ticker'), side: getVal('bf-side'), qty: parseFloat(getVal('bf-qty')) };
+
+      case 'RATES':
+        if (subtype === 'irs') {
+          const tenorEl = document.getElementById('bf-tenor');
+          const tenorYears = tenorEl ? parseFloat(tenorEl.selectedOptions[0].dataset.years) : 5;
+          return {
+            desk, book_id,
+            ticker: getVal('bf-tenor'),
+            side: getVal('bf-side'),
+            qty: parseFloat(getVal('bf-qty')),
+            product_subtype: 'irs',
+            fixed_rate: parseFloat(getVal('bf-fixed-rate')) / 100,
+            tenor_years: tenorYears,
+            currency: getVal('bf-ccy') || 'USD',
+            counterparty_id: getVal('bf-counterparty') || null,
+            notional: parseFloat(getVal('bf-qty')),
+          };
         }
-        // 'tick' messages are used only for WS health indicator
-      };
-      ws.onclose = () => {
-        dot.classList.remove('live');
-        label.textContent = 'reconnecting…';
-        setTimeout(connectWS, 3000);
-      };
-      ws.onerror = () => ws.close();
-      setInterval(() => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({type:'ping'})); }, 25_000);
+        return { desk, book_id, product_subtype: 'gov_bond', ticker: getVal('bf-ticker'), side: getVal('bf-side'), qty: parseFloat(getVal('bf-qty')) };
+
+      case 'FX':
+        if (subtype === 'fwd') return {
+          desk, book_id, product_subtype: 'fwd',
+          ticker: getVal('bf-ticker'), side: getVal('bf-side'),
+          qty: parseFloat(getVal('bf-qty')),
+          tenor_years: parseFloat(getVal('bf-tenor')),
+          counterparty_id: getVal('bf-counterparty') || null,
+          notional: parseFloat(getVal('bf-qty')),
+        };
+        return { desk, book_id, product_subtype: 'spot', ticker: getVal('bf-ticker'), side: getVal('bf-side'), qty: parseFloat(getVal('bf-qty')) };
+
+      case 'CREDIT':
+        return {
+          desk, book_id, product_subtype: 'cds',
+          ticker: getVal('bf-ticker'), side: getVal('bf-side'),
+          qty: parseFloat(getVal('bf-qty')),
+          spread_bps: parseFloat(getVal('bf-spread')),
+          tenor_years: parseFloat(getVal('bf-tenor')),
+          counterparty_id: getVal('bf-counterparty') || null,
+          notional: parseFloat(getVal('bf-qty')),
+        };
+
+      case 'COMMODITIES':
+        return {
+          desk, book_id, product_subtype: 'future',
+          ticker: getVal('bf-ticker'), side: getVal('bf-side'),
+          qty: parseFloat(getVal('bf-qty')),
+          expiry_date: getVal('bf-expiry'),
+        };
+
+      case 'DERIVATIVES': {
+        const underlying = getVal('bf-underlying') || 'AAPL';
+        const opttype    = getVal('bf-opttype') || 'CALL';
+        const strike     = parseFloat(getVal('bf-strike')) || 200;
+        const ticker = (underlying === 'AAPL' && opttype === 'CALL' && strike === 200)
+          ? 'AAPL_CALL_200'
+          : `${underlying}_${opttype}_${strike}`;
+        return {
+          desk, book_id, product_subtype: 'option',
+          ticker, side: getVal('bf-side'),
+          qty: parseFloat(getVal('bf-qty')),
+          strike, expiry_date: getVal('bf-expiry'),
+        };
+      }
+    }
+    throw new Error('Unknown asset class');
+  }
+
+  function fmtN(n) {
+    if (!n || isNaN(n)) return '—';
+    if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(0)}MM`;
+    if (n >= 1_000)     return `${(n/1_000).toFixed(0)}k`;
+    return `${n}`;
+  }
+
+  function updateExecLabel() {
+    const btn = document.getElementById('exec-btn-new');
+    const lbl = document.getElementById('exec-label');
+    let label = '—', sellMode = false, neutralMode = false;
+
+    try {
+      const asset   = _bookingAsset;
+      const subtype = _bookingSubtype;
+
+      if (asset === 'EQUITY') {
+        const side = getVal('bf-side') || 'buy';
+        const ticker = getVal('bf-ticker') || 'AAPL';
+        const qty  = parseInt(getVal('bf-qty')) || 0;
+        sellMode = side === 'sell';
+        label = `${side.toUpperCase()} ${qty.toLocaleString()} ${ticker}`;
+
+      } else if (asset === 'RATES' && subtype === 'irs') {
+        const side = getVal('bf-side') || 'payer';
+        const qty  = parseFloat(getVal('bf-qty')) || 0;
+        const rate = getVal('bf-fixed-rate') || '?';
+        const tenorEl = document.getElementById('bf-tenor');
+        const tenorLabel = tenorEl && tenorEl.selectedOptions[0] ? tenorEl.selectedOptions[0].text : '?';
+        neutralMode = true;
+        label = `${side === 'payer' ? 'PAY FIXED' : 'RCV FIXED'} ${fmtN(qty)} ${tenorLabel} @ ${rate}%`;
+
+      } else if (asset === 'RATES') {
+        const side = getVal('bf-side') || 'buy';
+        const ticker = getVal('bf-ticker') || '';
+        const qty  = parseFloat(getVal('bf-qty')) || 0;
+        sellMode = side === 'sell';
+        label = `${side.toUpperCase()} ${fmtN(qty)} ${ticker}`;
+
+      } else if (asset === 'FX') {
+        const side = getVal('bf-side') || 'buy';
+        const pair = getVal('bf-ticker') || '';
+        const qty  = parseFloat(getVal('bf-qty')) || 0;
+        const ccy  = pair.slice(0,3);
+        sellMode = side === 'sell';
+        label = `${side === 'buy' ? 'BUY' : 'SELL'} ${ccy} ${fmtN(qty)}${subtype === 'fwd' ? ' FWD' : ' SPOT'}`;
+
+      } else if (asset === 'CREDIT') {
+        const side   = getVal('bf-side') || 'protection_buy';
+        const ref    = getVal('bf-ticker') || '';
+        const qty    = parseFloat(getVal('bf-qty')) || 0;
+        const spread = getVal('bf-spread') || '?';
+        const tenor  = getVal('bf-tenor') || '5';
+        neutralMode  = true;
+        label = `${side === 'protection_buy' ? 'BUY PROT' : 'SELL PROT'} ${fmtN(qty)} ${ref} ${tenor}Y @ ${spread}bps`;
+
+      } else if (asset === 'COMMODITIES') {
+        const side = getVal('bf-side') || 'buy';
+        const contract = getVal('bf-ticker') || '';
+        const lots = parseInt(getVal('bf-qty')) || 0;
+        sellMode = side === 'sell';
+        label = `${side.toUpperCase()} ${lots.toLocaleString()} ${contract} LOTS`;
+
+      } else if (asset === 'DERIVATIVES') {
+        const side       = getVal('bf-side') || 'buy';
+        const underlying = getVal('bf-underlying') || 'AAPL';
+        const opttype    = getVal('bf-opttype') || 'CALL';
+        const strike     = getVal('bf-strike') || '?';
+        const qty        = parseInt(getVal('bf-qty')) || 0;
+        sellMode = side === 'sell';
+        label = `${side.toUpperCase()} ${underlying} ${opttype} $${strike} × ${qty.toLocaleString()} cts`;
+      }
+    } catch(e) { label = '—'; }
+
+    if (lbl) lbl.textContent = label;
+    if (btn) {
+      btn.classList.toggle('sell-mode',    sellMode && !neutralMode);
+      btn.classList.toggle('neutral-mode', neutralMode);
+      btn.classList.toggle('sell-mode',    sellMode);
+      if (neutralMode) { btn.classList.remove('sell-mode'); btn.classList.add('neutral-mode'); }
+      else if (sellMode) { btn.classList.remove('neutral-mode'); btn.classList.add('sell-mode'); }
+      else { btn.classList.remove('sell-mode', 'neutral-mode'); }
+    }
+  }
+
+  function updateBookingContext() {
+    let ticker = null, label = '—', sublabel = '';
+
+    switch(_bookingAsset) {
+      case 'EQUITY':      ticker = getVal('bf-ticker'); label = 'Equity Price';       sublabel = 'live mid'; break;
+      case 'RATES':
+        if (_bookingSubtype === 'irs') { ticker = getVal('bf-tenor'); label = 'Par Handle'; sublabel = 'IRS fixed rate ref'; }
+        else                           { ticker = getVal('bf-ticker'); label = 'Clean Price'; sublabel = 'treasury mid'; }
+        break;
+      case 'FX':          ticker = getVal('bf-ticker'); label = 'Spot Rate';          sublabel = 'mid quote'; break;
+      case 'CREDIT':      ticker = getVal('bf-ticker'); label = 'CDX Reference';      sublabel = 'price handle'; break;
+      case 'COMMODITIES': ticker = getVal('bf-ticker'); label = 'Futures Price';      sublabel = 'front month mid'; break;
+      case 'DERIVATIVES': ticker = 'AAPL_CALL_200';    label = 'Option Mid (BSM)';   sublabel = 'per contract'; break;
     }
 
-    // ── Boot ─────────────────────────────────────────────────────────────────
+    const price = ticker && _livePrices[ticker];
+    const priceEl = document.getElementById('ctx-price');
+    const lblEl   = document.getElementById('ctx-label');
+    const subEl   = document.getElementById('ctx-sub');
+    const extra   = document.getElementById('ctx-extra');
 
-    async function loadAll() {
-      await Promise.all([loadGreeks(), loadCCR(), loadPnl(), loadPnlExplain(), loadCircuitBreaker(), loadBlotter()]);
+    if (lblEl)   lblEl.textContent  = label;
+    if (priceEl) priceEl.textContent = price
+      ? price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+      : '—';
+    if (subEl)   subEl.textContent  = sublabel;
+
+    // Inline price badge
+    const badge = document.getElementById('bf-live-px');
+    if (badge && price) badge.textContent = price.toFixed(4);
+
+    // Extra context lines
+    if (extra) {
+      extra.innerHTML = '';
+      if (_bookingAsset === 'EQUITY' && price) {
+        const ticker2 = getVal('bf-ticker') || 'AAPL';
+        const qty = parseFloat(getVal('bf-qty')) || 0;
+        const notional = qty * price;
+        extra.innerHTML = `
+          <div><div class="ctx-label">Notional Est.</div><div class="ctx-meta">${notional >= 1e6 ? `$${(notional/1e6).toFixed(2)}MM` : `$${(notional/1e3).toFixed(0)}k`}</div></div>`;
+      } else if (_bookingAsset === 'RATES' && _bookingSubtype === 'irs') {
+        const fixedRate = parseFloat(getVal('bf-fixed-rate')) || 0;
+        const notional  = parseFloat(getVal('bf-qty')) || 0;
+        const dv01Approx = notional * 0.0001; // ~1bp per year (rough)
+        extra.innerHTML = `
+          <div><div class="ctx-label">Fixed Rate</div><div class="ctx-meta">${fixedRate.toFixed(2)}%</div></div>
+          <div><div class="ctx-label">DV01 est.</div><div class="ctx-meta">$${(dv01Approx/1e3).toFixed(0)}k/bp</div></div>`;
+      } else if (_bookingAsset === 'CREDIT') {
+        const spread = parseFloat(getVal('bf-spread')) || 0;
+        const notional = parseFloat(getVal('bf-qty')) || 0;
+        const annualPrem = notional * spread / 10000;
+        extra.innerHTML = `
+          <div><div class="ctx-label">Annual Premium</div><div class="ctx-meta">${annualPrem >= 1e6 ? `$${(annualPrem/1e6).toFixed(2)}MM` : `$${(annualPrem/1e3).toFixed(0)}k`}/yr</div></div>`;
+      }
+    }
+  }
+
+  async function submitBookingTicket() {
+    const btn   = document.getElementById('exec-btn-new');
+    const preEl = document.getElementById('pretrade-display');
+    if (btn) btn.disabled = true;
+    if (preEl) preEl.textContent = 'Submitting…';
+
+    let payload;
+    try {
+      payload = buildPayload();
+    } catch(e) {
+      alert('Form error: ' + e.message);
+      if (btn) btn.disabled = false;
+      return;
+    }
+    if (!payload || !payload.ticker || !payload.qty || isNaN(payload.qty) || payload.qty <= 0) {
+      alert('Please fill in all required fields');
+      if (btn) btn.disabled = false;
+      return;
     }
 
-    loadAll();
-    connectWS();
-    setInterval(loadAll, 30_000);  // fallback poll every 30s
-  </script>
+    try {
+      const res = await fetch('/api/trading/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Order rejected: ' + (err.detail || res.statusText));
+        if (preEl) preEl.textContent = '';
+        return;
+      }
+      const conf = await res.json();
+      if (preEl) preEl.textContent = conf.pre_trade_message || '';
+      showConfirmation(conf);
+      await Promise.all([loadGreeks(), loadPnl(), loadBlotter()]);
+    } catch(e) {
+      alert('Network error: ' + e.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // ── Demo trade catalog ────────────────────────────────────────────────────
+
+  const DEMO_TRADES = [
+    { desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'AAPL',        side:'buy',           qty:5000 },
+    { desk:'RATES',       book_id:'RATES_BOOK_1', ticker:'US10Y',       side:'sell',          qty:10000 },
+    { desk:'DERIVATIVES', book_id:'DERIV_BOOK_1', ticker:'AAPL_CALL_200', side:'buy',         qty:500 },
+    { desk:'FX',          book_id:'FX_BOOK_1',    ticker:'EURUSD',      side:'buy',           qty:5000000 },
+    { desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'NVDA',        side:'buy',           qty:8000 },
+    { desk:'EQUITY',      book_id:'EQ_BOOK_1',    ticker:'SPY',         side:'sell',          qty:2000 },
+    { desk:'RATES',       book_id:'RATES_BOOK_2', ticker:'USD_IRS_10Y', side:'payer',         qty:100000000, product_subtype:'irs', fixed_rate:0.0425, tenor_years:10, notional:100000000 },
+    { desk:'CREDIT',      book_id:'CREDIT_BOOK_1',ticker:'IG_CDX',      side:'protection_buy',qty:50000000,  product_subtype:'cds', spread_bps:65, tenor_years:5, notional:50000000 },
+    { desk:'COMMODITIES', book_id:'COMM_BOOK_1',  ticker:'XAUUSD',      side:'buy',           qty:500,       product_subtype:'future' },
+  ];
+
+  const DESK_BOOKS = {
+    EQUITY:'EQ_BOOK_1', RATES:'RATES_BOOK_1', FX:'FX_BOOK_1',
+    CREDIT:'CREDIT_BOOK_1', DERIVATIVES:'DERIV_BOOK_1', COMMODITIES:'COMM_BOOK_1',
+  };
+
+  function demoTrade(idx) {
+    const t = DEMO_TRADES[idx];
+    submitOrderRaw(t);
+  }
+
+  async function submitOrderRaw(payload) {
+    const preEl = document.getElementById('pretrade-display');
+    if (preEl) preEl.textContent = 'Submitting…';
+    try {
+      const res = await fetch('/api/trading/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Order rejected: ' + (err.detail || res.statusText));
+        if (preEl) preEl.textContent = '';
+        return;
+      }
+      const conf = await res.json();
+      if (preEl) preEl.textContent = conf.pre_trade_message || '';
+      showConfirmation(conf);
+      await Promise.all([loadGreeks(), loadPnl(), loadBlotter()]);
+    } catch(e) {
+      alert('Network error: ' + e.message);
+    }
+  }
+
+  // Legacy wrapper used by no remaining code — kept for safety
+  async function submitOrder(desk, book_id, ticker, side, qty) {
+    return submitOrderRaw({ desk, book_id, ticker, side, qty });
+  }
+
+  // ── Confirmation modal ────────────────────────────────────────────────────
+
+  function showConfirmation(conf) {
+    const fmtP = (n) => n == null ? '—' : `$${(n/1_000_000).toFixed(2)}MM`;
+    const pd   = conf.product_details || {};
+
+    // Build a semantic title based on product_subtype
+    let titleText = `${conf.side} ${fmt(conf.quantity)} ${conf.ticker} — FILLED`;
+    let titleColor = conf.side === 'BUY' ? 'var(--positive)' : 'var(--negative)';
+
+    if (conf.product_subtype === 'irs') {
+      const side = (pd.original_side || conf.side).toUpperCase();
+      const rate  = pd.fixed_rate != null ? (pd.fixed_rate * 100).toFixed(2) + '%' : '—';
+      const tenor = pd.tenor_years ? `${pd.tenor_years}Y` : '';
+      titleText  = `${side === 'PAYER' ? 'PAY FIXED' : 'RCV FIXED'} ${fmtP(conf.notional)} ${tenor} @ ${rate} — FILLED`;
+      titleColor = 'var(--warning)';
+    } else if (conf.product_subtype === 'cds') {
+      const side  = (pd.original_side || conf.side).toUpperCase();
+      const tenor = pd.tenor_years ? `${pd.tenor_years}Y` : '';
+      const spread = pd.spread_bps != null ? `${pd.spread_bps}bps` : '';
+      titleText  = `${side === 'PROTECTION_BUY' ? 'BUY PROT' : 'SELL PROT'} ${fmtP(conf.notional)} ${conf.ticker} ${tenor} @ ${spread} — FILLED`;
+      titleColor = 'var(--accent)';
+    } else if (conf.product_subtype === 'fwd') {
+      titleText = `${conf.side} ${conf.ticker} FWD ${fmtP(conf.notional)} — FILLED`;
+    } else if (conf.product_subtype === 'option') {
+      titleText = `${conf.side} ${conf.ticker} × ${fmt(conf.quantity)} cts — FILLED`;
+    }
+
+    const title = document.getElementById('modal-title');
+    title.textContent = titleText;
+    title.style.color = titleColor;
+
+    // Core fields
+    let extraFields = '';
+    if (conf.counterparty_id) {
+      const cp = _counterparties.find(c => c.id === conf.counterparty_id);
+      extraFields += `<div><div class="modal-field-label">Counterparty</div><div class="modal-field-value">${cp ? cp.counterparty : conf.counterparty_id}</div></div>`;
+    }
+    if (conf.product_subtype === 'irs' && pd.fixed_rate != null) {
+      extraFields += `<div><div class="modal-field-label">Fixed Rate</div><div class="modal-field-value">${(pd.fixed_rate*100).toFixed(2)}%</div></div>`;
+    }
+    if (conf.product_subtype === 'cds' && pd.spread_bps != null) {
+      extraFields += `<div><div class="modal-field-label">Spread</div><div class="modal-field-value">${pd.spread_bps}bps</div></div>`;
+    }
+
+    document.getElementById('modal-grid').innerHTML = `
+      <div><div class="modal-field-label">UTI</div><div class="modal-field-value" style="font-size:10px">${conf.uti.slice(0,16)}…</div></div>
+      <div><div class="modal-field-label">${conf.product_subtype ? 'Mid Handle' : 'Fill Price'}</div><div class="modal-field-value">$${conf.fill_price.toFixed(4)}</div></div>
+      <div><div class="modal-field-label">Notional</div><div class="modal-field-value">${fmtP(conf.notional)}</div></div>
+      <div><div class="modal-field-label">Book</div><div class="modal-field-value">${conf.book_id}</div></div>
+      ${extraFields}
+    `;
+
+    document.getElementById('modal-var-before').textContent = fmtP(conf.var_before);
+    document.getElementById('modal-var-after').textContent  = fmtP(conf.var_after);
+
+    const badge = document.getElementById('modal-limit-badge');
+    badge.textContent = conf.limit_status;
+    badge.style.color = statusColor(conf.limit_status);
+
+    const g = conf.greeks || {};
+    document.getElementById('modal-greeks').innerHTML =
+      `Greeks (incremental) — Δ: ${fmtK(g.delta)} | Γ: ${fmtK(g.gamma)} | ν: ${fmtK(g.vega)} | DV01: ${fmtK(g.dv01)}`;
+
+    document.getElementById('modal-pretrade').textContent = conf.pre_trade_message || '';
+    document.getElementById('confirm-modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('confirm-modal').classList.remove('active');
+  }
+
+  document.getElementById('confirm-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── WebSocket ─────────────────────────────────────────────────────────────
+
+  let ws = null;
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws/trading`);
+    const dot   = document.getElementById('ws-dot');
+    const label = document.getElementById('ws-label');
+
+    ws.onopen = () => {
+      dot.classList.add('live');
+      label.textContent = 'live';
+    };
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === 'fill') {
+        loadBlotter();
+        // Append to ws-fills scroll area
+        const fills = document.getElementById('ws-fills');
+        if (fills) {
+          const line = document.createElement('div');
+          line.className = 'ws-fill-line';
+          const side = (msg.side || '').toUpperCase();
+          const cls  = side === 'BUY' ? 'fill-buy' : 'fill-sell';
+          line.innerHTML = `<span class="${cls}">${side}</span> ${msg.ticker || ''} ${msg.qty || ''} @ ${msg.price || '—'} <span style="color:var(--muted)">${new Date().toLocaleTimeString()}</span>`;
+          // Remove placeholder
+          const placeholder = fills.querySelector('span');
+          if (placeholder) placeholder.remove();
+          fills.appendChild(line);
+          fills.scrollTop = fills.scrollHeight;
+        }
+      } else if (msg.type === 'positions') {
+        loadPnl();
+      }
+      // 'tick' messages used only for WS health indicator
+    };
+    ws.onclose = () => {
+      dot.classList.remove('live');
+      label.textContent = 'reconnecting…';
+      setTimeout(connectWS, 3000);
+    };
+    ws.onerror = () => ws.close();
+    setInterval(() => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({type:'ping'})); }, 25_000);
+  }
+
+  // ── Expander toggle ───────────────────────────────────────────────────────
+
+  document.querySelectorAll('.expander-header').forEach(h => {
+    h.addEventListener('click', () => {
+      h.classList.toggle('open');
+      h.nextElementSibling.classList.toggle('open');
+    });
+  });
+
+  // ── Last refresh ──────────────────────────────────────────────────────────
+
+  function updateRefreshTime() {
+    const el = document.getElementById('last-refresh');
+    if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  }
+
+  document.getElementById('trade-filter-apply').addEventListener('click', async () => {
+    readTradeFiltersFromUi();
+    _selectedTradeId = null;
+    await loadBlotter(_tradeFilters);
+    switchInnerTab('inner-blotter');
+  });
+
+  document.getElementById('trade-filter-reset').addEventListener('click', async () => {
+    _tradeFilters = { trade_id: '', book: '', instrument: '' };
+    _selectedTradeId = null;
+    syncTradeFiltersToUi();
+    await loadBlotter(_tradeFilters);
+    switchInnerTab('inner-blotter');
+  });
+
+  ['trade-filter-id', 'trade-filter-book', 'trade-filter-instrument'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        readTradeFiltersFromUi();
+        _selectedTradeId = null;
+        await loadBlotter(_tradeFilters);
+      }
+    });
+  });
+
+  document.getElementById('detail-drawer-content').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-trade-id]');
+    if (!btn) return;
+    showTradeDetailById(btn.dataset.tradeId);
+    switchInnerTab('inner-blotter');
+  });
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+
+  async function loadAll() {
+    clearAlerts();
+    await Promise.all([
+      loadGreeks(),
+      loadCCR(),
+      loadPnl(),
+      loadPnlExplain(),
+      loadCircuitBreaker(),
+      loadBlotter(),
+    ]);
+    updateRefreshTime();
+  }
+
+  // Initialise booking ticket (renders default Equity form)
+  setAsset('EQUITY');
+  loadCounterpartiesForTicket();
+  syncTradeFiltersToUi();
+  setDrawer('Trade Detail', '', 'Select a trade, desk, or open position to view more detail.');
+
+  loadAll();
+  connectWS();
+  setInterval(loadAll, 30_000);
+  setInterval(loadLivePrices, 5_000);
+</script>
 </body>
 </html>

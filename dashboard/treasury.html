@@ -8,120 +8,6 @@
   <style>
     body { max-width: 1480px; margin: 0 auto; padding: 20px 24px; }
 
-    .page-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .page-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-
-    .page-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      max-width: 760px;
-      line-height: 1.7;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .live-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 12px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--card);
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .live-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--positive);
-      box-shadow: 0 0 8px rgba(63, 185, 80, 0.55);
-    }
-
-    .refresh-btn {
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--text);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-family: inherit;
-      font-size: 12px;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-    }
-
-    .refresh-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .kpi-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-    }
-
-    .kpi-label {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 6px;
-    }
-
-    .kpi-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-
-    .kpi-value.pos { color: var(--positive); }
-    .kpi-value.neg { color: var(--negative); }
-    .kpi-value.warn { color: var(--warning); }
-    .kpi-value.accent { color: var(--accent); }
-
-    .kpi-sub {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-
     .card-title {
       display: flex;
       align-items: center;
@@ -135,56 +21,12 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--muted);
+      margin: 0;
     }
 
     .card-title .meta {
       font-size: 11px;
       color: var(--muted);
-    }
-
-    .split-55-45 {
-      display: grid;
-      grid-template-columns: 1.22fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-      align-items: start;
-    }
-
-    .split-40-60 {
-      display: grid;
-      grid-template-columns: 0.67fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-      align-items: start;
-    }
-
-    .full-width {
-      margin-bottom: 16px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    th {
-      text-align: left;
-      padding: 8px 10px;
-      color: var(--muted);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      border-bottom: 1px solid var(--border);
-      font-weight: 500;
-    }
-
-    td {
-      padding: 9px 10px;
-      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
-      color: var(--text);
-      font-variant-numeric: tabular-nums;
-      vertical-align: top;
     }
 
     td.right, th.right { text-align: right; }
@@ -210,29 +52,23 @@
       background: rgba(248, 81, 73, 0.14);
     }
 
-    .cell-pos { color: var(--positive); }
-    .cell-neg { color: var(--negative); }
+    .cell-pos  { color: var(--positive); }
+    .cell-neg  { color: var(--negative); }
     .cell-warn { color: var(--warning); }
 
-    .bg-pos { background: rgba(63, 185, 80, 0.10); }
-    .bg-neg { background: rgba(248, 81, 73, 0.10); }
+    .bg-pos  { background: rgba(63, 185, 80, 0.10); }
+    .bg-neg  { background: rgba(248, 81, 73, 0.10); }
     .bg-warn { background: rgba(227, 179, 65, 0.10); }
 
-    /* Priority row borders for hedge table */
-    tr.prio-high td:first-child { border-left: 3px solid var(--negative); }
+    tr.prio-high   td:first-child { border-left: 3px solid var(--negative); }
     tr.prio-medium td:first-child { border-left: 3px solid var(--warning); }
-    tr.prio-low td:first-child { border-left: 3px solid var(--positive); }
+    tr.prio-low    td:first-child { border-left: 3px solid var(--positive); }
 
-    /* FTP stress columns */
     .col-idio { color: var(--warning); }
     .col-mws  { color: var(--negative); }
 
-    /* Repricing gap chart */
-    .repricing-gap-chart {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    /* Repricing gap bars */
+    .repricing-gap-chart { display: flex; flex-direction: column; gap: 8px; }
 
     .rg-bucket {
       display: grid;
@@ -241,23 +77,11 @@
       gap: 8px;
     }
 
-    .rg-label {
-      font-size: 11px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
+    .rg-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
 
-    .rg-bars {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
+    .rg-bars { display: flex; flex-direction: column; gap: 3px; }
 
-    .rg-bar-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .rg-bar-row { display: flex; align-items: center; gap: 6px; }
 
     .rg-bar-type {
       font-size: 9px;
@@ -275,12 +99,8 @@
       overflow: hidden;
     }
 
-    .rg-bar-fill {
-      height: 100%;
-      border-radius: 999px;
-    }
-
-    .rg-bar-fill.asset { background: var(--positive); }
+    .rg-bar-fill { height: 100%; border-radius: 999px; }
+    .rg-bar-fill.asset     { background: var(--positive); }
     .rg-bar-fill.liability { background: var(--negative); }
 
     .rg-gap-val {
@@ -294,7 +114,6 @@
       display: flex;
       align-items: flex-end;
       gap: 6px;
-      height: 180px;
       padding: 0 4px;
       position: relative;
     }
@@ -314,18 +133,8 @@
       flex: 1;
     }
 
-    .eve-bar-label {
-      font-size: 9px;
-      color: var(--muted);
-      margin-top: 4px;
-      text-align: center;
-    }
-
-    .eve-bar-val {
-      font-size: 9px;
-      color: var(--muted);
-      margin-bottom: 2px;
-    }
+    .eve-bar-label { font-size: 9px; color: var(--muted); margin-top: 4px; text-align: center; }
+    .eve-bar-val   { font-size: 9px; color: var(--muted); margin-bottom: 2px; }
 
     .eve-bar {
       width: 100%;
@@ -352,163 +161,263 @@
       color: rgba(248, 81, 73, 0.8);
     }
 
-    .error-banner {
-      display: none;
-      margin-bottom: 16px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      border: 1px solid rgba(248, 81, 73, 0.45);
-      background: rgba(248, 81, 73, 0.08);
-      color: #ffb3ad;
-      font-size: 12px;
-    }
-
-    .error-banner.visible {
-      display: block;
-    }
-
-    .empty-state {
-      color: var(--muted);
-      font-size: 12px;
-      padding: 8px 0;
-    }
-
     tr.firm-total td {
       font-weight: 700;
       border-top: 1px solid var(--border);
     }
 
-    td em {
-      font-style: italic;
-      color: var(--muted);
+    td em { font-style: italic; color: var(--muted); }
+
+    /* NMD summary strip */
+    .nmd-summary-strip { margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+    /* Tab content spacing */
+    .tsy-tab-panel > * + * { margin-top: 16px; }
+
+    /* Two-col layout within ALM tab */
+    .alm-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
     }
 
-    @media (max-width: 1180px) {
-      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .split-55-45, .split-40-60 { grid-template-columns: 1fr; }
+    /* Funding tab layout */
+    .funding-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 16px;
+    }
+
+    .funding-left { display: flex; flex-direction: column; gap: 16px; }
+
+    .funding-drawer {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      position: sticky;
+      top: 16px;
+      align-self: start;
+    }
+
+    /* KRD table compact */
+    .krd-table td, .krd-table th { padding: 6px 10px; }
+
+    @media (max-width: 1100px) {
+      .alm-two-col  { grid-template-columns: 1fr; }
+      .funding-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="page-header">
+
+  <!-- ── Page Shell ────────────────────────────────────────────────────────── -->
+  <div class="page-shell">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-title">Treasury</div>
+        <div class="page-subtitle">Balance sheet, funding, and ALM oversight</div>
+      </div>
+      <div class="page-header-right">
+        <span class="source-chip" data-source="LIVE">LIVE</span>
+        <span class="last-refresh" id="last-refresh">—</span>
+      </div>
+    </div>
+
+    <!-- Alert Rail -->
+    <div class="alert-rail" id="tsy-alerts" data-empty="true"></div>
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">NII Sensitivity</div>
+        <div class="kpi-value" id="kpi-nii">—</div>
+        <div class="kpi-sub" id="kpi-nii-sub">+200bps shock</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">EVE Sensitivity</div>
+        <div class="kpi-value" id="kpi-eve">—</div>
+        <div class="kpi-sub" id="kpi-eve-sub">rate shock vs equity</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Avg FTP Spread</div>
+        <div class="kpi-value accent" id="kpi-ftp">—</div>
+        <div class="kpi-sub" id="kpi-ftp-sub">bps across tenors</div>
+      </div>
+    </div>
+
+    <!-- Tab Bar + Tab Panels wrapper -->
     <div>
-      <div class="page-title">Treasury &amp; ALM</div>
-      <div class="page-subtitle">
-        Duration gap, EVE sensitivity, NII at risk, FTP curve, RAROC by desk, and balance sheet optimization.
-        The treasury desk owns the bank's interest rate risk in the banking book — this page surfaces
-        the key regulatory and management indicators in one view.
+      <!-- Tab Bar -->
+      <div class="tab-bar" id="tsy-tab-bar">
+        <button class="tab-btn active" data-tab="tab-funding">Funding</button>
+        <button class="tab-btn" data-tab="tab-alm">ALM</button>
+        <button class="tab-btn" data-tab="tab-ftp">FTP</button>
+        <button class="tab-btn" data-tab="tab-bs">Balance Sheet</button>
+      </div>
+
+      <!-- ── Funding Tab ─────────────────────────────────────────────────── -->
+      <div class="tab-panel tsy-tab-panel active" id="tab-funding" style="margin-top:16px;">
+        <div class="funding-grid">
+          <div class="funding-left">
+
+            <!-- NMD Model card -->
+            <section class="card">
+              <div class="card-title">
+                <h2>NMD Model Analysis</h2>
+                <span class="meta" id="nmd-meta">segment-level behavioral deposit model</span>
+              </div>
+              <div id="nmd-table-wrap"></div>
+              <div class="nmd-summary-strip" id="nmd-summary"></div>
+            </section>
+
+            <!-- FTP-Adjusted P&L — shown here as funding context -->
+            <section class="card">
+              <div class="card-title">
+                <h2>FTP-Adjusted P&amp;L by Desk</h2>
+                <span class="meta">gross vs net after FTP charge</span>
+              </div>
+              <div id="ftp-pnl-table-wrap"></div>
+            </section>
+
+          </div>
+
+          <!-- Funding Drawer -->
+          <div class="funding-drawer">
+            <div class="detail-drawer-title">Funding Summary</div>
+            <div id="funding-drawer-content">
+              <div class="detail-drawer-empty">Loading funding metrics…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ALM Tab ────────────────────────────────────────────────────── -->
+      <div class="tab-panel tsy-tab-panel" id="tab-alm" style="margin-top:16px;">
+
+        <!-- Repricing gap -->
+        <section class="card">
+          <div class="card-title">
+            <h2>Repricing Gap Schedule</h2>
+            <span class="meta">assets vs liabilities by tenor bucket</span>
+          </div>
+          <div id="repricing-gap-chart"></div>
+        </section>
+
+        <div class="alm-two-col">
+
+          <!-- NII Sensitivity -->
+          <section class="card">
+            <div class="card-title">
+              <h2>NII Sensitivity</h2>
+              <span class="meta">rate shock scenarios</span>
+            </div>
+            <div id="nii-sensitivity-table"></div>
+          </section>
+
+          <!-- EVE Sensitivity -->
+          <section class="card">
+            <div class="card-title">
+              <h2>EVE Sensitivity</h2>
+              <span class="meta">rate shock vs equity</span>
+            </div>
+            <div id="eve-chart-wrap"></div>
+          </section>
+
+        </div>
+
+        <!-- KRD Table -->
+        <section class="card">
+          <div class="card-title">
+            <h2>Key Rate Durations</h2>
+            <span class="meta">by tenor bucket</span>
+          </div>
+          <div id="krd-table-wrap"></div>
+        </section>
+
+        <!-- Hedge Recommendations -->
+        <section class="card">
+          <div class="card-title">
+            <h2>ALM Hedge Recommendations</h2>
+            <span class="meta" id="hedge-meta">sorted by priority</span>
+          </div>
+          <div id="hedge-table-wrap"></div>
+        </section>
+
+      </div>
+
+      <!-- ── FTP Tab ────────────────────────────────────────────────────── -->
+      <div class="tab-panel tsy-tab-panel" id="tab-ftp" style="margin-top:16px;">
+
+        <!-- FTP Curve table -->
+        <section class="card">
+          <div class="card-title">
+            <h2>FTP Curve</h2>
+            <span class="meta">tenor / base rate / liquidity premium / all-in FTP (bps)</span>
+          </div>
+          <div id="ftp-curve-table"></div>
+        </section>
+
+      </div>
+
+      <!-- ── Balance Sheet Tab ──────────────────────────────────────────── -->
+      <div class="tab-panel tsy-tab-panel" id="tab-bs" style="margin-top:16px;">
+
+        <!-- RAROC by Business -->
+        <section class="card">
+          <div class="card-title">
+            <h2>RAROC by Business</h2>
+            <span class="meta">hurdle rate 12%</span>
+          </div>
+          <div id="raroc-table-wrap"></div>
+        </section>
+
+        <!-- Balance Sheet Optimization -->
+        <section class="card">
+          <div class="card-title">
+            <h2>Balance Sheet Optimization — RWA Density</h2>
+            <span class="meta" id="bs-meta">ranked by RoRWA%</span>
+          </div>
+          <div id="bs-table-wrap"></div>
+        </section>
+
+      </div>
+    </div><!-- end tab-bar + tab-panels wrapper -->
+
+    <!-- ── Secondary Expander — Advanced ─────────────────────────────────── -->
+    <div class="secondary-expander">
+      <div class="expander-header">
+        <span>Advanced</span>
+        <span class="expander-caret">▸</span>
+      </div>
+      <div class="expander-body">
+
+        <!-- Dynamic FTP Stress Curves -->
+        <section style="margin-bottom:16px;">
+          <div class="card-title" style="margin-bottom:8px;">
+            <h2 style="margin:0;">Dynamic FTP Stress Curves</h2>
+            <span class="meta">SOFR OIS / base / idiosyncratic / market-wide</span>
+          </div>
+          <div id="ftp-dynamic-table"></div>
+        </section>
+
+        <!-- Full RAROC Decomposition placeholder -->
+        <section>
+          <div class="card-title" style="margin-bottom:8px;">
+            <h2 style="margin:0;">Full RAROC Decomposition</h2>
+            <span class="meta">economic capital attribution by risk type</span>
+          </div>
+          <div id="raroc-decomp-wrap">
+            <div class="empty-state" style="padding:16px 0;">Select a desk in the Balance Sheet tab to view decomposition.</div>
+          </div>
+        </section>
+
       </div>
     </div>
-    <div class="header-actions">
-      <div class="live-indicator">
-        <span class="live-dot"></span>
-        <span id="live-text">Live snapshot</span>
-      </div>
-      <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
-    </div>
-  </div>
 
-  <div class="error-banner" id="error-banner"></div>
-
-  <!-- KPI Strip -->
-  <section class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-label">Duration Gap</div>
-      <div class="kpi-value" id="kpi-duration-gap">—</div>
-      <div class="kpi-sub" id="kpi-duration-gap-sub">asset vs liability duration</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">NII at Risk</div>
-      <div class="kpi-value neg" id="kpi-nii-at-risk">—</div>
-      <div class="kpi-sub" id="kpi-nii-at-risk-sub">unhedged / +100bps shock</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Blended FTP Rate</div>
-      <div class="kpi-value accent" id="kpi-ftp-rate">—</div>
-      <div class="kpi-sub" id="kpi-ftp-rate-sub">all-in funding cost</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Top Hedge Rec</div>
-      <div class="kpi-value" id="kpi-hedge-rec" style="font-size:14px;line-height:1.3;">—</div>
-      <div class="kpi-sub" id="kpi-hedge-rec-sub">highest priority recommendation</div>
-    </div>
-  </section>
-
-  <!-- Row 1: Repricing Gap | NII Sensitivity -->
-  <div class="split-55-45">
-    <section class="card">
-      <div class="card-title">
-        <h2>Repricing Gap Schedule</h2>
-        <span class="meta">assets vs liabilities by tenor bucket</span>
-      </div>
-      <div id="repricing-gap-chart"></div>
-    </section>
-
-    <section class="card">
-      <div class="card-title">
-        <h2>NII Sensitivity</h2>
-        <span class="meta">rate shock scenarios</span>
-      </div>
-      <div id="nii-sensitivity-table"></div>
-    </section>
-  </div>
-
-  <!-- Row 2: EVE Sensitivity | ALM Hedge Recommendations -->
-  <div class="split-40-60">
-    <section class="card">
-      <div class="card-title">
-        <h2>EVE Sensitivity</h2>
-        <span class="meta">rate shock vs equity</span>
-      </div>
-      <div id="eve-chart-wrap"></div>
-    </section>
-
-    <section class="card">
-      <div class="card-title">
-        <h2>ALM Hedge Recommendations</h2>
-        <span class="meta">sorted by priority</span>
-      </div>
-      <div id="hedge-table-wrap"></div>
-    </section>
-  </div>
-
-  <!-- Row 3: Dynamic FTP Curve | RAROC by Desk -->
-  <div class="split-40-60">
-    <section class="card">
-      <div class="card-title">
-        <h2>Dynamic FTP Curve</h2>
-        <span class="meta">base + stress scenarios (%)</span>
-      </div>
-      <div id="ftp-curve-table"></div>
-    </section>
-
-    <section class="card">
-      <div class="card-title">
-        <h2>RAROC by Desk</h2>
-        <span class="meta">hurdle rate 12%</span>
-      </div>
-      <div id="raroc-table-wrap"></div>
-    </section>
-  </div>
-
-  <!-- Row 4: Balance Sheet Optimization -->
-  <section class="card full-width">
-    <div class="card-title">
-      <h2>Balance Sheet Optimization — RWA Density</h2>
-      <span class="meta" id="bs-meta">ranked by RoRWA%</span>
-    </div>
-    <div id="bs-table-wrap"></div>
-  </section>
-
-  <!-- Row 5: NMD Model Analysis -->
-  <section class="card full-width">
-    <div class="card-title">
-      <h2>NMD Model Analysis</h2>
-      <span class="meta" id="nmd-meta">segment-level behavioral deposit model</span>
-    </div>
-    <div id="nmd-table-wrap"></div>
-    <div id="nmd-summary" style="margin-top:12px;font-size:12px;color:var(--muted);"></div>
-  </section>
+  </div><!-- end page-shell -->
 
   <script>
     /* ── Utilities ──────────────────────────────────────────────────────── */
@@ -554,22 +463,6 @@
       if (el) el.innerHTML = html;
     }
 
-    function showError(message) {
-      const banner = document.getElementById("error-banner");
-      banner.textContent = message;
-      banner.classList.add("visible");
-    }
-
-    function clearError() {
-      const banner = document.getElementById("error-banner");
-      banner.textContent = "";
-      banner.classList.remove("visible");
-    }
-
-    function renderEmpty(targetId, message) {
-      setHtml(targetId, `<div class="empty-state">${esc(message)}</div>`);
-    }
-
     async function safeFetch(url) {
       try {
         const res = await fetch(url);
@@ -578,6 +471,30 @@
       } catch (_) {
         return null;
       }
+    }
+
+    /* ── Alert Rail ─────────────────────────────────────────────────────── */
+    const _pendingAlerts = [];
+
+    function pushAlert(severity, message) {
+      _pendingAlerts.push({ severity, message });
+    }
+
+    function flushAlerts() {
+      const rail = document.getElementById("tsy-alerts");
+      if (!rail) return;
+      rail.innerHTML = "";
+      if (_pendingAlerts.length === 0) {
+        rail.setAttribute("data-empty", "true");
+        return;
+      }
+      rail.removeAttribute("data-empty");
+      _pendingAlerts.forEach(function (a) {
+        const item = document.createElement("div");
+        item.className = `alert-item ${a.severity}`;
+        item.innerHTML = `<span class="alert-item-dot"></span>${esc(a.message)}`;
+        rail.appendChild(item);
+      });
     }
 
     /* ── Repricing Gap ──────────────────────────────────────────────────── */
@@ -630,7 +547,7 @@
       const wrap = document.getElementById("nii-sensitivity-table");
       if (!data || !data.scenarios || !data.scenarios.length) {
         wrap.innerHTML = '<div class="empty-state">No NII sensitivity data.</div>';
-        return;
+        return data;
       }
 
       const rows = data.scenarios.map(function (s) {
@@ -659,6 +576,37 @@
           <tbody>${rows}</tbody>
         </table>
       `;
+
+      // KPI: find +200bps scenario
+      const s200 = data.scenarios.find(s => s.shock_bps === 200);
+      if (s200) {
+        const nii200 = s200.nii_change_usd || 0;
+        const el = document.getElementById("kpi-nii");
+        if (el) {
+          el.textContent = fmtUsdM(nii200);
+          el.className = "kpi-value " + (nii200 >= 0 ? "positive" : "negative");
+        }
+        setText("kpi-nii-sub", "+200bps shock");
+      } else if (data.scenarios.length > 0) {
+        const first = data.scenarios[0];
+        const el = document.getElementById("kpi-nii");
+        if (el) {
+          el.textContent = fmtUsdM(first.nii_change_usd || 0);
+          el.className = "kpi-value " + ((first.nii_change_usd || 0) >= 0 ? "positive" : "negative");
+        }
+        setText("kpi-nii-sub", `${first.shock_bps > 0 ? "+" : ""}${first.shock_bps}bps shock`);
+      }
+
+      // Alert: NII sensitivity exceeds 10% of NII
+      if (data.base_nii_usd) {
+        const threshold = Math.abs(data.base_nii_usd) * 0.10;
+        const worst = data.scenarios.reduce((max, s) => Math.max(max, Math.abs(s.nii_change_usd || 0)), 0);
+        if (worst > threshold) {
+          pushAlert("warning", "NII sensitivity exceeds internal band");
+        }
+      }
+
+      return data;
     }
 
     /* ── EVE Sensitivity ────────────────────────────────────────────────── */
@@ -667,23 +615,18 @@
       const wrap = document.getElementById("eve-chart-wrap");
       if (!data || !data.scenarios || !data.scenarios.length) {
         wrap.innerHTML = '<div class="empty-state">No EVE sensitivity data.</div>';
-        return;
+        return data;
       }
 
       const scenarios = data.scenarios;
-      const svbThresholdPct = -15; // SVB warning: -15% equity
+      const svbThresholdPct = -15;
 
-      // Find max absolute EVE change for bar scaling
       const maxAbs = Math.max(...scenarios.map(s => Math.abs(s.eve_change_usd || 0)), 1);
-
       const equityUsd = data.equity_usd || 300e9;
       const svbAbsUsd = Math.abs(equityUsd * svbThresholdPct / 100);
 
-      // Total chart height = 160px for bars
       const chartH = 160;
       const maxBarH = chartH * 0.90;
-
-      // Threshold line position (relative to bottom of chart)
       const thresholdLineH = Math.min((svbAbsUsd / maxAbs) * maxBarH, chartH - 4);
 
       const bars = scenarios.map(function (s) {
@@ -704,8 +647,6 @@
         `;
       }).join("");
 
-      const thresholdTop = chartH - thresholdLineH;
-
       wrap.innerHTML = `
         <div style="position:relative;">
           <div class="eve-chart" style="height:${chartH + 40}px;position:relative;">
@@ -716,6 +657,73 @@
           <div style="font-size:10px;color:var(--muted);margin-top:6px;text-align:center;">Rate shock (bps)</div>
         </div>
       `;
+
+      // KPI: worst negative EVE scenario
+      const worstEVE = scenarios.reduce((min, s) => Math.min(min, s.eve_change_usd || 0), 0);
+      const eveEl = document.getElementById("kpi-eve");
+      if (eveEl) {
+        eveEl.textContent = `${(worstEVE / 1e9).toFixed(1)}B`;
+        eveEl.className = "kpi-value " + (worstEVE >= 0 ? "positive" : "negative");
+      }
+      const worstScenario = scenarios.find(s => s.eve_change_usd === worstEVE);
+      if (worstScenario) {
+        setText("kpi-eve-sub", `worst: ${worstScenario.shock_bps > 0 ? "+" : ""}${worstScenario.shock_bps}bps shock`);
+      }
+
+      // Alert: EVE drop > 15%
+      if (equityUsd > 0) {
+        const worstPct = (worstEVE / equityUsd) * 100;
+        if (worstPct < -15) {
+          pushAlert("warning", "EVE sensitivity elevated — duration gap");
+        }
+      }
+
+      // Alert: SVB-style warning (any bar at or exceeding threshold)
+      const svbWarning = scenarios.some(s => {
+        const eveUsd = s.eve_change_usd || 0;
+        return eveUsd < 0 && Math.abs(eveUsd) >= svbAbsUsd;
+      });
+      if (svbWarning) {
+        pushAlert("critical", "SVB-style EVE breach — rate shock exceeds −15% equity threshold");
+      }
+
+      return data;
+    }
+
+    /* ── KRD Table ──────────────────────────────────────────────────────── */
+    async function loadKRD() {
+      const data = await safeFetch("/api/treasury/alm/krd");
+      const wrap = document.getElementById("krd-table-wrap");
+      if (!data || !data.key_rate_durations) {
+        wrap.innerHTML = '<div class="empty-state">No KRD data available.</div>';
+        return;
+      }
+
+      const krd = data.key_rate_durations;
+      const tenors = Object.keys(krd);
+
+      const rows = tenors.map(function (tenor) {
+        const val = krd[tenor] || 0;
+        const absClass = Math.abs(val) > 1 ? "cell-neg" : Math.abs(val) > 0.5 ? "cell-warn" : "cell-pos";
+        return `
+          <tr>
+            <td>${esc(tenor)}</td>
+            <td class="right ${absClass}">${fmtNum(val, 3)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table class="krd-table">
+          <thead>
+            <tr>
+              <th>Tenor</th>
+              <th class="right">KRD (years)</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
     }
 
     /* ── Hedge Recommendations ──────────────────────────────────────────── */
@@ -723,34 +731,15 @@
       const data = await safeFetch("/api/treasury/alm/hedge-recommendations");
       if (!data) return;
 
-      // KPI: Duration Gap
+      // Duration gap sub-label on hedge section
       if (data.duration_gap) {
         const gap = data.duration_gap.duration_gap_raw || 0;
-        const gapEl = document.getElementById("kpi-duration-gap");
-        if (gapEl) {
-          gapEl.textContent = `${gap.toFixed(2)}yr`;
-          gapEl.className = "kpi-value " + (gap <= 0.25 ? "pos" : gap <= 0.5 ? "warn" : "neg");
-        }
-        setText("kpi-duration-gap-sub",
-          `Asset ${(data.duration_gap.asset_duration_years||0).toFixed(2)}yr vs Liability ${(data.duration_gap.liability_duration_years||0).toFixed(2)}yr`);
+        setText("hedge-meta",
+          `Duration gap: ${gap.toFixed(2)}yr | Asset ${(data.duration_gap.asset_duration_years||0).toFixed(2)}yr vs Liability ${(data.duration_gap.liability_duration_years||0).toFixed(2)}yr`
+        );
       }
 
-      // KPI: NII at Risk
-      if (data.nii_at_risk) {
-        const nii = data.nii_at_risk.unhedged_nii_impact_usd || 0;
-        setText("kpi-nii-at-risk", fmtUsdM(nii));
-        setText("kpi-nii-at-risk-sub", `unhedged / +${data.nii_at_risk.rate_shock_bps || 100}bps shock`);
-      }
-
-      // KPI: Top Hedge Rec
       const recs = data.recommendations || [];
-      if (recs.length > 0) {
-        const top = recs[0];
-        setText("kpi-hedge-rec", `${top.instrument || "—"} ${top.tenor || ""}`);
-        setText("kpi-hedge-rec-sub", `${top.priority || ""} priority — $${(top.notional_bn || 0).toFixed(0)}B notional`);
-      }
-
-      // Hedge table
       const wrap = document.getElementById("hedge-table-wrap");
       if (!recs.length) {
         wrap.innerHTML = '<div class="empty-state">No hedge recommendations.</div>';
@@ -790,32 +779,84 @@
       `;
     }
 
-    /* ── Dynamic FTP Curve ──────────────────────────────────────────────── */
-    async function loadFTPCurve() {
-      const data = await safeFetch("/api/treasury/ftp/curve-dynamic");
+    /* ── FTP Curve (static) ─────────────────────────────────────────────── */
+    async function loadFTPCurveStatic() {
+      const data = await safeFetch("/api/treasury/ftp/curve");
       const wrap = document.getElementById("ftp-curve-table");
-      if (!data || !data.base_curve) {
+      if (!data || !data.tenors) {
         wrap.innerHTML = '<div class="empty-state">No FTP curve data.</div>';
+        return;
+      }
+
+      const tenors = data.tenors || [];
+      let totalSpread = 0;
+      let count = 0;
+
+      const rows = tenors.map(function (t) {
+        const baseRateBps  = Math.round((t.base_rate  || 0) * 10000);
+        const liqPremBps   = Math.round((t.liquidity_premium || 0) * 10000);
+        const ftpRateBps   = Math.round((t.ftp_rate   || 0) * 10000);
+        const spreadBps    = ftpRateBps - baseRateBps;
+        totalSpread += spreadBps;
+        count++;
+
+        const spreadClass = spreadBps > 50 ? "cell-neg" : spreadBps > 25 ? "cell-warn" : "cell-pos";
+
+        return `
+          <tr>
+            <td>${esc(t.tenor || "—")}</td>
+            <td class="right">${baseRateBps}bps</td>
+            <td class="right">${liqPremBps}bps</td>
+            <td class="right">${ftpRateBps}bps</td>
+            <td class="right ${spreadClass}">${spreadBps >= 0 ? "+" : ""}${spreadBps}bps</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Tenor</th>
+              <th class="right">Base Rate</th>
+              <th class="right">Liq. Premium</th>
+              <th class="right">FTP Rate</th>
+              <th class="right">Spread</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      // KPI: average FTP spread
+      if (count > 0) {
+        const avg = Math.round(totalSpread / count);
+        const el = document.getElementById("kpi-ftp");
+        if (el) {
+          el.textContent = `${avg}bps`;
+          el.className = "kpi-value " + (avg > 50 ? "negative" : avg > 25 ? "warning" : "accent");
+        }
+        setText("kpi-ftp-sub", `avg spread across ${count} tenors`);
+      }
+
+      return data;
+    }
+
+    /* ── Dynamic FTP Curve (stress) ─────────────────────────────────────── */
+    async function loadFTPCurveDynamic() {
+      const data = await safeFetch("/api/treasury/ftp/curve-dynamic");
+      const wrap = document.getElementById("ftp-dynamic-table");
+      if (!data || !data.base_curve) {
+        wrap.innerHTML = '<div class="empty-state">No dynamic FTP stress data.</div>';
         return;
       }
 
       const tenors = Object.keys(data.base_curve);
 
-      // FTP KPI — use first available rate from base curve as proxy
-      const ftpSummary = await safeFetch("/api/treasury/ftp/summary");
-      if (ftpSummary) {
-        const rate = ftpSummary.blended_ftp_rate_pct;
-        if (rate != null) {
-          setText("kpi-ftp-rate", `${(rate * 100).toFixed(0)}bps`);
-          setText("kpi-ftp-rate-sub", `blended all-in / ${new Date().toLocaleTimeString()}`);
-        }
-      }
-
       const rows = tenors.map(function (tenor) {
         const base  = (data.base_curve[tenor]          || 0).toFixed(2);
         const idio  = (data.idiosyncratic_stress[tenor] || 0).toFixed(2);
         const mws   = (data.market_wide_stress[tenor]   || 0).toFixed(2);
-        // SOFR OIS approximation: base minus average bank spread (~0.30%)
         const sofr  = Math.max(0, (data.base_curve[tenor] || 0) - 0.35).toFixed(2);
 
         return `
@@ -845,7 +886,44 @@
       `;
     }
 
-    /* ── RAROC by Desk ──────────────────────────────────────────────────── */
+    /* ── FTP-Adjusted P&L by Desk ───────────────────────────────────────── */
+    async function loadFTPAdjustedPnL() {
+      const data = await safeFetch("/api/treasury/ftp/adjusted-pnl");
+      const wrap = document.getElementById("ftp-pnl-table-wrap");
+      if (!data || !data.desks) {
+        wrap.innerHTML = '<div class="empty-state">No FTP P&amp;L data available.</div>';
+        return;
+      }
+
+      const rows = data.desks.map(function (d) {
+        const netPnl = d.net_pnl_usd || 0;
+        const netClass = netPnl >= 0 ? "cell-pos" : "cell-neg";
+        return `
+          <tr>
+            <td>${esc(d.desk || "—")}</td>
+            <td class="right">${fmtUsdM(d.gross_pnl_usd)}</td>
+            <td class="right cell-neg">${fmtUsdM(d.ftp_charge_usd)}</td>
+            <td class="right ${netClass}">${fmtUsdM(netPnl)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      wrap.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Desk</th>
+              <th class="right">Gross P&amp;L</th>
+              <th class="right">FTP Charge</th>
+              <th class="right">Net P&amp;L</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    /* ── RAROC by Business ──────────────────────────────────────────────── */
     async function loadRAROC() {
       const data = await safeFetch("/api/treasury/ftp/raroc");
       const wrap = document.getElementById("raroc-table-wrap");
@@ -922,7 +1000,6 @@
       const businesses = rwa.by_business || [];
       const hurdle = rwa.hurdle_pct || 12;
 
-      // Build optimization action lookup
       const actionMap = {};
       (data.optimization_recommendations || []).forEach(function (rec) {
         actionMap[rec.business] = rec.action || null;
@@ -948,7 +1025,6 @@
         `;
       }).join("");
 
-      // Firm total row
       const firmAbove = rwa.firm_rorwa_pct >= hurdle;
       const firmRow = `
         <tr class="firm-total">
@@ -984,23 +1060,21 @@
       const wrap = document.getElementById("nmd-table-wrap");
       if (!data || !data.core_duration_profile) {
         wrap.innerHTML = '<div class="empty-state">No NMD model data.</div>';
-        return;
+        return data;
       }
 
       const profile = data.core_duration_profile;
       const segments = Object.entries(profile);
 
-      // Runoff risk: use 100bps shock runoff pct if available
       const runoff100 = (data.runoff_scenarios && data.runoff_scenarios.shock_100bps)
         ? data.runoff_scenarios.shock_100bps.by_segment
         : {};
 
-      // Friendly name map
       const nameMap = {
-        "retail_checking": "Retail Checking",
-        "retail_savings": "Retail Savings",
-        "commercial_operating": "Commercial Operating",
-        "commercial_non_operating": "Commercial Non-Operating",
+        "retail_checking":         "Retail Checking",
+        "retail_savings":          "Retail Savings",
+        "commercial_operating":    "Commercial Operating",
+        "commercial_non_operating":"Commercial Non-Operating",
       };
 
       const rows = segments.map(function ([name, seg]) {
@@ -1038,11 +1112,10 @@
         </table>
       `;
 
-      // Summary footer
-      const totalBal = data.total_nmd_balance_usd || 0;
+      const totalBal  = data.total_nmd_balance_usd || 0;
       const totalCore = data.total_core_usd || 0;
-      const corePct = data.core_pct_of_total || 0;
-      const effDur = data.effective_duration_years || 0;
+      const corePct   = data.core_pct_of_total || 0;
+      const effDur    = data.effective_duration_years || 0;
 
       setText("nmd-meta", `${segments.length} segments — total NMD book`);
       document.getElementById("nmd-summary").innerHTML = `
@@ -1050,35 +1123,112 @@
         &nbsp;|&nbsp; Core: <strong style="color:var(--positive)">${fmtUsdB(totalCore)} (${fmtPct(corePct)})</strong>
         &nbsp;|&nbsp; Effective duration: <strong style="color:var(--accent)">${effDur.toFixed(2)}yr</strong>
       `;
+
+      return data;
     }
+
+    /* ── Funding Drawer ─────────────────────────────────────────────────── */
+    function populateFundingDrawer(nmdData) {
+      const el = document.getElementById("funding-drawer-content");
+      if (!el) return;
+
+      if (!nmdData) {
+        el.innerHTML = '<div class="detail-drawer-empty">No funding data loaded.</div>';
+        return;
+      }
+
+      const totalBal    = nmdData.total_nmd_balance_usd || 0;
+      const totalCore   = nmdData.total_core_usd || 0;
+      const corePct     = nmdData.core_pct_of_total || 0;
+      const volatilePct = 100 - corePct;
+      const effDur      = nmdData.effective_duration_years || 0;
+
+      const profile = nmdData.core_duration_profile || {};
+      const segs = Object.values(profile);
+      const avgBeta = segs.length > 0
+        ? (segs.reduce((s, seg) => s + (seg.beta || 0), 0) / segs.length)
+        : 0;
+
+      el.innerHTML = `
+        <div class="detail-section">
+          <div class="detail-row">
+            <span>Total Deposits</span>
+            <strong>${fmtUsdB(totalBal)}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Core (stable)</span>
+            <strong class="cell-pos">${fmtUsdB(totalCore)} (${fmtPct(corePct)})</strong>
+          </div>
+          <div class="detail-row">
+            <span>Volatile</span>
+            <strong class="cell-warn">${fmtPct(volatilePct)}</strong>
+          </div>
+          <div class="detail-row">
+            <span>Effective Duration</span>
+            <strong class="accent">${effDur.toFixed(2)}yr</strong>
+          </div>
+          <div class="detail-row">
+            <span>Avg Repricing Beta</span>
+            <strong class="${avgBeta > 0.5 ? "cell-neg" : avgBeta > 0.3 ? "cell-warn" : "cell-pos"}">${avgBeta.toFixed(2)}</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    /* ── Tab switching ──────────────────────────────────────────────────── */
+    function switchTsyTab(id) {
+      document.querySelectorAll('#tsy-tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tsy-tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('[data-tab="' + id + '"]').classList.add('active');
+      document.getElementById(id).classList.add('active');
+    }
+
+    document.querySelectorAll('#tsy-tab-bar .tab-btn').forEach(b => {
+      b.addEventListener('click', () => switchTsyTab(b.dataset.tab));
+    });
+
+    /* ── Expander toggle ────────────────────────────────────────────────── */
+    document.querySelectorAll('.expander-header').forEach(h => {
+      h.addEventListener('click', () => {
+        h.classList.toggle('open');
+        h.nextElementSibling.classList.toggle('open');
+      });
+    });
 
     /* ── Master load ─────────────────────────────────────────────────────── */
     async function loadAll() {
-      clearError();
-      setText("live-text", "Refreshing...");
+      _pendingAlerts.length = 0;
+      setText("last-refresh", "Refreshing…");
+
       try {
-        await Promise.all([
+        const [nmdData] = await Promise.all([
+          loadNMD(),
           loadRepricingGap(),
           loadNIISensitivity(),
           loadEVESensitivity(),
+          loadKRD(),
           loadHedgeRecommendations(),
-          loadFTPCurve(),
+          loadFTPCurveStatic(),
+          loadFTPCurveDynamic(),
+          loadFTPAdjustedPnL(),
           loadRAROC(),
           loadBSOptimization(),
-          loadNMD(),
         ]);
+
+        populateFundingDrawer(nmdData);
       } catch (err) {
-        showError(`Treasury dashboard error: ${err.message}`);
+        console.error("Treasury dashboard error:", err);
       } finally {
-        setText("live-text", `Updated ${new Date().toLocaleTimeString()}`);
+        setText("last-refresh", `Updated ${new Date().toLocaleTimeString()}`);
+        flushAlerts();
       }
     }
 
-    document.getElementById("refresh-btn").addEventListener("click", loadAll);
     document.addEventListener("DOMContentLoaded", loadAll);
     setInterval(loadAll, 30000);
   </script>
 
-  <script src="/static/shared_nav.js"></script>
+  <script src="/static/shared_nav.js?v=20260411b"></script>
+  <script src="/static/glossary.js" defer></script>
 </body>
 </html>

@@ -1,27 +1,23 @@
 """
-Market data feed handler — simulates a live price feed.
+Market data feed handler — polls real prices from Yahoo Finance.
 
 In production, this connects to Bloomberg B-PIPE, Refinitiv Elektron,
-or direct exchange feeds (CME, ICE, NASDAQ). For simulation, we generate
-realistic price paths using geometric Brownian motion (the same math
-behind Black-Scholes option pricing).
+or direct exchange feeds (CME, ICE, NASDAQ). For simulation, we poll
+Yahoo Finance every few seconds and dispatch real prices to subscribers.
 """
 
 from __future__ import annotations
 import asyncio
-import random
-import math
-from decimal import Decimal, ROUND_HALF_UP
-from datetime import datetime
+from decimal import Decimal
 from typing import Callable, Optional
 import structlog
 
-from models.market_data import Quote, OHLCV
+from models.market_data import Quote
 
 log = structlog.get_logger()
 
-# Static fallback prices and vol/spread parameters.
-# Prices are overwritten at startup by fetch_live_seeds() where available.
+# Spread and vol parameters (vol used only for Greeks/VaR estimates, not price generation).
+# Prices are fetched live; these are never used to generate prices.
 SEED_PRICES: dict[str, dict] = {
     "AAPL":          {"price": 185.50,  "vol": 0.22,  "spread_bps": 1.5},
     "MSFT":          {"price": 415.20,  "vol": 0.20,  "spread_bps": 1.2},
@@ -34,24 +30,35 @@ SEED_PRICES: dict[str, dict] = {
     "CL1":           {"price": 78.40,   "vol": 0.30,  "spread_bps": 3.0},
     "NVDA":          {"price": 875.00,  "vol": 0.35,  "spread_bps": 2.0},
     "US2Y":          {"price": 99.10,   "vol": 0.02,  "spread_bps": 1.5},
+    "GOOGL":         {"price": 175.0,   "vol": 0.24,  "spread_bps": 1.5},
+    "USD_IRS_1Y":    {"price": 100.0,   "vol": 0.008, "spread_bps": 3.0},
+    "USD_IRS_2Y":    {"price": 100.0,   "vol": 0.012, "spread_bps": 3.0},
+    "USD_IRS_10Y":   {"price": 100.0,   "vol": 0.025, "spread_bps": 5.0},
+    "USD_IRS_30Y":   {"price": 100.0,   "vol": 0.030, "spread_bps": 6.0},
+    "IG_CDX":        {"price": 100.0,   "vol": 0.090, "spread_bps": 10.0},
+    "HY_CDX":        {"price": 100.0,   "vol": 0.180, "spread_bps": 20.0},
+    "XAUUSD":        {"price": 2350.0,  "vol": 0.14,  "spread_bps": 4.0},
+    "NG1":           {"price": 2.20,    "vol": 0.50,  "spread_bps": 15.0},
 }
 
 
 class MarketDataFeed:
     """
-    Simulates a live market data feed using GBM (Geometric Brownian Motion).
+    Live market data feed — polls Yahoo Finance on a configurable interval
+    and dispatches real prices to subscribers.
 
-    GBM formula: S(t+dt) = S(t) * exp((mu - 0.5*sigma²)*dt + sigma*sqrt(dt)*Z)
-    where Z ~ N(0,1). This is the same model used in Black-Scholes.
+    Tickers without a Yahoo Finance mapping (IRS, CDX) hold their last known
+    price (initially the SEED_PRICES fallback) and are dispatched unchanged
+    on every tick so subscribers always receive a full snapshot.
 
     Subscribers register callbacks that fire on every price update — exactly
     how real market data middleware works (e.g., TIBCO Rendezvous, Solace).
     """
 
-    def __init__(self, tick_interval_ms: int = 500):
+    def __init__(self, tick_interval_ms: int = 5_000):
         self.tick_interval_ms = tick_interval_ms
 
-        # Start from static fallbacks, then overwrite with live prices where available.
+        # Start from static fallbacks; overwritten by live fetch at start().
         self._prices: dict[str, float] = {
             k: v["price"] for k, v in SEED_PRICES.items()
         }
@@ -102,38 +109,48 @@ class MarketDataFeed:
     def get_all_quotes(self) -> dict[str, Quote]:
         return {t: q for t in self._prices if (q := self.get_quote(t))}
 
-    def _next_price(self, ticker: str) -> float:
-        """Generate next price using GBM with dt = tick interval."""
-        params = SEED_PRICES[ticker]
-        sigma = params["vol"]
-        dt = self.tick_interval_ms / (252 * 6.5 * 3600 * 1000)  # fraction of trading year
-        mu = 0.0  # zero drift for simulation (risk-neutral measure)
-        z = random.gauss(0, 1)
-        current = self._prices[ticker]
-        return current * math.exp((mu - 0.5 * sigma**2) * dt + sigma * math.sqrt(dt) * z)
+    async def _fetch_and_dispatch(self) -> None:
+        """Fetch real prices from Yahoo Finance and push to subscribers."""
+        try:
+            from infrastructure.market_data.live_seed import fetch_live_seeds
+            live = await asyncio.get_event_loop().run_in_executor(None, fetch_live_seeds)
+            updated = 0
+            for ticker, price in live.items():
+                if ticker in self._prices:
+                    self._prices[ticker] = price
+                    updated += 1
+            if updated:
+                log.debug("market_data.refreshed", updated=updated)
+        except Exception as exc:
+            log.warning("market_data.refresh_failed", error=str(exc))
+
+        # Dispatch current prices for all tickers (including non-YF ones at last known price)
+        for ticker in list(self._prices.keys()):
+            price = self._prices[ticker]
+            params = SEED_PRICES.get(ticker, {"spread_bps": 5.0})
+            half_spread = price * params["spread_bps"] / 20000
+            quote = Quote(
+                ticker=ticker,
+                bid=Decimal(str(round(price - half_spread, 6))),
+                ask=Decimal(str(round(price + half_spread, 6))),
+            )
+            self._history[ticker].append(quote)
+            for cb in self._subscribers.get(ticker, []):
+                try:
+                    cb(quote)
+                except Exception as e:
+                    log.error("market_data.callback_error", ticker=ticker, error=str(e))
 
     async def start(self) -> None:
-        """Begin ticking prices and notifying subscribers."""
+        """Begin polling real prices and notifying subscribers."""
         self._running = True
-        log.info("market_data.feed_started", tickers=list(self._prices.keys()))
+        log.info(
+            "market_data.feed_started",
+            tickers=list(self._prices.keys()),
+            poll_interval_s=self.tick_interval_ms / 1000,
+        )
         while self._running:
-            for ticker in list(self._prices.keys()):
-                new_price = self._next_price(ticker)
-                self._prices[ticker] = new_price
-                params = SEED_PRICES[ticker]
-                half_spread = new_price * params["spread_bps"] / 20000
-                quote = Quote(
-                    ticker=ticker,
-                    bid=Decimal(str(round(new_price - half_spread, 6))),
-                    ask=Decimal(str(round(new_price + half_spread, 6))),
-                )
-                self._history[ticker].append(quote)
-                # Fire all subscriber callbacks
-                for cb in self._subscribers.get(ticker, []):
-                    try:
-                        cb(quote)
-                    except Exception as e:
-                        log.error("market_data.callback_error", ticker=ticker, error=str(e))
+            await self._fetch_and_dispatch()
             await asyncio.sleep(self.tick_interval_ms / 1000)
 
     async def stop(self) -> None:

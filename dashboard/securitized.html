@@ -7,113 +7,143 @@
   <link rel="stylesheet" href="/static/shared.css">
   <style>
     body { max-width: 1480px; margin: 0 auto; padding: 20px 24px; }
-    .page-header, .card-title { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
-    .page-header { margin-bottom:20px; }
-    .page-title { font-size:24px; font-weight:700; color:var(--text); margin-bottom:6px; }
-    .page-subtitle { font-size:12px; color:var(--muted); max-width:800px; line-height:1.7; }
-    .header-actions { display:flex; align-items:center; gap:10px; }
-    .live-indicator { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid var(--border); border-radius:999px; background:var(--card); font-size:11px; color:var(--muted); }
-    .live-dot { width:7px; height:7px; border-radius:50%; background:var(--positive); box-shadow:0 0 8px rgba(63,185,80,.55); }
-    .refresh-btn { border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:6px; padding:8px 12px; font-family:inherit; font-size:12px; cursor:pointer; }
-    .refresh-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .kpi-grid, .watchlist, .split-grid, .pipeline-grid { display:grid; gap:12px; }
-    .kpi-grid { grid-template-columns:repeat(5,minmax(0,1fr)); margin-bottom:18px; }
-    .watchlist { grid-template-columns:repeat(3,minmax(0,1fr)); }
-    .split-grid { grid-template-columns:1.1fr 1fr; align-items:start; }
-    .pipeline-grid { grid-template-columns:1fr; }
-    .stack { display:flex; flex-direction:column; gap:16px; }
-    .kpi-card, .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); }
-    .kpi-card { padding:14px 16px; }
-    .card { padding:16px; }
-    .kpi-label, th { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
-    .kpi-label { margin-bottom:6px; }
-    .kpi-value { font-size:24px; font-weight:700; color:var(--text); line-height:1; margin-bottom:4px; }
-    .kpi-value.accent { color:var(--accent); }
-    .kpi-value.warn { color:var(--warning); }
-    .kpi-sub, .meta, .watch-text, .insight p { font-size:11px; color:var(--muted); }
-    .card-title { margin-bottom:12px; align-items:center; }
-    .card-title h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
-    .watch-item, .pipeline-item { border:1px solid var(--border); border-radius:8px; padding:12px; background:rgba(255,255,255,.01); }
-    .watch-item.YELLOW, .pipeline-item.NEXT { border-color:rgba(227,179,65,.45); background:rgba(227,179,65,.06); }
-    .watch-item.GREEN, .pipeline-item.FOUNDATION { border-color:rgba(63,185,80,.35); background:rgba(63,185,80,.05); }
-    .watch-label, .pipeline-status { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:5px; }
-    .watch-value, .pipeline-name { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
-    table { width:100%; border-collapse:collapse; font-size:12px; }
-    th { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); font-weight:500; }
-    td { padding:9px 10px; border-bottom:1px solid rgba(48,54,61,.5); color:var(--text); font-variant-numeric:tabular-nums; vertical-align:top; }
-    td.right, th.right { text-align:right; }
     .status-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
     .status-pill.GREEN { color:var(--positive); background:rgba(63,185,80,.12); }
     .status-pill.YELLOW { color:var(--warning); background:rgba(227,179,65,.14); }
+    .status-pill.RED { color:var(--negative); background:rgba(248,81,73,.14); }
+    .watch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .watch-item { border:1px solid var(--border); border-radius:6px; padding:12px; background:rgba(255,255,255,.01); }
+    .watch-item.YELLOW { border-color:rgba(227,179,65,.45); background:rgba(227,179,65,.06); }
+    .watch-item.GREEN { border-color:rgba(63,185,80,.35); background:rgba(63,185,80,.05); }
+    .watch-label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:5px; }
+    .watch-value { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .watch-text { font-size:11px; color:var(--muted); }
+    td.right, th.right { text-align:right; }
+    tr[data-clickable] { cursor:pointer; }
+    tr[data-clickable]:hover td { background:rgba(88,166,255,.05); }
+    .pipeline-item { border:1px solid var(--border); border-radius:6px; padding:10px; background:rgba(255,255,255,.01); }
+    .pipeline-item.NEXT { border-color:rgba(227,179,65,.45); background:rgba(227,179,65,.06); }
+    .pipeline-item.FOUNDATION { border-color:rgba(63,185,80,.35); background:rgba(63,185,80,.05); }
+    .pipeline-status { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:5px; }
+    .pipeline-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .pipeline-detail { font-size:11px; color:var(--muted); }
     .insight-list { display:flex; flex-direction:column; gap:10px; }
     .insight { border-left:3px solid var(--accent); padding-left:10px; }
     .insight h3 { font-size:12px; color:var(--text); margin-bottom:4px; }
-    .error-banner { display:none; margin-bottom:16px; padding:12px 14px; border-radius:8px; border:1px solid rgba(248,81,73,.45); background:rgba(248,81,73,.08); color:#ffb3ad; font-size:12px; }
-    .error-banner.visible { display:block; }
-    @media (max-width: 1180px) { .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .split-grid, .watchlist { grid-template-columns:1fr; } }
+    .insight p { font-size:11px; color:var(--muted); }
   </style>
-  <script src="/static/shared_nav.js" defer></script>
+  <script src="/static/shared_nav.js?v=20260411b" defer></script>
+  <script src="/static/glossary.js" defer></script>
 </head>
 <body>
-  <div class="page-header">
-    <div>
-      <div class="page-title">Securitized Products</div>
-      <div class="page-subtitle">
-        Agency MBS, ABS, CMBS, and CLOs add the product depth a global dealer needs: optionality, spread carry, funding drag,
-        and structured-credit risk. This page gives Apex a first operating surface for OAS, duration, convexity, and securitized-product buildout priorities.
+  <div class="page-shell">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-title">Securitized Products</div>
+        <div class="page-subtitle">Agency MBS, ABS, CMBS, and CLO analytics</div>
+      </div>
+      <div class="page-header-right">
+        <span class="last-refresh" id="last-refresh">—</span>
+        <span class="source-chip" data-source="SIMULATED">SIMULATED</span>
+        <button class="btn" id="refresh-btn" type="button" style="padding:3px 10px;">Refresh</button>
       </div>
     </div>
-    <div class="header-actions">
-      <div class="live-indicator"><span class="live-dot"></span><span>Desk analytics</span></div>
-      <button class="refresh-btn" id="refresh-btn" type="button">Refresh</button>
+
+    <!-- Alert rail -->
+    <div class="alert-rail" id="sec-alerts" data-empty="true"></div>
+
+    <!-- KPI strip (3 cards) -->
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Notional</div>
+        <div class="kpi-value accent" id="kpi-notional">—</div>
+        <div class="kpi-sub">securitized inventory</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Weighted OAS</div>
+        <div class="kpi-value" id="kpi-oas">—</div>
+        <div class="kpi-sub">spread after optionality</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Weighted Duration</div>
+        <div class="kpi-value" id="kpi-duration">—</div>
+        <div class="kpi-sub">effective duration</div>
+      </div>
     </div>
-  </div>
-  <div class="error-banner" id="error-banner"></div>
-  <section class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-label">Notional</div><div class="kpi-value accent" id="kpi-notional">—</div><div class="kpi-sub">securitized inventory</div></div>
-    <div class="kpi-card"><div class="kpi-label">Market Value</div><div class="kpi-value" id="kpi-mv">—</div><div class="kpi-sub">current valuation</div></div>
-    <div class="kpi-card"><div class="kpi-label">Weighted OAS</div><div class="kpi-value" id="kpi-oas">—</div><div class="kpi-sub">spread after optionality</div></div>
-    <div class="kpi-card"><div class="kpi-label">Weighted Duration</div><div class="kpi-value warn" id="kpi-duration">—</div><div class="kpi-sub">effective duration</div></div>
-    <div class="kpi-card"><div class="kpi-label">Warnings</div><div class="kpi-value" id="kpi-warnings">—</div><div class="kpi-sub">risk buckets under pressure</div></div>
-  </section>
-  <div class="split-grid">
-    <div class="stack">
-      <section class="card">
-        <div class="card-title"><h2>Desk Watchlist</h2><span class="meta">optionality, spread, funding</span></div>
-        <div class="watchlist" id="watchlist"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Inventory</h2><span class="meta">current desk sleeve</span></div>
-        <div id="inventory-table"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Relative Value</h2><span class="meta" id="rv-meta">net carry screen</span></div>
-        <div id="rv-table"></div>
-      </section>
-    </div>
-    <div class="stack">
-      <section class="card">
-        <div class="card-title"><h2>Sector Mix</h2><span class="meta">market value by sleeve</span></div>
-        <div id="sector-table"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Stress View</h2><span class="meta" id="stress-scenario">rates + vol + spread</span></div>
-        <div id="stress-table"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Implementation Pipeline</h2><span class="meta">how Apex should build this business</span></div>
-        <div class="pipeline-grid" id="pipeline-grid"></div>
-      </section>
-      <section class="card">
-        <div class="card-title"><h2>Consulting View</h2><span class="meta">why this matters next</span></div>
-        <div class="insight-list">
-          <div class="insight"><h3>MBS makes the bank feel real</h3><p>Agency mortgages are one of the fastest ways to add optionality, convexity hedging, repo financing, and spread risk to Apex in a coherent way.</p></div>
-          <div class="insight"><h3>Securitized credit broadens the franchise</h3><p>ABS, CMBS, and CLOs connect treasury, collateral, financing, and credit in a way vanilla rates and equities cannot.</p></div>
-          <div class="insight"><h3>Build agency first</h3><p>The right sequence is TBA/pass-through analytics first, then specified pools, then only later non-agency and waterfall-heavy structures.</p></div>
+
+    <!-- Main panel -->
+    <div class="main-panel">
+      <div class="main-content">
+
+        <!-- Watchlist -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Desk Watchlist</h2>
+            <span style="font-size:11px;color:var(--muted);">optionality, spread, funding</span>
+          </div>
+          <div class="watch-grid" id="watchlist"></div>
         </div>
-      </section>
+
+        <!-- Inventory -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Inventory</h2>
+            <span style="font-size:11px;color:var(--muted);">current desk sleeve — click row for detail</span>
+          </div>
+          <div id="inventory-table"></div>
+        </div>
+
+        <!-- Relative Value -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Relative Value</h2>
+            <span style="font-size:11px;color:var(--muted);" id="rv-meta">net carry screen</span>
+          </div>
+          <div id="rv-table"></div>
+        </div>
+
+      </div>
+
+      <!-- Detail drawer -->
+      <div class="detail-drawer" id="sec-drawer">
+        <div class="detail-drawer-title">Security Detail</div>
+        <div id="sec-drawer-content">
+          <div class="detail-drawer-empty">Select a security to view details</div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- Secondary expander: Sector, Stress, Pipeline, Consulting -->
+    <div class="secondary-expander">
+      <div class="expander-header">
+        <span>Sector Mix, Stress &amp; Pipeline</span>
+        <span class="expander-caret">▾</span>
+      </div>
+      <div class="expander-body">
+        <div class="grid-2" style="gap:16px;">
+          <div>
+            <h2 style="margin-bottom:10px;">Sector Mix</h2>
+            <div id="sector-table"></div>
+            <h2 style="margin-top:20px;margin-bottom:10px;">Stress View — <span id="stress-scenario" style="text-transform:none;font-size:11px;">rates + vol + spread</span></h2>
+            <div id="stress-table"></div>
+          </div>
+          <div>
+            <h2 style="margin-bottom:10px;">Implementation Pipeline</h2>
+            <div id="pipeline-grid" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <div style="margin-top:20px;" class="insight-list">
+              <div class="insight"><h3>MBS makes the bank feel real</h3><p>Agency mortgages are one of the fastest ways to add optionality, convexity hedging, repo financing, and spread risk to Apex in a coherent way.</p></div>
+              <div class="insight"><h3>Securitized credit broadens the franchise</h3><p>ABS, CMBS, and CLOs connect treasury, collateral, financing, and credit in a way vanilla rates and equities cannot.</p></div>
+              <div class="insight"><h3>Build agency first</h3><p>The right sequence is TBA/pass-through analytics first, then specified pools, then only later non-agency structures.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .page-shell -->
+
   <script>
     const fmtUsd = v => { const n = Number(v||0), a = Math.abs(n); if (a >= 1e9) return `$${(n/1e9).toFixed(2)}B`; if (a >= 1e6) return `$${(n/1e6).toFixed(2)}M`; if (a >= 1e3) return `$${(n/1e3).toFixed(1)}K`; return `$${n.toFixed(0)}`; };
     const fmtPct = v => `${Number(v||0).toFixed(1)}%`;
@@ -121,17 +151,122 @@
     const fmtNum = v => Number(v||0).toFixed(2);
     const esc = v => String(v ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[ch]));
     const statusPill = s => `<span class="status-pill ${esc(s)}">${esc(s)}</span>`;
-    function showError(message) { const el = document.getElementById("error-banner"); el.textContent = message; el.classList.add("visible"); }
-    function clearError() { const el = document.getElementById("error-banner"); el.textContent = ""; el.classList.remove("visible"); }
-    async function fetchJSON(url) { const res = await fetch(url); if (!res.ok) throw new Error(`${url} failed (${res.status})`); return res.json(); }
-    function renderWatchlist(items) { document.getElementById("watchlist").innerHTML = items.map(item => `<div class="watch-item ${esc(item.status)}"><div class="watch-label">${esc(item.label)}</div><div class="watch-value">${esc(item.value)}</div><div class="watch-text">${esc(item.detail)}</div></div>`).join(""); }
-    function renderInventory(rows) { document.getElementById("inventory-table").innerHTML = `<table><thead><tr><th>Name</th><th>Sector</th><th class="right">Notional</th><th class="right">MV</th><th class="right">OAS</th><th class="right">Duration</th><th class="right">Convexity</th><th>Status</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.sector)}</td><td class="right">${fmtUsd(r.notional_usd)}</td><td class="right">${fmtUsd(r.market_value_usd)}</td><td class="right">${fmtBps(r.oas_bps)}</td><td class="right">${fmtNum(r.effective_duration)}</td><td class="right">${fmtNum(r.convexity)}</td><td>${statusPill(r.status)}</td></tr>`).join("")}</tbody></table>`; }
-    function renderRV(rv) { document.getElementById("rv-meta").textContent = `cheapest: ${rv.cheapest_risk_adjusted || "—"} | richest: ${rv.richest_risk_adjusted || "—"}`; document.getElementById("rv-table").innerHTML = `<table><thead><tr><th>Name</th><th>Sector</th><th class="right">Net Carry</th><th class="right">OAS</th><th class="right">Funding</th><th class="right">Duration</th><th class="right">Convexity</th></tr></thead><tbody>${(rv.screen || []).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.sector)}</td><td class="right">${fmtBps(r.net_carry_bps)}</td><td class="right">${fmtBps(r.oas_bps)}</td><td class="right">${fmtBps(r.funding_cost_bps)}</td><td class="right">${fmtNum(r.duration)}</td><td class="right">${fmtNum(r.convexity)}</td></tr>`).join("")}</tbody></table>`; }
-    function renderSector(rows) { document.getElementById("sector-table").innerHTML = `<table><thead><tr><th>Sector</th><th class="right">Market Value</th><th class="right">Weight</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.sector)}</td><td class="right">${fmtUsd(r.market_value_usd)}</td><td class="right">${fmtPct(r.weight_pct)}</td></tr>`).join("")}</tbody></table>`; }
-    function renderStress(stress) { document.getElementById("stress-scenario").textContent = stress.scenario; document.getElementById("stress-table").innerHTML = `<table><tbody><tr><td>P&L delta</td><td class="right">${fmtUsd(stress.pnl_delta_usd)}</td></tr><tr><td>Duration shift</td><td class="right">${fmtNum(stress.duration_shift)}</td></tr><tr><td>Convexity drag</td><td class="right">${fmtUsd(stress.convexity_drag_usd)}</td></tr><tr><td>Credit spread drag</td><td class="right">${fmtUsd(stress.credit_spread_drag_usd)}</td></tr><tr><td>Funding drag</td><td class="right">${fmtUsd(stress.funding_drag_usd)}</td></tr></tbody></table>`; }
-    function renderPipeline(rows) { document.getElementById("pipeline-grid").innerHTML = rows.map(r => `<div class="pipeline-item ${esc(r.status)}"><div class="pipeline-status">${esc(r.status)}</div><div class="pipeline-name">${esc(r.name)}</div><div class="watch-text">${esc(r.detail)}</div></div>`).join(""); }
+
+    let _inventory = [];
+
+    function pushAlert(level, text) {
+      const rail = document.getElementById('sec-alerts');
+      rail.removeAttribute('data-empty');
+      const item = document.createElement('div');
+      item.className = `alert-item ${level}`;
+      item.innerHTML = `<span class="alert-item-dot"></span>${esc(text)}`;
+      rail.appendChild(item);
+    }
+
+    function renderWatchlist(items) {
+      document.getElementById("watchlist").innerHTML = items.map(item =>
+        `<div class="watch-item ${esc(item.status)}">
+          <div class="watch-label">${esc(item.label)}</div>
+          <div class="watch-value">${esc(item.value)}</div>
+          <div class="watch-text">${esc(item.detail)}</div>
+        </div>`
+      ).join("");
+    }
+
+    function renderInventory(rows) {
+      _inventory = rows;
+      document.getElementById("inventory-table").innerHTML =
+        `<table><thead><tr><th>Name</th><th>Sector</th><th class="right">Notional</th><th class="right">MV</th><th class="right">OAS</th><th class="right">Duration</th><th class="right">Convexity</th><th>Status</th></tr></thead>
+        <tbody>${rows.map((r, i) =>
+          `<tr data-clickable onclick="selectSecurity(${i})">
+            <td>${esc(r.name)}</td><td>${esc(r.sector)}</td>
+            <td class="right">${fmtUsd(r.notional_usd)}</td>
+            <td class="right">${fmtUsd(r.market_value_usd)}</td>
+            <td class="right">${fmtBps(r.oas_bps)}</td>
+            <td class="right">${fmtNum(r.effective_duration)}</td>
+            <td class="right">${fmtNum(r.convexity)}</td>
+            <td>${statusPill(r.status)}</td>
+          </tr>`
+        ).join("")}</tbody></table>`;
+    }
+
+    function selectSecurity(idx) {
+      const r = _inventory[idx];
+      if (!r) return;
+      document.getElementById('sec-drawer-content').innerHTML = `
+        <div class="detail-section">
+          <div class="detail-section-label">${esc(r.name)}</div>
+          <div class="detail-row"><span class="detail-row-label">Sector</span><span class="detail-row-value">${esc(r.sector)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Status</span><span class="detail-row-value">${statusPill(r.status)}</span></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-label">Valuation</div>
+          <div class="detail-row"><span class="detail-row-label">Notional</span><span class="detail-row-value">${fmtUsd(r.notional_usd)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Market Value</span><span class="detail-row-value">${fmtUsd(r.market_value_usd)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">OAS</span><span class="detail-row-value">${fmtBps(r.oas_bps)}</span></div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-section-label">Risk</div>
+          <div class="detail-row"><span class="detail-row-label">Eff. Duration</span><span class="detail-row-value">${fmtNum(r.effective_duration)}</span></div>
+          <div class="detail-row"><span class="detail-row-label">Convexity</span><span class="detail-row-value">${fmtNum(r.convexity)}</span></div>
+        </div>
+      `;
+    }
+
+    function renderRV(rv) {
+      document.getElementById("rv-meta").textContent = `cheapest: ${rv.cheapest_risk_adjusted || "—"} | richest: ${rv.richest_risk_adjusted || "—"}`;
+      document.getElementById("rv-table").innerHTML =
+        `<table><thead><tr><th>Name</th><th>Sector</th><th class="right">Net Carry</th><th class="right">OAS</th><th class="right">Funding</th><th class="right">Duration</th></tr></thead>
+        <tbody>${(rv.screen || []).map(r =>
+          `<tr><td>${esc(r.name)}</td><td>${esc(r.sector)}</td>
+          <td class="right">${fmtBps(r.net_carry_bps)}</td>
+          <td class="right">${fmtBps(r.oas_bps)}</td>
+          <td class="right">${fmtBps(r.funding_cost_bps)}</td>
+          <td class="right">${fmtNum(r.duration)}</td>
+          </tr>`
+        ).join("")}</tbody></table>`;
+    }
+
+    function renderSector(rows) {
+      document.getElementById("sector-table").innerHTML =
+        `<table><thead><tr><th>Sector</th><th class="right">Market Value</th><th class="right">Weight</th></tr></thead>
+        <tbody>${rows.map(r =>
+          `<tr><td>${esc(r.sector)}</td><td class="right">${fmtUsd(r.market_value_usd)}</td><td class="right">${fmtPct(r.weight_pct)}</td></tr>`
+        ).join("")}</tbody></table>`;
+    }
+
+    function renderStress(stress) {
+      document.getElementById("stress-scenario").textContent = stress.scenario;
+      document.getElementById("stress-table").innerHTML =
+        `<table><tbody>
+          <tr><td>P&amp;L delta</td><td class="right">${fmtUsd(stress.pnl_delta_usd)}</td></tr>
+          <tr><td>Duration shift</td><td class="right">${fmtNum(stress.duration_shift)}</td></tr>
+          <tr><td>Convexity drag</td><td class="right">${fmtUsd(stress.convexity_drag_usd)}</td></tr>
+          <tr><td>Credit spread drag</td><td class="right">${fmtUsd(stress.credit_spread_drag_usd)}</td></tr>
+          <tr><td>Funding drag</td><td class="right">${fmtUsd(stress.funding_drag_usd)}</td></tr>
+        </tbody></table>`;
+    }
+
+    function renderPipeline(rows) {
+      document.getElementById("pipeline-grid").innerHTML = rows.map(r =>
+        `<div class="pipeline-item ${esc(r.status)}">
+          <div class="pipeline-status">${esc(r.status)}</div>
+          <div class="pipeline-name">${esc(r.name)}</div>
+          <div class="pipeline-detail">${esc(r.detail)}</div>
+        </div>`
+      ).join("");
+    }
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} failed (${res.status})`);
+      return res.json();
+    }
+
     async function load() {
-      clearError();
+      const rail = document.getElementById('sec-alerts');
+      rail.innerHTML = '';
+      rail.dataset.empty = 'true';
       try {
         const [overview, inventory, rv, stress, pipeline] = await Promise.all([
           fetchJSON("/api/securitized/overview"),
@@ -141,21 +276,30 @@
           fetchJSON("/api/securitized/pipeline"),
         ]);
         document.getElementById("kpi-notional").textContent = fmtUsd(overview.total_notional_usd);
-        document.getElementById("kpi-mv").textContent = fmtUsd(overview.market_value_usd);
         document.getElementById("kpi-oas").textContent = fmtBps(overview.weighted_oas_bps);
         document.getElementById("kpi-duration").textContent = fmtNum(overview.weighted_duration);
-        document.getElementById("kpi-warnings").textContent = String(overview.warning_count || 0);
+        document.getElementById("last-refresh").textContent = new Date().toLocaleTimeString();
+        if (overview.warning_count > 0) pushAlert('warning', `${overview.warning_count} risk bucket(s) under pressure`);
         renderWatchlist(overview.watchlist || []);
         renderInventory(inventory);
         renderRV(rv);
         renderSector(overview.sector_mix || []);
         renderStress(stress);
-        renderPipeline((pipeline.priority_builds || []));
+        renderPipeline(pipeline.priority_builds || []);
       } catch (err) {
-        showError(err.message || "Unable to load securitized products dashboard.");
+        pushAlert('critical', err.message || "Unable to load securitized products data");
       }
     }
+
     document.getElementById("refresh-btn").addEventListener("click", load);
+
+    document.querySelectorAll('.expander-header').forEach(h => {
+      h.addEventListener('click', () => {
+        h.classList.toggle('open');
+        h.nextElementSibling.classList.toggle('open');
+      });
+    });
+
     load();
   </script>
 </body>

@@ -264,3 +264,28 @@ async def event_bus_stats():
     """Event bus subscription and publication statistics."""
     from infrastructure.events.bus import event_bus
     return event_bus.stats()
+
+
+# ---------------------------------------------------------------------------
+# Desk suspension management (P4)
+# ---------------------------------------------------------------------------
+
+@router.get("/suspensions")
+def get_suspensions():
+    """
+    List all currently suspended desks and recent limit action log.
+    Desks are suspended automatically when a limit hits RED status.
+    """
+    from infrastructure.risk.limit_actions import limit_action_engine
+    return limit_action_engine.get_summary()
+
+
+@router.post("/suspensions/{desk}/lift")
+def lift_suspension(desk: str, body: dict = {}):
+    """
+    Manually lift a desk suspension. Requires CRO authorisation in production.
+    Body: { lifted_by: str }  — name of approving officer (for audit log).
+    """
+    from infrastructure.risk.limit_actions import limit_action_engine
+    lifted_by = (body or {}).get("lifted_by", "risk_officer")
+    return limit_action_engine.lift_suspension(desk.upper(), lifted_by=lifted_by)

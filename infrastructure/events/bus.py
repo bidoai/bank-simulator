@@ -125,7 +125,9 @@ class EventBus:
                 except Exception:
                     pass
         self._published += 1
-        if len(queues) > 0:
+        # Tick events are high-frequency and flood the terminal in dev.
+        # Keep debug logs for lower-volume event types only.
+        if len(queues) > 0 and etype != "tick":
             log.debug("event_bus.published", event_type=etype, subscribers=len(queues))
 
     def publish_sync(self, event: AnyEvent) -> None:
