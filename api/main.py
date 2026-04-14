@@ -144,6 +144,22 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     except Exception as exc:
         log.error("model_registry.startup_failed", error=str(exc))
 
+    # Initialise IBD deal pipeline
+    try:
+        from infrastructure.ibd.deal_pipeline import deal_pipeline
+        deal_pipeline.initialize()
+        log.info("ibd_deal_pipeline.ready")
+    except Exception as exc:
+        log.error("ibd_deal_pipeline.startup_failed", error=str(exc))
+
+    # Initialise Wealth client book
+    try:
+        from infrastructure.wealth.client_book import client_book
+        client_book.initialize()
+        log.info("wealth_client_book.ready")
+    except Exception as exc:
+        log.error("wealth_client_book.startup_failed", error=str(exc))
+
     yield
 
     if _feed is not None:
@@ -213,6 +229,8 @@ _ROUTE_MODULES = [
     "deposits_routes",
     "payments_routes",
     "custody_routes",
+    "ibd_routes",
+    "wealth_routes",
 ]
 
 for _mod in _ROUTE_MODULES:

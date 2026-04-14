@@ -38,3 +38,28 @@ def get_dfast_scenario(scenario: str) -> dict:
         )
     result = dfast_engine.run_scenario(scenario, quarters=9)
     return result.to_dict()
+
+
+# ── Historical Crisis Replay endpoints (T3-D) ────────────────────────────────
+
+@router.get("/crisis/scenarios")
+def get_crisis_scenarios() -> dict:
+    """Return the three historical crisis scenario definitions and shock parameters."""
+    from infrastructure.stress.crisis_replay import crisis_replay_engine
+    return crisis_replay_engine.get_scenarios()
+
+
+@router.get("/crisis/replay-all")
+def run_all_crisis_replays() -> dict:
+    """Run all three crisis scenarios against live positions — comparative summary."""
+    from infrastructure.stress.crisis_replay import crisis_replay_engine
+    return crisis_replay_engine.run_all_scenarios()
+
+
+@router.get("/crisis/replay/{scenario_id}")
+def run_crisis_replay(scenario_id: str) -> dict:
+    """Run a single crisis scenario against live positions. IDs: GFC_2008 | COVID_2020 | UK_GILT_2022."""
+    from infrastructure.stress.crisis_replay import crisis_replay_engine, CRISIS_SCENARIOS
+    if scenario_id not in CRISIS_SCENARIOS:
+        raise HTTPException(status_code=404, detail=f"Unknown scenario: {scenario_id!r}")
+    return crisis_replay_engine.run_replay(scenario_id)

@@ -66,7 +66,8 @@ class ConsolidatedIncomeStatement:
 
         nii         = self._get_nii() * scale
         trading_pnl = self._get_trading_pnl()          # already current period
-        fee_revenue = self._get_fee_revenue() * scale
+        fee_data    = self._get_fee_revenue()
+        fee_revenue = fee_data["total"] * scale
         total_revenue = nii + trading_pnl + fee_revenue
 
         provisions       = self._get_provisions() * scale
@@ -78,6 +79,12 @@ class ConsolidatedIncomeStatement:
         taxes = max(0.0, pre_tax_income * tax_rate)
         net_income = pre_tax_income - taxes
 
+        fee_breakdown = {
+            "investment_banking_usd": round(fee_data["investment_banking"] * scale, 0),
+            "wealth_management_usd":  round(fee_data["wealth_management"] * scale, 0),
+            **{k: round(v * scale, 0) for k, v in fee_data["other_stubs"].items()},
+        }
+
         return {
             "period":              period,
             "as_of":               datetime.now(timezone.utc).isoformat(),
@@ -85,7 +92,7 @@ class ConsolidatedIncomeStatement:
                 "net_interest_income_usd":   round(nii, 0),
                 "trading_revenue_usd":       round(trading_pnl, 0),
                 "fee_revenue_usd":           round(fee_revenue, 0),
-                "fee_revenue_breakdown":     {k: round(v * scale, 0) for k, v in _FEE_REVENUE_STUBS.items()},
+                "fee_revenue_breakdown":     fee_breakdown,
                 "total_revenue_usd":         round(total_revenue, 0),
             },
             "expenses": {
@@ -106,7 +113,12 @@ class ConsolidatedIncomeStatement:
                 "efficiency_ratio":   round(operating_expenses / max(total_revenue, 1), 4),
                 "net_interest_margin": round(nii / (2_200e9 * scale) * (1 / scale), 4) if scale > 0 else 0.0,
             },
-            "fee_revenue_is_stub": True,   # flag until T3-A IBD/Wealth pipelines are live
+            "fee_sources": {
+                "investment_banking": "live" if fee_data["ibd_live"] else "stub",
+                "wealth_management":  "live" if fee_data["wealth_live"] else "stub",
+                "other":              "stub",
+            },
+            "fee_revenue_is_stub": not (fee_data["ibd_live"] or fee_data["wealth_live"]),
         }
 
     # ── Component getters ────────────────────────────────────────────────────
@@ -134,9 +146,43 @@ class ConsolidatedIncomeStatement:
         except Exception:
             return 0.0
 
-    def _get_fee_revenue(self) -> float:
-        """Annual fee revenue (stub until T3-A)."""
-        return sum(_FEE_REVENUE_STUBS.values())
+    def _get_fee_revenue(self) -> dict:
+        """
+        Annual fee revenue: live IBD (T3-A) + live Wealth (T3-B) + remaining stubs.
+        Returns dict with total and per-source breakdown.
+        """
+        # T3-A: IBD live revenue
+        try:
+            from infrastructure.ibd.deal_pipeline import deal_pipeline
+            ibd_revenue = deal_pipeline.get_annual_fee_revenue()
+            ibd_live = True
+        except Exception:
+            ibd_revenue = _FEE_REVENUE_STUBS["investment_banking"]
+            ibd_live = False
+
+        # T3-B: Wealth live revenue
+        try:
+            from infrastructure.wealth.client_book import client_book
+            wealth_revenue = client_book.calculate_annual_fees()
+            wealth_live = True
+        except Exception:
+            wealth_revenue = _FEE_REVENUE_STUBS["wealth_management"]
+            wealth_live = False
+
+        other_stubs = {
+            k: v for k, v in _FEE_REVENUE_STUBS.items()
+            if k not in ("investment_banking", "wealth_management")
+        }
+        other_total = sum(other_stubs.values())
+
+        return {
+            "total": ibd_revenue + wealth_revenue + other_total,
+            "investment_banking": ibd_revenue,
+            "wealth_management":  wealth_revenue,
+            "other_stubs":        other_stubs,
+            "ibd_live":           ibd_live,
+            "wealth_live":        wealth_live,
+        }
 
     def _get_provisions(self) -> float:
         """Annual ECL provisions from IFRS9 engine."""

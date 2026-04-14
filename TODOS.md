@@ -277,6 +277,26 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 **Context:** `infrastructure/custody/custody_accounts.py` — 4 seed clients, 10 seed holdings, ~$19B AuC. `infrastructure/custody/settlement.py` — `SettlementEngine` with PENDING/AFFIRMED/SETTLED/FAILED lifecycle. `infrastructure/custody/corporate_actions.py` — 3 seed CAs (IBM div, Amazon split, MSFT div). `api/custody_routes.py` — 10 endpoints at `/api/custody/`.
 **Status:** ✅ DONE — 2026-04-14
 
+### TODO-061: IBD Deal Pipeline ✅ DONE
+**What:** M&A/ECM/DCM deal tracking with stage lifecycle (ORIGINATION→PITCHING→MANDATE→SIGNED→EXECUTION→CLOSED/FALLEN_AWAY), fee accrual at close, league tables.
+**Context:** `infrastructure/ibd/deal_pipeline.py` — 8 seed deals (~$572M annual fee revenue from closed deals), `advance_stage()` accrues fee at CLOSED, `get_annual_fee_revenue()`, `get_league_table()`. `api/ibd_routes.py` — 6 endpoints at `/api/ibd/`. Wired into `ConsolidatedIncomeStatement._get_fee_revenue()` as live source.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-062: Wealth Management Client Book ✅ DONE
+**What:** HNWI/UHNWI/FAMILY_OFFICE client AUM tracking with DISCRETIONARY/ADVISORY/EXECUTION_ONLY mandates, model portfolios (conservative/balanced/growth/aggressive), tiered fee billing.
+**Context:** `infrastructure/wealth/client_book.py` — 6 seed clients ($8.1B AUM, ~$41M annual fees). `api/wealth_routes.py` — 8 endpoints at `/api/wealth/`. Wired into `ConsolidatedIncomeStatement._get_fee_revenue()` as live source.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-063: FRTB IMA Engine ✅ DONE
+**What:** BCBS MAR33/457 Expected Shortfall at 97.5% confidence, P&L Attribution test (Spearman ρ ≥ 0.80, mean ratio 0.80–1.20), desk IMA/SA routing, IMA capital = 1.5 × ES_10d.
+**Context:** `infrastructure/risk/frtb_ima.py` — ES reuses VaRCalculator(0.975).cvar_amount, RTPL synthesised from backtest var_99. `api/capital_routes.py` — 4 new endpoints at `/api/capital/frtb/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-064: Historical Crisis Replay ✅ DONE
+**What:** GFC 2008 / COVID-2020 / UK Gilt Crisis 2022 scenario tapes replayed against live positions to show P&L impact and RWA delta.
+**Context:** `infrastructure/stress/crisis_replay.py` — 3 calibrated scenarios (equity/rates/credit/FX/commodity shocks), P&L computed per asset class from position notionals. `api/stress_routes.py` — 3 new endpoints at `/api/stress/crisis/`.
+**Status:** ✅ DONE — 2026-04-14
+
 ---
 
 ## Not in scope (explicitly deferred)

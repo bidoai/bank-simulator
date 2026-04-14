@@ -30,6 +30,8 @@ DB_LOANS             = DATA_DIR / "loans.db"
 DB_DEPOSITS          = DATA_DIR / "deposits.db"
 DB_PAYMENTS          = DATA_DIR / "payments.db"
 DB_CUSTODY           = DATA_DIR / "custody.db"
+DB_IBD               = DATA_DIR / "ibd.db"
+DB_WEALTH            = DATA_DIR / "wealth.db"
 
 # ---------------------------------------------------------------------------
 # API credentials
