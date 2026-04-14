@@ -13,7 +13,7 @@ import structlog
 
 from infrastructure.risk.counterparty_registry import counterparty_registry
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 ALPHA = 1.4
 
@@ -221,17 +221,106 @@ class SACCREngine:
             "alpha": ALPHA,
         }
 
+    # ── Live position wiring ─────────────────────────────────────────────────
+
+    # Map product_subtype → SA-CCR asset class
+    _SUBTYPE_TO_CLASS: dict[str, str] = {
+        "irs":       "IR",
+        "gov_bond":  "IR",
+        "fwd":       "FX",
+        "spot":      "FX",
+        "cds":       "CREDIT",
+        "option":    "EQUITY",
+        "future":    "EQUITY",
+        "repo":      "IR",
+        "mbs":       "IR",
+    }
+
+    def build_live_netting_sets(self, positions: list[dict]) -> list[dict[str, Any]]:
+        """
+        Convert live OMS positions to SA-CCR netting sets grouped by counterparty_id.
+        Merges with SAMPLE_NETTING_SETS — live positions supplement or override
+        where counterparty_id matches. Returns the merged list.
+        """
+        # Group live positions by counterparty_id (skip positions with no counterparty)
+        live_by_cp: dict[str, list[dict]] = {}
+        for pos in positions:
+            cp = pos.get("counterparty_id")
+            if not cp:
+                continue
+            asset_class = self._SUBTYPE_TO_CLASS.get(
+                (pos.get("product_subtype") or "").lower(), "EQUITY"
+            )
+            notional = abs(
+                pos.get("notional") or
+                (pos.get("quantity", 0) * pos.get("avg_cost", 1.0))
+            )
+            delta = 1 if (pos.get("side") or "buy").lower() == "buy" else -1
+            tenor = pos.get("tenor_years") or 1.0
+            live_by_cp.setdefault(cp, []).append({
+                "type":        asset_class,
+                "notional":    notional,
+                "delta":       delta,
+                "start_years": 0.0,
+                "end_years":   tenor,
+                "currency":    pos.get("currency", "USD"),
+            })
+
+        if not live_by_cp:
+            # No live OTC positions — fall back to static samples
+            return SAMPLE_NETTING_SETS
+
+        # Build a merged list: start with samples, augment with live data
+        existing_cp = {ns["counterparty_id"] for ns in SAMPLE_NETTING_SETS}
+        merged: list[dict] = []
+
+        for ns in SAMPLE_NETTING_SETS:
+            cp = ns["counterparty_id"]
+            if cp in live_by_cp:
+                # Supplement sample positions with live trade positions
+                augmented = dict(ns)
+                augmented["positions"] = ns["positions"] + live_by_cp[cp]
+                augmented["has_live_positions"] = True
+                merged.append(augmented)
+            else:
+                merged.append(ns)
+
+        # Add new netting sets for counterparties not in the sample
+        seq = len(merged) + 1
+        for cp, live_positions in live_by_cp.items():
+            if cp not in existing_cp:
+                merged.append({
+                    "netting_set_id": f"NS-LIVE-{seq:03d}",
+                    "counterparty_id": cp,
+                    "margined": False,
+                    "threshold_usd": 0.0,
+                    "mta_usd": 0.0,
+                    "nica_usd": 0.0,
+                    "positions": live_positions,
+                    "has_live_positions": True,
+                })
+                seq += 1
+
+        return merged
+
     def calculate_portfolio_ead(
         self,
         all_positions_by_counterparty: dict[str, list[dict[str, Any]]] | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Compute EAD for all netting sets. Uses SAMPLE_NETTING_SETS if not supplied.
+        Compute EAD for all netting sets. Incorporates live OMS positions when
+        available; falls back to SAMPLE_NETTING_SETS when positions are empty.
         Returns list of per-netting-set EAD dicts.
         """
         results = []
 
-        netting_sets = SAMPLE_NETTING_SETS
+        # Try to get live positions and merge with static samples
+        try:
+            from infrastructure.risk.risk_service import risk_service
+            live_positions = risk_service.position_manager.get_all_positions()
+            netting_sets = self.build_live_netting_sets(live_positions)
+        except Exception:
+            netting_sets = SAMPLE_NETTING_SETS
 
         for ns in netting_sets:
             cp_id = ns["counterparty_id"]

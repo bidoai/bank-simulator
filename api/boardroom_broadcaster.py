@@ -16,6 +16,8 @@ from typing import Any
 
 import structlog
 
+from api.base_broadcaster import BaseBroadcaster
+
 log = structlog.get_logger(__name__)
 
 _MAX_HISTORY = 200
@@ -31,18 +33,18 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-class BoardroomBroadcaster:
+class BoardroomBroadcaster(BaseBroadcaster):
     """
-    Singleton broadcaster that maintains the set of connected WebSocket
-    clients and the rolling message history.
+    Singleton broadcaster for the boardroom WebSocket stream.
 
-    All public methods are async-safe via an asyncio.Lock protecting
-    history writes.  Individual sends are fire-and-forget; dead clients
-    are silently pruned.
+    Extends BaseBroadcaster with rolling message history (replayed to late
+    joiners) and agent-turn helpers. All history writes are guarded by an
+    asyncio.Lock.
     """
 
     def __init__(self) -> None:
-        self.clients: set = set()
+        super().__init__("boardroom")
+        self.clients = self._clients   # public alias for legacy callers
         self._history: list[dict] = []
         self._lock = asyncio.Lock()
 
@@ -58,18 +60,18 @@ class BoardroomBroadcaster:
         async with self._lock:
             history_snapshot = list(self._history)
 
-        await self._safe_send(websocket, {
+        await self._safe_send(websocket, json.dumps({
             "type": "history",
             "messages": history_snapshot,
-        })
+        }, default=str))
 
-        self.clients.add(websocket)
-        log.info("boardroom.ws.connected", total=len(self.clients))
+        self._clients.add(websocket)
+        log.info("boardroom.ws.connected", total=len(self._clients))
 
     async def disconnect(self, websocket) -> None:
         """Remove a client from the active set."""
-        self.clients.discard(websocket)
-        log.info("boardroom.ws.disconnected", total=len(self.clients))
+        self._clients.discard(websocket)
+        log.info("boardroom.ws.disconnected", total=len(self._clients))
 
     # ── Broadcast helpers ─────────────────────────────────────────────────────
 
@@ -151,29 +153,7 @@ class BoardroomBroadcaster:
 
         await self._broadcast(msg)
 
-    # ── Internal ──────────────────────────────────────────────────────────────
-
-    async def _broadcast(self, data: dict) -> None:
-        """Send a message to every connected client; prune dead ones."""
-        dead: set = set()
-        for ws in list(self.clients):
-            success = await self._safe_send(ws, data)
-            if not success:
-                dead.add(ws)
-        self.clients -= dead
-
-    async def _safe_send(self, ws, data: dict) -> bool:
-        """
-        Attempt to send JSON to a single client.
-        Returns False (and removes the client) if the send fails.
-        """
-        try:
-            await ws.send_text(json.dumps(data, default=str))
-            return True
-        except Exception as exc:
-            log.debug("boardroom.ws.dead_client", error=str(exc))
-            self.clients.discard(ws)
-            return False
+    # _broadcast and _safe_send are inherited from BaseBroadcaster.
 
 
 # ── Module-level singleton ────────────────────────────────────────────────────

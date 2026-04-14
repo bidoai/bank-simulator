@@ -13,7 +13,7 @@ import structlog
 
 from infrastructure.risk.counterparty_registry import counterparty_registry
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # Apex Global Bank Tier 1 capital (from regulatory_capital.py)

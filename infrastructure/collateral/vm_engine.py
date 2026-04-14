@@ -21,7 +21,7 @@ from infrastructure.collateral.csa import (
     CollateralAssetType,
 )
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 def _business_days_ahead(from_date: date, n: int) -> date:

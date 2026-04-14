@@ -16,7 +16,7 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 _DB_PATH = Path(__file__).parent.parent.parent / "data" / "var_backtest.db"
 

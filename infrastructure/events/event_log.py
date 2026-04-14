@@ -9,6 +9,9 @@ from threading import Lock
 
 import structlog
 
+from config.settings import DB_EVENTS
+from infrastructure.persistence.sqlite_base import open_db
+
 log = structlog.get_logger(__name__)
 
 _DDL = """
@@ -28,7 +31,8 @@ CREATE INDEX IF NOT EXISTS idx_event_type ON bank_events(event_type);
 
 
 class EventLog:
-    def __init__(self, db_path: str = "data/events.db") -> None:
+    def __init__(self, db_path: str | Path = DB_EVENTS) -> None:
+        db_path = str(db_path)
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._db_path = db_path
         self._lock = Lock()
@@ -37,9 +41,7 @@ class EventLog:
         log.info("event_log.ready", db=db_path)
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._db_path, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        return conn
+        return open_db(self._db_path)
 
     def _next_sequence(self, conn: sqlite3.Connection, aggregate_type: str, aggregate_id: str) -> int:
         row = conn.execute(

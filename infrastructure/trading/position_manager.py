@@ -18,7 +18,7 @@ import structlog
 
 from infrastructure.events.event_log import event_log
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 @dataclass

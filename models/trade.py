@@ -123,7 +123,8 @@ class TradeConfirmation(BaseModel):
     # Derivative enrichment fields (None for plain equity/bond trades)
     counterparty_id: Optional[str] = None
     product_subtype: Optional[str] = None   # "irs", "cds", "fwd", "option", "gov_bond", "spot", "future"
-    product_details: Optional[dict] = None  # fixed_rate, tenor_years, spread_bps, expiry, strike, etc.
+    product_details: Optional[dict] = None  # fixed_rate, tenor_years, spread_bps, expiry, strike, volcker_classification, etc.
+    volcker_classification: Optional[str] = None  # Volcker Rule classification (populated from product_details)
 
 
 class OrderBook(BaseModel):

@@ -27,6 +27,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from api.trading_broadcaster import trading_broadcaster
+from config.settings import DB_OMS
 from infrastructure.risk.counterparty_registry import counterparty_registry
 from infrastructure.risk.risk_service import risk_service
 from infrastructure.trading.greeks import GreeksCalculator
@@ -36,7 +37,7 @@ log = structlog.get_logger(__name__)
 
 router = APIRouter()
 
-_DB_PATH = str(Path(__file__).parent.parent / "data" / "oms_trades.db")
+_DB_PATH = str(DB_OMS)
 
 # Serialise concurrent order submissions — prevents PositionManager data corruption
 # under concurrent requests. Single-user demo: contention never occurs in practice.
@@ -63,6 +64,7 @@ class OrderRequest(BaseModel):
     product_subtype: Optional[str] = None   # "irs","cds","fwd","option","gov_bond","spot","future"
     spread_bps: Optional[float] = None      # CDS spread at booking
     override_raroc: bool = False            # P6: bypass RAROC gate (use when desk is below-hurdle but trade is strategically necessary)
+    volcker_classification: Optional[str] = None  # Volcker Rule class; auto-classified if None
 
 
 # ---------------------------------------------------------------------------
@@ -294,6 +296,19 @@ async def submit_order(order: OrderRequest) -> dict:
     if normalised_side not in ("buy", "sell"):
         raise HTTPException(status_code=400, detail=f"Unknown side: {order.side!r}")
 
+    # Volcker Rule auto-classification
+    try:
+        from infrastructure.compliance.volcker import classify_trade as _vc_classify
+        volcker_class = order.volcker_classification or _vc_classify(
+            desk=order.desk.upper(),
+            product_subtype=order.product_subtype,
+            tenor_years=order.tenor_years,
+            counterparty_id=order.counterparty_id,
+            notional=order.notional or order.qty,
+        ).value
+    except Exception:
+        volcker_class = order.volcker_classification or "MARKET_MAKING"
+
     # Build product_details dict for derivatives
     product_details: dict | None = None
     if order.product_subtype:
@@ -305,7 +320,10 @@ async def submit_order(order: OrderRequest) -> dict:
             "expiry_date":  order.expiry_date,
             "currency":     order.currency,
             "original_side": order.side,       # preserve "payer"/"receiver" etc.
+            "volcker_classification": volcker_class,
         }.items() if v is not None}
+    else:
+        product_details = {"volcker_classification": volcker_class}
 
     async with _ORDER_LOCK:
         try:

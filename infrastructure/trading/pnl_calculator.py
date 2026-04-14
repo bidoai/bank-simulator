@@ -21,7 +21,9 @@ from datetime import date, datetime
 from typing import Optional
 import structlog
 
-log = structlog.get_logger()
+from config.settings import PNL_INVESTIGATE_PCT, PNL_ESCALATE_PCT
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -268,9 +270,9 @@ class PnLCalculator:
         unexplained_pct = (abs(unexplained) / max(abs(actual), 1.0)) * 100.0
 
         risk_flag = "CLEAR"
-        if unexplained_pct > 20:
+        if unexplained_pct > PNL_ESCALATE_PCT:
             risk_flag = "MODEL_RISK_ESCALATION"
-        elif unexplained_pct > 10:
+        elif unexplained_pct > PNL_INVESTIGATE_PCT:
             risk_flag = "INVESTIGATE"
 
         return {

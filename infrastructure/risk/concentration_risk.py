@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class ConcentrationRiskMonitor:

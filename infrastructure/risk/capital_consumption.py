@@ -20,7 +20,7 @@ import structlog
 
 from infrastructure.risk.regulatory_capital import RegulatoryCapitalEngine
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 _RISK_WEIGHTS    = RegulatoryCapitalEngine.RISK_WEIGHTS
 _PRODUCT_TYPE_MAP = RegulatoryCapitalEngine.PRODUCT_TYPE_MAP

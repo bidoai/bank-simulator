@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 # ── SIMM published parameters (IR risk class, USD "Regular" vol) ──────────

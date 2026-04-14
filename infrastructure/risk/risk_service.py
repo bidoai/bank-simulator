@@ -11,11 +11,12 @@ from typing import Any
 
 import structlog
 
+from config.settings import VAR_CONFIDENCE, VAR_HORIZON_DAYS
 from infrastructure.trading.position_manager import PositionManager
 from infrastructure.trading.limit_manager import LimitManager
 from infrastructure.risk.var_calculator import VaRCalculator
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 # Default annualised volatilities by desk
 _DESK_VOLS: dict[str, float] = {
@@ -62,7 +63,7 @@ class RiskService:
         log.info("risk_service.sample_positions_loaded")
 
     def run_snapshot(self) -> dict[str, Any]:
-        calculator = VaRCalculator(confidence=0.99, horizon_days=1)
+        calculator = VaRCalculator(confidence=VAR_CONFIDENCE, horizon_days=VAR_HORIZON_DAYS)
         all_positions = self.position_manager.get_all_positions()
 
         # ── Group positions by desk ──────────────────────────────────────────

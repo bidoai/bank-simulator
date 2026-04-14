@@ -72,6 +72,29 @@ class IntradayLiquidityMonitor:
             "headroom_bn": round(self._credit_line - peak["peak_credit_draw_bn"], 2),
         }
 
+    def record_payment(self, amount_usd: float, direction: str, rail: str) -> None:
+        """
+        Record a live payment into the intraday profile.
+        direction: 'OUTFLOW' | 'INFLOW'
+        Appends a flow entry so subsequent get_cashflow_profile() includes it.
+        """
+        amount_bn = amount_usd / 1e9
+        if direction == "OUTFLOW":
+            entry = {
+                "time": "LIVE",
+                "description": f"Live {rail} payment",
+                "payments_bn": -round(amount_bn, 4),
+                "receipts_bn": 0.0,
+            }
+        else:
+            entry = {
+                "time": "LIVE",
+                "description": f"Live {rail} receipt",
+                "payments_bn": 0.0,
+                "receipts_bn": round(amount_bn, 4),
+            }
+        self._flows = list(self._flows) + [entry]
+
     def get_daily_summary(self) -> dict[str, Any]:
         profile = self.get_cashflow_profile()
         peak = self.get_peak_exposure()

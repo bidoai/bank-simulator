@@ -9,7 +9,7 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class RegulatoryCapitalEngine:
@@ -72,6 +72,18 @@ class RegulatoryCapitalEngine:
     def _product_type(self, ticker: str) -> str:
         return self.PRODUCT_TYPE_MAP.get(ticker, "equity")  # conservative default
 
+    def _live_cet1(self) -> float:
+        """
+        Dynamic CET1 = paid-in capital floor + cumulative retained earnings.
+        Falls back to static constant if retained earnings ledger is unavailable.
+        """
+        try:
+            from infrastructure.treasury.retained_earnings import retained_earnings_ledger
+            cumulative_re = retained_earnings_ledger.get_cumulative()
+            return self.CET1_CAPITAL_USD + cumulative_re
+        except Exception:
+            return self.CET1_CAPITAL_USD
+
     def calculate(self, positions: list[dict]) -> dict[str, Any]:
         rwa_by_asset_class: dict[str, float] = {pt: 0.0 for pt in self.RISK_WEIGHTS}
 
@@ -91,10 +103,18 @@ class RegulatoryCapitalEngine:
         BASELINE_RWA = 346_000_000_000.0  # $346B → 13% CET1 at $45B capital
         rwa_floor = max(rwa_total, BASELINE_RWA)
 
-        cet1_ratio    = self.CET1_CAPITAL_USD   / rwa_floor
-        tier1_ratio   = self.TIER1_CAPITAL_USD  / rwa_floor
-        total_ratio   = self.TOTAL_CAPITAL_USD  / rwa_floor
-        leverage_ratio= self.CET1_CAPITAL_USD   / self.TOTAL_EXPOSURE_USD
+        # Use dynamic CET1 (paid-in capital + cumulative retained earnings)
+        live_cet1 = self._live_cet1()
+        # Tier1 and Total scale proportionally from live CET1
+        cet1_to_tier1 = self.TIER1_CAPITAL_USD / self.CET1_CAPITAL_USD
+        cet1_to_total = self.TOTAL_CAPITAL_USD / self.CET1_CAPITAL_USD
+        live_tier1 = live_cet1 * cet1_to_tier1
+        live_total = live_cet1 * cet1_to_total
+
+        cet1_ratio    = live_cet1   / rwa_floor
+        tier1_ratio   = live_tier1  / rwa_floor
+        total_ratio   = live_total  / rwa_floor
+        leverage_ratio= live_cet1   / self.TOTAL_EXPOSURE_USD
 
         breaches: list[str] = []
         if cet1_ratio  < self.CET1_MIN:
@@ -114,17 +134,20 @@ class RegulatoryCapitalEngine:
         )
 
         return {
-            "rwa_total_usd":       round(rwa_total, 2),
-            "rwa_by_asset_class":  {k: round(v, 2) for k, v in rwa_by_asset_class.items()},
-            "cet1_ratio":          round(cet1_ratio, 6),
-            "tier1_ratio":         round(tier1_ratio, 6),
-            "total_capital_ratio": round(total_ratio, 6),
-            "leverage_ratio":      round(leverage_ratio, 6),
-            "cet1_buffer":         round(cet1_ratio - self.CET1_MIN, 6),
-            "cet1_vs_target":      round(cet1_ratio - self.CET1_TARGET, 6),
-            "capital_adequate":    len(breaches) == 0,
-            "breaches":            breaches,
-            "as_of":               datetime.now(timezone.utc).isoformat(),
+            "rwa_total_usd":          round(rwa_total, 2),
+            "rwa_by_asset_class":     {k: round(v, 2) for k, v in rwa_by_asset_class.items()},
+            "cet1_capital_usd":       round(live_cet1, 2),
+            "cet1_paid_in_usd":       self.CET1_CAPITAL_USD,
+            "retained_earnings_usd":  round(live_cet1 - self.CET1_CAPITAL_USD, 2),
+            "cet1_ratio":             round(cet1_ratio, 6),
+            "tier1_ratio":            round(tier1_ratio, 6),
+            "total_capital_ratio":    round(total_ratio, 6),
+            "leverage_ratio":         round(leverage_ratio, 6),
+            "cet1_buffer":            round(cet1_ratio - self.CET1_MIN, 6),
+            "cet1_vs_target":         round(cet1_ratio - self.CET1_TARGET, 6),
+            "capital_adequate":       len(breaches) == 0,
+            "breaches":               breaches,
+            "as_of":                  datetime.now(timezone.utc).isoformat(),
         }
 
     def get_minimum_capital_requirement(self, rwa: float) -> dict[str, float]:

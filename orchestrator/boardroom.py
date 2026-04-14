@@ -26,7 +26,7 @@ import structlog
 
 from agents.base_agent import BankAgent
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 console = Console(width=120)
 
 

@@ -320,3 +320,33 @@ def get_output_floor() -> dict[str, Any]:
         total_capital=total,
         sa_rwa=sa_rwa_total,
     )
+
+
+# ── FRTB IMA endpoints (T3-C) ───────────────────────────────────────────────
+
+@router.get("/frtb/es")
+def get_frtb_es() -> dict[str, Any]:
+    """FRTB IMA Expected Shortfall at 97.5% confidence (BCBS MAR33)."""
+    from infrastructure.risk.frtb_ima import frtb_ima_engine
+    return frtb_ima_engine.calculate_es()
+
+
+@router.get("/frtb/pla/{desk}")
+def get_frtb_pla(desk: str) -> dict[str, Any]:
+    """P&L Attribution test for a desk (BCBS 457 §89)."""
+    from infrastructure.risk.frtb_ima import frtb_ima_engine
+    return frtb_ima_engine.run_pla_test(desk)
+
+
+@router.get("/frtb/routing")
+def get_frtb_routing() -> dict[str, Any]:
+    """IMA vs SA routing decision for each trading desk."""
+    from infrastructure.risk.frtb_ima import frtb_ima_engine
+    return frtb_ima_engine.get_desk_routing()
+
+
+@router.get("/frtb/capital")
+def get_frtb_capital() -> dict[str, Any]:
+    """Full FRTB IMA capital calculation: ES-based IMA capital + SA fallback."""
+    from infrastructure.risk.frtb_ima import frtb_ima_engine
+    return frtb_ima_engine.calculate_portfolio_capital()

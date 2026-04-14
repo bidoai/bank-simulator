@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 router = APIRouter(prefix="/collateral", tags=["collateral"])
 
 

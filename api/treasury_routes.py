@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 router = APIRouter(prefix="/treasury", tags=["treasury"])
 
 
@@ -141,3 +141,48 @@ async def ftp_raroc():
 async def balance_sheet_optimization():
     from infrastructure.treasury.balance_sheet_optimizer import balance_sheet_optimizer
     return balance_sheet_optimizer.get_full_optimization_report()
+
+
+# ── Consolidated Income Statement ───────────────────────────────────────────
+
+@router.get("/income-statement")
+async def income_statement(period: str = "annual"):
+    """
+    Consolidated income statement aggregating NII, trading P&L, fee revenue,
+    provisions, and op risk charges. period: 'annual' | 'quarterly' | 'daily'.
+    """
+    if period not in ("annual", "quarterly", "daily"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=422, detail="period must be annual, quarterly, or daily")
+    from infrastructure.treasury.consolidated_pnl import income_statement as _is
+    return _is.get_statement(period=period)
+
+
+@router.get("/retained-earnings")
+async def retained_earnings():
+    """Retained earnings history and cumulative balance."""
+    from infrastructure.treasury.retained_earnings import retained_earnings_ledger
+    return retained_earnings_ledger.get_summary()
+
+
+class AccruePeriodRequest:
+    pass
+
+
+@router.post("/retained-earnings/accrue")
+async def accrue_period(body: dict):
+    """
+    Record a period's net income. Body: {period, net_income_usd, dividends_usd?, other_comprehensive_income?}
+    """
+    from fastapi import HTTPException
+    from infrastructure.treasury.retained_earnings import retained_earnings_ledger
+    period = body.get("period")
+    net_income = body.get("net_income_usd")
+    if not period or net_income is None:
+        raise HTTPException(status_code=422, detail="period and net_income_usd are required")
+    return retained_earnings_ledger.accrue_period(
+        period=period,
+        net_income_usd=float(net_income),
+        dividends_usd=float(body.get("dividends_usd", 0.0)),
+        other_comprehensive_income=float(body.get("other_comprehensive_income", 0.0)),
+    )

@@ -10,7 +10,7 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 FLOOR_RATE: float = 0.725   # 72.5%
 

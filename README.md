@@ -1,6 +1,6 @@
 # Apex Global Bank Simulator
 
-> A JPMorgan-scale investment bank, fully simulated in Python — live trading infrastructure with 7-gate pre-trade enforcement, real-time capital allocation, multi-agent AI executives, Basel III capital engine, XVA suite, live FRED/Yahoo Finance market data, and 17 SR 11-7 model development documents. Powered by Claude.
+> A JPMorgan-scale investment bank, fully simulated in Python — live trading infrastructure with 7-gate pre-trade enforcement, real-time capital allocation, multi-agent AI executives, Basel III capital engine, XVA suite, FRTB IMA, IBD deal pipeline, wealth management, banking book, payments, custody, historical crisis replay, live FRED/Yahoo Finance market data, and 17 SR 11-7 model development documents. Powered by Claude.
 
 ---
 
@@ -9,8 +9,9 @@
                        │               APEX GLOBAL BANK — LIVE SYSTEM             │
                        │                                                           │
                        │  14 AI AGENTS · 11 DASHBOARDS · 17 RISK MODELS          │
-                       │  60+ REST ROUTES · 4 WEBSOCKET STREAMS                   │
+                       │  100+ REST ROUTES · 4 WEBSOCKET STREAMS                  │
                        │  7-GATE PRE-TRADE · LIVE CAPITAL ALLOCATION              │
+                       │  BANKING BOOK · IBD · WEALTH · FRTB IMA · CRISIS REPLAY │
                        └──────────────────────────────────────────────────────────┘
 
    ┌─────────────┐   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
@@ -227,7 +228,9 @@ Every module is a real quantitative system — not a stub.
 | `VaRCalculator` | Historical (250-day), parametric delta-normal, Monte Carlo Cholesky (regime-aware) |
 | `CorrelationRegimeModel` | 2-state HMM proxy: NORMAL/STRESS 6×6 matrices; auto-switches on realized cross-asset correlation |
 | `StressedVaREngine` | GFC 2008–09 calibration (3.5× equity vol, 4× credit spread); sVaR multiplier; IMA exception tracking |
-| `RegulatoryCapitalEngine` | Basel III SA: CET1/Tier1/Total/Leverage ratios; SA-CCR EAD; OpRisk BIA; 72.5% output floor |
+| `FRTBIMAEngine` | BCBS MAR33/457: ES97.5 via Monte Carlo, PLA test (Spearman ρ ≥ 0.80), IMA/SA desk routing, IMA capital = 1.5 × ES_10d |
+| `CrisisReplayEngine` | GFC 2008 / COVID-2020 / UK Gilt 2022 scenario tapes applied to live positions; P&L impact and RWA delta by asset class |
+| `RegulatoryCapitalEngine` | Basel III SA: CET1/Tier1/Total/Leverage ratios; SA-CCR EAD (live-wired to OMS); OpRisk BIA; 72.5% output floor |
 | `CapitalBufferEngine` | CCB 2.5%, CCyB, G-SIB surcharge 1.5%, Pillar 2 add-on; MDA calculation |
 | `ConcentrationRiskMonitor` | Single-name (5% of book), sector (25%), geography (40%) limits with HHI |
 | `LargeExposuresEngine` | Basel CRE70: 25% Tier 1 per counterparty (15% for G-SIBs); early warning at 10% |
@@ -244,12 +247,33 @@ Every module is a real quantitative system — not a stub.
 | `RAROCEngine` | Desk-level economic capital; hurdle rate 12%; RORWA density analysis |
 | `BalanceSheetOptimizer` | Below-hurdle desk identification; CCP clearing, compression, collateral upgrade recommendations |
 
+### Banking Book
+| Module | Description |
+|--------|-------------|
+| `LoanBook` | TERM/REVOLVER/BULLET commercial loans; IFRS9 stage assignment; amortization schedules; 8 seed facilities |
+| `DepositBook` | CHECKING/SAVINGS/TERM accounts for RETAIL/SME/CORPORATE; NMD behavioural split; ALM repricing bucket output |
+| `PaymentLedger` | Fedwire (RTGS, instant settle) + CHIPS (bilateral net, EOD batch); daylight overdraft enforcement; nostro tracking |
+| `NostroBook` | 4 nostro accounts (USD/EUR/GBP/JPY); balance tracking; credit line limits |
+| `CustodyBook` | OMNIBUS/SEGREGATED custody accounts; ~$19B AuC; 10 seed holdings; corporate action processing |
+| `SettlementEngine` | DVP settlement lifecycle — PENDING→AFFIRMED→SETTLED/FAILED; T+1 equities, T+2 bonds |
+
+### Revenue & Deal Flow
+| Module | Description |
+|--------|-------------|
+| `DealPipeline` | M&A/ECM/DCM deal stages (ORIGINATION→PITCHING→MANDATE→SIGNED→EXECUTION→CLOSED); fee accrual at close; league tables; 8 seed deals (~$572M fees) |
+| `ClientBook` | HNWI/UHNWI/FAMILY_OFFICE AUM tracking; DISCRETIONARY/ADVISORY/EXECUTION_ONLY mandates; model portfolios; tiered fee billing; 6 seed clients ($8.1B AUM) |
+| `ConsolidatedIncomeStatement` | Firm-wide P&L: NII + trading P&L + live IBD/Wealth fees + ECL provisions + OpRisk charge; dynamic CET1 via retained earnings |
+| `RetainedEarningsLedger` | SQLite-backed retained earnings with quarterly accrual; adds to static CET1 capital base for live ratio calculation |
+
 ### Credit & Compliance
 | Module | Description |
 |--------|-------------|
-| `IFRS9ECLEngine` | Stage 1/2/3 ECL on 50-obligor portfolio; PIT PD via GDP/unemployment macro overlay |
+| `IFRS9ECLEngine` | Stage 1/2/3 ECL on 50-obligor portfolio; PIT PD via GDP/unemployment macro overlay; dynamic obligor registration from loan book |
 | `DFASTEngine` | 9-quarter CET1 projection under baseline/adverse/severely adverse; 2025 official Fed parameters |
 | `AMLTransactionMonitor` | 6 rule typologies: structuring, velocity, round-dollar, layering, geography, sanctions |
+| `VolckerClassificationEngine` | OMS position tagging: MARKET_MAKING / PERMITTED_HEDGING / CUSTOMER_FACILITATION / UNDERWRITING / PROHIBITED_PROP |
+| `LossEventDB` | SQLite op risk loss event log with business line / event type / gross & net loss; BIA capital integration |
+| `RCSAFramework` | Risk/control register: 15 pre-seeded controls across Trading/Compliance/IT/Operations; heat map; residual risk scores |
 
 ### Collateral
 | Module | Description |
@@ -336,7 +360,7 @@ Pre-built boardroom scenarios that inject structured market shocks into agent co
 
 ## API Surface
 
-17 route modules, 60+ endpoints, 4 WebSocket streams:
+28 route modules, 100+ endpoints, 4 WebSocket streams:
 
 ```
 # Trading & Capital
@@ -384,6 +408,50 @@ GET  /api/securitized/mbs-analytics       Live OAS, duration, convexity (PSA + H
 GET  /api/credit/ecl/portfolio      IFRS 9 ECL summary (50-obligor portfolio)
 GET  /api/compliance/aml/stats      AML alert rate and SAR conversion
 POST /api/compliance/aml/screen     Screen a transaction against all 6 rule typologies
+GET  /api/compliance/volcker/report Volcker Rule portfolio attribution by class
+GET  /api/compliance/volcker/flags  Positions flagged as potentially prohibited prop
+GET  /api/oprisk/summary            Op risk BIA capital + loss event statistics
+POST /api/oprisk/loss-event         Record an op risk loss event
+GET  /api/oprisk/rcsa               RCSA risk/control heat map
+PATCH /api/oprisk/rcsa/{id}         Update control effectiveness score
+
+# Banking Book
+POST /api/loans/originate           Originate a commercial loan (TERM/REVOLVER/BULLET)
+GET  /api/loans/portfolio           All loans with live IFRS9 stage
+GET  /api/loans/{id}/amortization   Loan amortization schedule
+POST /api/loans/{id}/repay          Record a loan repayment
+GET  /api/loans/ecl                 Live ECL on the loan book
+POST /api/deposits/accounts         Open a deposit account
+GET  /api/deposits/portfolio        All accounts with balances
+GET  /api/deposits/nmd-profile      NMD behavioural split (core stable / core less-stable / non-core)
+POST /api/payments/submit           Submit a Fedwire or CHIPS payment
+GET  /api/payments/nostro/balances  Live nostro account balances (USD/EUR/GBP/JPY)
+GET  /api/payments/intraday-position Running intraday cash flow position
+POST /api/custody/settlement/instruct  Create a DVP settlement instruction
+GET  /api/custody/auc               Total assets under custody
+GET  /api/custody/corporate-actions/pending  Pending dividends and corporate actions
+
+# IBD & Wealth
+GET  /api/ibd/pipeline              Full IBD deal pipeline with stages and status
+POST /api/ibd/deals/{id}/advance    Advance a deal to the next stage
+GET  /api/ibd/league-table          Fee league table by deal type
+GET  /api/wealth/clients            Wealth management client roster
+PUT  /api/wealth/clients/{id}/aum   Update client AUM
+GET  /api/wealth/summary            AUM total, fee revenue, mandate breakdown
+POST /api/wealth/billing/run        Run fee billing cycle across all clients
+
+# FRTB & Crisis Replay
+GET  /api/capital/frtb/es           FRTB IMA Expected Shortfall at 97.5% confidence
+GET  /api/capital/frtb/pla/{desk}   P&L Attribution test for a desk
+GET  /api/capital/frtb/routing      IMA vs SA routing decision per desk
+GET  /api/capital/frtb/capital      Full FRTB IMA capital calculation
+GET  /api/stress/crisis/scenarios   Crisis scenario definitions and shock parameters
+GET  /api/stress/crisis/replay-all  All three crisis scenarios vs live positions
+GET  /api/stress/crisis/replay/{id} Single crisis replay (GFC_2008 | COVID_2020 | UK_GILT_2022)
+
+# Treasury (extended)
+GET  /api/treasury/income-statement Consolidated firm P&L (NII + trading + fees - provisions)
+GET  /api/treasury/retained-earnings Retained earnings ledger and dynamic CET1
 
 # Models & Governance
 GET  /api/models/registry           Full SR 11-7 model registry
@@ -457,7 +525,7 @@ POST /api/trading/orders
                                     │ HTTP / WS
                     ┌───────────────▼────────────────────────┐
                     │       FastAPI  (api/main.py)           │
-                    │  17 route modules · 4 WS broadcasters  │
+                    │  28 route modules · 4 WS broadcasters  │
                     └──┬────────────┬──────────┬─────────────┘
                        │            │          │
           ┌────────────▼──┐  ┌──────▼────┐  ┌─▼──────────────┐
@@ -467,7 +535,10 @@ POST /api/trading/orders
           │  14 BankAgents │  │ VaR ·     │  │ OMS · ALM · FTP │
           │  claude-opus   │  │ Capital · │  │ SIMM · XVA · ECL│
           │  4.6           │  │ Collat ·  │  │ AML · Sec-Fin · │
-          │                │  │ DFAST     │  │ RAROC · Suspend │
+          │                │  │ DFAST ·   │  │ RAROC · Suspend │
+          │                │  │ FRTB ·    │  │ IBD · Wealth    │
+          │                │  │ Crisis    │  │ Loans · Deposits│
+          │                │  │ Replay    │  │ Payments · Cust │
           └────────────────┘  └───────────┘  └────────┬────────┘
                                                        │
                                    ┌───────────────────▼────────────────────┐
@@ -483,6 +554,14 @@ POST /api/trading/orders
                                             │  instruments.db      │
                                             │  boardroom.db        │
                                             │  metrics.db          │
+                                            │  loans.db            │
+                                            │  deposits.db         │
+                                            │  payments.db         │
+                                            │  custody.db          │
+                                            │  ibd.db              │
+                                            │  wealth.db           │
+                                            │  loss_events.db      │
+                                            │  retained_earnings.db│
                                             └─────────────────────-┘
 ```
 
@@ -513,9 +592,16 @@ api/
   xva_routes.py              CVA/DVA/FVA, PFE, live XVA broadcaster
   securities_finance_routes.py  Repo/SBL analytics + trade booking
   securitized_routes.py      MBS/ABS analytics + trade booking
-  stress_routes.py           DFAST 9-quarter projections
+  stress_routes.py           DFAST 9-quarter projections; crisis replay (GFC/COVID/Gilt)
   credit_routes.py           IFRS 9 ECL, stage classification
-  compliance_routes.py       AML alerts, SAR stats, transaction screening
+  compliance_routes.py       AML alerts, SAR stats, Volcker attribution
+  oprisk_routes.py           Op risk loss events, RCSA heat map, BIA capital
+  loan_routes.py             Loan origination, amortization, repayment, ECL
+  deposits_routes.py         Deposit accounts, NMD profile, ALM repricing
+  payments_routes.py         Fedwire/CHIPS payments, nostro balances, intraday position
+  custody_routes.py          Custody accounts, settlement, corporate actions
+  ibd_routes.py              IBD deal pipeline, stage advancement, league tables
+  wealth_routes.py           Wealth client book, AUM tracking, fee billing
   models_routes.py           SR 11-7 registry, MDD serving, AI model Q&A
   liquidity_routes.py        LCR, NSFR, intraday monitor, liquidity ladder
   boardroom_routes.py        Boardroom session management + archive
@@ -526,15 +612,21 @@ infrastructure/
   trading/                   OMS, PositionManager, LimitManager, LimitActionEngine, Greeks
   risk/                      VaRCalculator, CorrelationRegimeModel, RegulatoryCapitalEngine,
                              CapitalAllocationFramework, CapitalConsumptionTracker,
-                             LimitActionEngine, ConcentrationRisk, LargeExposures, SA-CCR
-  treasury/                  ALMEngine, FTPEngine, DynamicFTPEngine, RAROCEngine, BalanceSheetOptimizer
+                             LimitActionEngine, ConcentrationRisk, LargeExposures, SA-CCR,
+                             FRTBIMAEngine, LossEventDB, RCSAFramework
+  treasury/                  ALMEngine, FTPEngine, DynamicFTPEngine, RAROCEngine, BalanceSheetOptimizer,
+                             ConsolidatedIncomeStatement, RetainedEarningsLedger, DepositBook
   collateral/                VMEngine, SIMMEngine, CollateralStressScenarios
-  credit/                    IFRS9ECLEngine
-  stress/                    DFASTEngine
-  compliance/                AMLTransactionMonitor
+  credit/                    IFRS9ECLEngine, LoanBook
+  stress/                    DFASTEngine, CrisisReplayEngine
+  compliance/                AMLTransactionMonitor, VolckerClassificationEngine
   xva/                       SimulationXVAService, XVAAdapter, XVABroadcaster
   securities_finance/        SecuritiesFinanceService, RepoLadder, MarginEngine
   securitized_products/      SecuritizedProductsService, MBSAnalyticsEngine
+  ibd/                       DealPipeline (M&A/ECM/DCM stages, fee accrual, league tables)
+  wealth/                    ClientBook (HNWI/UHNWI/FO mandates, model portfolios, fee billing)
+  payments/                  PaymentLedger (Fedwire/CHIPS), NostroBook
+  custody/                   CustodyBook, SettlementEngine, CorporateActionProcessor
   market_data/               MarketDataFeed (GBM), LiveSeed (Yahoo Finance), FREDCurve
   governance/                ModelRegistry (SR 11-7 lifecycle)
   events/                    EventLog (append-only SQLite), EventBus

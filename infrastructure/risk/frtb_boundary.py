@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 TRADING_BOOK_INSTRUMENT_TYPES: set[str] = {
     "equity_listed",

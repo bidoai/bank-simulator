@@ -62,3 +62,58 @@ def update_alert_status(alert_id: str, body: StatusUpdate) -> dict:
     if not updated:
         raise HTTPException(status_code=404, detail=f"Alert '{alert_id}' not found")
     return {"alert_id": alert_id, "status": body.status, "updated": True}
+
+
+# ---------------------------------------------------------------------------
+# Volcker Rule Attribution
+# ---------------------------------------------------------------------------
+
+@router.get("/volcker/report")
+def volcker_report() -> dict:
+    """Portfolio Volcker attribution — notional by classification class."""
+    from infrastructure.compliance.volcker import volcker_engine
+    from infrastructure.risk.risk_service import risk_service
+    positions = risk_service.position_manager.get_all_positions()
+    return volcker_engine.get_portfolio_attribution(positions)
+
+
+@router.get("/volcker/flags")
+def volcker_flags() -> dict:
+    """Return positions classified as PROHIBITED_PROP with notional ≥ $1M."""
+    from infrastructure.compliance.volcker import volcker_engine
+    from infrastructure.risk.risk_service import risk_service
+    positions = risk_service.position_manager.get_all_positions()
+    return volcker_engine.get_compliance_report(positions)
+
+
+class VolckerClassifyRequest(BaseModel):
+    desk: str
+    product_subtype: str | None = None
+    tenor_years: float | None = None
+    counterparty_id: str | None = None
+    notional: float | None = None
+
+
+@router.post("/volcker/classify")
+def classify_single_trade(body: VolckerClassifyRequest) -> dict:
+    """Classify a hypothetical trade under the Volcker Rule."""
+    from infrastructure.compliance.volcker import classify_trade, VolckerClass
+    vc = classify_trade(
+        desk=body.desk,
+        product_subtype=body.product_subtype,
+        tenor_years=body.tenor_years,
+        counterparty_id=body.counterparty_id,
+        notional=body.notional,
+    )
+    return {
+        "volcker_classification": vc.value,
+        "is_prohibited": vc == VolckerClass.PROHIBITED_PROP,
+        "description": {
+            "MARKET_MAKING":           "Permitted — inventory held to service client orders",
+            "PERMITTED_HEDGING":       "Permitted — hedging existing bank risk exposure",
+            "CUSTOMER_FACILITATION":   "Permitted — executing on behalf of a customer",
+            "UNDERWRITING":            "Permitted — underwriting securities distribution",
+            "REPO_SECURITIES_FINANCE": "Permitted — repo/securities lending activity",
+            "PROHIBITED_PROP":         "PROHIBITED — principal risk-taking with no client nexus",
+        }.get(vc.value, ""),
+    }

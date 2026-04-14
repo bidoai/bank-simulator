@@ -21,7 +21,7 @@ import structlog
 
 from infrastructure.trading.limit_manager import LimitStatus
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 # Maps LimitManager limit name → logical OMS desk name (None = firm-wide)
 _LIMIT_TO_DESK: dict[str, str | None] = {

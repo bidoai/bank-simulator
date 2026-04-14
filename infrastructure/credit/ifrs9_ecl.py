@@ -198,5 +198,26 @@ class IFRS9ECLEngine:
         return obligors
 
 
+    def add_obligor(self, obligor: Obligor) -> None:
+        """Add a dynamically originated loan obligor to the live portfolio."""
+        _live_portfolio.append(obligor)
+        log.info("ifrs9.obligor_added", obligor_id=obligor.obligor_id, notional=obligor.notional_usd)
+
+    def remove_obligor(self, obligor_id: str) -> bool:
+        """Remove an obligor (e.g. on full repayment). Returns True if found."""
+        before = len(_live_portfolio)
+        _live_portfolio[:] = [o for o in _live_portfolio if o.obligor_id != obligor_id]
+        removed = len(_live_portfolio) < before
+        if removed:
+            log.info("ifrs9.obligor_removed", obligor_id=obligor_id)
+        return removed
+
+    def get_live_portfolio(self) -> list[Obligor]:
+        """Return the combined sample + dynamically added obligors."""
+        return list(_live_portfolio)
+
+
 ecl_engine = IFRS9ECLEngine()
 _sample_portfolio: list[Obligor] = ecl_engine.generate_sample_portfolio()
+# Live portfolio starts from the sample; loan origination appends here
+_live_portfolio: list[Obligor] = list(_sample_portfolio)

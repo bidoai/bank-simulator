@@ -14,7 +14,7 @@ import structlog
 
 from models.market_data import Quote
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 # Spread and vol parameters (vol used only for Greeks/VaR estimates, not price generation).
 # Prices are fetched live; these are never used to generate prices.

@@ -25,7 +25,7 @@ from typing import Any
 
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 FIRM_CET1_USD:  float = 45_000_000_000.0   # $45B — must match RegulatoryCapitalEngine
 CET1_MIN_RATIO: float = 0.045              # Basel III 4.5% minimum

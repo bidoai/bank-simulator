@@ -8,34 +8,23 @@ Pushes three message types to /ws/trading clients:
 """
 from __future__ import annotations
 
-import json
 import time
-from typing import Any
 
 import structlog
+
+from api.base_broadcaster import BaseBroadcaster
 
 log = structlog.get_logger(__name__)
 
 _TICK_THROTTLE_S = 2.0   # minimum seconds between tick broadcasts
 
 
-class TradingBroadcaster:
+class TradingBroadcaster(BaseBroadcaster):
 
     def __init__(self) -> None:
-        self._clients: set = set()
+        super().__init__("trading")
         self._last_tick: float = 0.0
         self._last_positions: float = 0.0
-
-    # ── Connection ─────────────────────────────────────────────────────────────
-
-    async def connect(self, websocket) -> None:
-        await websocket.accept()
-        self._clients.add(websocket)
-        log.info("trading.ws.connected", total=len(self._clients))
-
-    async def disconnect(self, websocket) -> None:
-        self._clients.discard(websocket)
-        log.info("trading.ws.disconnected", total=len(self._clients))
 
     # ── Broadcast methods ──────────────────────────────────────────────────────
 
@@ -59,18 +48,7 @@ class TradingBroadcaster:
         self._last_positions = now
         await self._broadcast({"type": "positions", "data": report})
 
-    # ── Internal ──────────────────────────────────────────────────────────────
-
-    async def _broadcast(self, data: dict[str, Any]) -> None:
-        dead: set = set()
-        payload = json.dumps(data, default=str)
-        for ws in list(self._clients):
-            try:
-                await ws.send_text(payload)
-            except Exception as exc:
-                log.debug("trading.ws.dead_client", error=str(exc))
-                dead.add(ws)
-        self._clients -= dead
+    # _broadcast and _safe_send are inherited from BaseBroadcaster.
 
 
 trading_broadcaster = TradingBroadcaster()

@@ -22,6 +22,7 @@ from datetime import datetime, date
 from typing import Optional
 import structlog
 
+from config.settings import VAR_CONFIDENCE, VAR_HORIZON_DAYS, VAR_MIN_HISTORY
 from models.risk_metrics import VaRResult
 from infrastructure.risk.correlation_regime import (
     CorrelationRegime,
@@ -29,7 +30,7 @@ from infrastructure.risk.correlation_regime import (
     regime_model,
 )
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class VaRCalculator:
@@ -41,7 +42,7 @@ class VaRCalculator:
     and the total bank. The process typically takes hours for a complex portfolio.
     """
 
-    def __init__(self, confidence: float = 0.99, horizon_days: int = 1):
+    def __init__(self, confidence: float = VAR_CONFIDENCE, horizon_days: int = VAR_HORIZON_DAYS):
         self.confidence = confidence
         self.horizon_days = horizon_days
 
@@ -59,8 +60,8 @@ class VaRCalculator:
 
         Basel III requires at least 250 trading days of history.
         """
-        if len(pnl_series) < 30:
-            raise ValueError(f"Need at least 30 observations, got {len(pnl_series)}")
+        if len(pnl_series) < VAR_MIN_HISTORY:
+            raise ValueError(f"Need at least {VAR_MIN_HISTORY} observations, got {len(pnl_series)}")
 
         arr = np.array(pnl_series)
         # VaR = the loss exceeded only (1-confidence)% of the time

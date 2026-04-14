@@ -20,7 +20,7 @@ import structlog
 from infrastructure.collateral.vm_engine import VMEngine, vm_engine
 from infrastructure.collateral.csa import MarginCallStatus
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 @dataclass

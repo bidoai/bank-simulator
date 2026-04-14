@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from config.settings import XVA_N_PATHS, XVA_HORIZON_YEARS
+
 log = logging.getLogger(__name__)
 
 
@@ -133,9 +135,9 @@ class XVAAdapter:
         """
         return {
             "simulation": {
-                "n_paths": 2000,
+                "n_paths": XVA_N_PATHS,
                 "n_steps": 40,
-                "horizon_years": 10.0,
+                "horizon_years": XVA_HORIZON_YEARS,
                 "random_seed": 42,
             },
             "model": {

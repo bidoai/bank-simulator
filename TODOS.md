@@ -1,5 +1,20 @@
 # TODOS — Apex Global Bank Simulator
 
+## Completed — Code Quality Refactor (2026-04-13)
+
+### TODO-REF: Codebase quality refactor ✅ DONE
+- `config/settings.py` — centralised env loading, DB paths, risk constants (VaR, P&L, limits, XVA)
+- `api/main.py` — 17 route try/except blocks → ordered loop; CORS from settings
+- `api/base_broadcaster.py` — shared WebSocket base; BoardroomBroadcaster + TradingBroadcaster inherit it
+- `infrastructure/persistence/sqlite_base.py` — shared `open_db()` helper; used by position_snapshots + event_log
+- Logging: 32 files fixed to `structlog.get_logger(__name__)`
+- Magic numbers replaced with settings constants in var_calculator, risk_service, pnl_calculator, limit_manager, xva/service, xva/adapter
+- Tests: `tests/test_var_calculator.py` (9 tests) + `tests/test_greeks.py` (13 tests) added → 269 total
+- Dashboard: `dashboard/js/api-client.js` shared fetch wrapper; loaded in all 11 dashboards
+- Test command updated in CLAUDE.md (added python-dotenv, aiosqlite, scipy; ignore scenarios/)
+
+---
+
 ## P1 — High Priority
 
 ### TODO-001: Agent Context Window Management ✅ DONE
@@ -217,6 +232,70 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 **What:** Add a RAROC pre-trade check: estimate incremental RAROC for the proposed trade (revenue = expected desk spread × notional × tenor; EC = asset class economic capital). If incremental RAROC < hurdle rate (12%) and desk is already below hurdle, require approval flag in trade request.
 **Context:** Gate 7 in `oms._pre_trade_check()`. Incremental RAROC = (spread × notional × tenor - EL - FTP) / EC. Only blocks if BOTH incremental RAROC < 12% AND desk portfolio is already below hurdle. `override_raroc: bool = False` field on `OrderRequest` and `submit_order()` bypasses gate. Available on all booking routes including SecFin and Securitized.
 **Status:** ✅ DONE — 2026-04-12
+
+---
+
+## v0.6 / v0.7 — Banking Book & Capital Completeness (2026-04-14)
+
+### TODO-053: Op Risk Loss Event DB + RCSA ✅ DONE
+**What:** SQLite loss event log + RCSA risk/control register, wired to BIA capital engine.
+**Context:** `infrastructure/risk/loss_event_db.py` — `LossEventDB` with 15 seed events across Basel III business lines/event types. `infrastructure/risk/rcsa.py` — `RCSAFramework` with 18 pre-seeded controls, heat map, residual risk scoring. `api/oprisk_routes.py` — 6 endpoints at `/api/oprisk/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-054: Consolidated P&L + Retained Earnings → Dynamic CET1 ✅ DONE
+**What:** Firm-wide income statement aggregating NII + trading PnL + fee revenue + provisions + op risk. Retained earnings ledger feeding dynamic CET1.
+**Context:** `infrastructure/treasury/consolidated_pnl.py` — annual/quarterly/daily scaling. `infrastructure/treasury/retained_earnings.py` — SQLite ledger, 4 seed quarters. `infrastructure/risk/regulatory_capital.py` — `_live_cet1()` adds cumulative retained earnings to static CET1 floor. New treasury endpoints: `/api/treasury/income-statement`, `/api/treasury/retained-earnings`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-055: Volcker Rule Attribution ✅ DONE
+**What:** Trade classification engine (MARKET_MAKING, PERMITTED_HEDGING, CUSTOMER_FACILITATION, UNDERWRITING, REPO_SECURITIES_FINANCE, PROHIBITED_PROP). Auto-classification on order submit.
+**Context:** `infrastructure/compliance/volcker.py` — rule table by desk prefix + product subtype. `api/oms_routes.py` — Volcker auto-classify on every `submit_order`. `api/compliance_routes.py` — 3 new endpoints: `/api/compliance/volcker/report`, `.../flags`, `.../classify`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-056: SA-CCR Live Position Wiring ✅ DONE
+**What:** Wire live OMS positions into SA-CCR EAD calculation (was using static SAMPLE_NETTING_SETS only).
+**Context:** `infrastructure/risk/sa_ccr.py` — `build_live_netting_sets(positions)` maps live positions by counterparty_id + product_subtype to SA-CCR netting set format, merges with static baseline. `calculate_portfolio_ead()` now auto-fetches live positions.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-057: Loan Origination Engine ✅ DONE
+**What:** SQLite-backed commercial loan book — TERM/REVOLVER/BULLET facilities, amortization, IFRS9 integration.
+**Context:** `infrastructure/credit/loan_book.py` — 8 seed loans, `originate()`, `repay()`, `get_amortization()`, IFRS9 stage assignment. `infrastructure/credit/ifrs9_ecl.py` — `add_obligor()`/`remove_obligor()` + `_live_portfolio`. `api/loan_routes.py` — 6 endpoints at `/api/loans/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-058: Deposit Account Model ✅ DONE
+**What:** CHECKING/SAVINGS/TERM accounts for RETAIL/SME/CORPORATE segments. NMD behavioural split. ALM repricing bucket output.
+**Context:** `infrastructure/treasury/deposits.py` — 10 seed accounts, `open_account()`, `deposit()`, `withdraw()`, `get_nmd_profile()`, `get_repricing_buckets()`. `api/deposits_routes.py` — 8 endpoints at `/api/deposits/`. `infrastructure/liquidity/intraday.py` — `record_payment()` added.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-059: Payments Simulation — Fedwire/CHIPS ✅ DONE
+**What:** RTGS (Fedwire, instant settle) + bilateral net (CHIPS, EOD batch). Nostro accounts with daylight overdraft limit enforcement.
+**Context:** `infrastructure/payments/ledger.py` — `PaymentLedger` with submit/settle/batch. `infrastructure/payments/nostro.py` — 4 seed nostros (USD/EUR/GBP/JPY), balance tracking. `api/payments_routes.py` — 7 endpoints at `/api/payments/`. Intraday monitor updated on settlement.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-060: Securities Custody Layer ✅ DONE
+**What:** Custody accounts (OMNIBUS/SEGREGATED), holdings, settlement (T+1 equity/T+2 bond DVP), corporate actions.
+**Context:** `infrastructure/custody/custody_accounts.py` — 4 seed clients, 10 seed holdings, ~$19B AuC. `infrastructure/custody/settlement.py` — `SettlementEngine` with PENDING/AFFIRMED/SETTLED/FAILED lifecycle. `infrastructure/custody/corporate_actions.py` — 3 seed CAs (IBM div, Amazon split, MSFT div). `api/custody_routes.py` — 10 endpoints at `/api/custody/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-061: IBD Deal Pipeline ✅ DONE
+**What:** M&A/ECM/DCM deal tracking with stage lifecycle (ORIGINATION→PITCHING→MANDATE→SIGNED→EXECUTION→CLOSED/FALLEN_AWAY), fee accrual at close, league tables.
+**Context:** `infrastructure/ibd/deal_pipeline.py` — 8 seed deals (~$572M annual fee revenue from closed deals), `advance_stage()` accrues fee at CLOSED, `get_annual_fee_revenue()`, `get_league_table()`. `api/ibd_routes.py` — 6 endpoints at `/api/ibd/`. Wired into `ConsolidatedIncomeStatement._get_fee_revenue()` as live source.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-062: Wealth Management Client Book ✅ DONE
+**What:** HNWI/UHNWI/FAMILY_OFFICE client AUM tracking with DISCRETIONARY/ADVISORY/EXECUTION_ONLY mandates, model portfolios (conservative/balanced/growth/aggressive), tiered fee billing.
+**Context:** `infrastructure/wealth/client_book.py` — 6 seed clients ($8.1B AUM, ~$41M annual fees). `api/wealth_routes.py` — 8 endpoints at `/api/wealth/`. Wired into `ConsolidatedIncomeStatement._get_fee_revenue()` as live source.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-063: FRTB IMA Engine ✅ DONE
+**What:** BCBS MAR33/457 Expected Shortfall at 97.5% confidence, P&L Attribution test (Spearman ρ ≥ 0.80, mean ratio 0.80–1.20), desk IMA/SA routing, IMA capital = 1.5 × ES_10d.
+**Context:** `infrastructure/risk/frtb_ima.py` — ES reuses VaRCalculator(0.975).cvar_amount, RTPL synthesised from backtest var_99. `api/capital_routes.py` — 4 new endpoints at `/api/capital/frtb/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-064: Historical Crisis Replay ✅ DONE
+**What:** GFC 2008 / COVID-2020 / UK Gilt Crisis 2022 scenario tapes replayed against live positions to show P&L impact and RWA delta.
+**Context:** `infrastructure/stress/crisis_replay.py` — 3 calibrated scenarios (equity/rates/credit/FX/commodity shocks), P&L computed per asset class from position notionals. `api/stress_routes.py` — 3 new endpoints at `/api/stress/crisis/`.
+**Status:** ✅ DONE — 2026-04-14
 
 ---
 

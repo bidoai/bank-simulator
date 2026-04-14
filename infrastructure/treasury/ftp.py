@@ -15,7 +15,7 @@ from datetime import datetime
 from dataclasses import dataclass, field, asdict
 import structlog
 
-log = structlog.get_logger()
+log = structlog.get_logger(__name__)
 
 
 class SwapCurve:
