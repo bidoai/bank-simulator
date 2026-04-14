@@ -20,10 +20,16 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-DB_MEETINGS  = DATA_DIR / "meetings.db"
-DB_OMS       = DATA_DIR / "oms_trades.db"
-DB_POSITIONS = DATA_DIR / "position_snapshots.db"
-DB_EVENTS    = DATA_DIR / "events.db"
+DB_MEETINGS          = DATA_DIR / "meetings.db"
+DB_OMS               = DATA_DIR / "oms_trades.db"
+DB_POSITIONS         = DATA_DIR / "position_snapshots.db"
+DB_EVENTS            = DATA_DIR / "events.db"
+DB_LOSS_EVENTS       = DATA_DIR / "loss_events.db"
+DB_RETAINED_EARNINGS = DATA_DIR / "retained_earnings.db"
+DB_LOANS             = DATA_DIR / "loans.db"
+DB_DEPOSITS          = DATA_DIR / "deposits.db"
+DB_PAYMENTS          = DATA_DIR / "payments.db"
+DB_CUSTODY           = DATA_DIR / "custody.db"
 
 # ---------------------------------------------------------------------------
 # API credentials

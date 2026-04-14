@@ -208,6 +208,11 @@ _ROUTE_MODULES = [
     "securities_finance_routes",
     "securitized_routes",
     "liquidity_routes",
+    "oprisk_routes",
+    "loan_routes",
+    "deposits_routes",
+    "payments_routes",
+    "custody_routes",
 ]
 
 for _mod in _ROUTE_MODULES:

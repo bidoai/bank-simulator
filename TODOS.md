@@ -235,6 +235,50 @@ Live: AA=53bps → factor=1.514, BBB=109bps → IG_CDX vol 12% → 13.08%.
 
 ---
 
+## v0.6 / v0.7 — Banking Book & Capital Completeness (2026-04-14)
+
+### TODO-053: Op Risk Loss Event DB + RCSA ✅ DONE
+**What:** SQLite loss event log + RCSA risk/control register, wired to BIA capital engine.
+**Context:** `infrastructure/risk/loss_event_db.py` — `LossEventDB` with 15 seed events across Basel III business lines/event types. `infrastructure/risk/rcsa.py` — `RCSAFramework` with 18 pre-seeded controls, heat map, residual risk scoring. `api/oprisk_routes.py` — 6 endpoints at `/api/oprisk/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-054: Consolidated P&L + Retained Earnings → Dynamic CET1 ✅ DONE
+**What:** Firm-wide income statement aggregating NII + trading PnL + fee revenue + provisions + op risk. Retained earnings ledger feeding dynamic CET1.
+**Context:** `infrastructure/treasury/consolidated_pnl.py` — annual/quarterly/daily scaling. `infrastructure/treasury/retained_earnings.py` — SQLite ledger, 4 seed quarters. `infrastructure/risk/regulatory_capital.py` — `_live_cet1()` adds cumulative retained earnings to static CET1 floor. New treasury endpoints: `/api/treasury/income-statement`, `/api/treasury/retained-earnings`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-055: Volcker Rule Attribution ✅ DONE
+**What:** Trade classification engine (MARKET_MAKING, PERMITTED_HEDGING, CUSTOMER_FACILITATION, UNDERWRITING, REPO_SECURITIES_FINANCE, PROHIBITED_PROP). Auto-classification on order submit.
+**Context:** `infrastructure/compliance/volcker.py` — rule table by desk prefix + product subtype. `api/oms_routes.py` — Volcker auto-classify on every `submit_order`. `api/compliance_routes.py` — 3 new endpoints: `/api/compliance/volcker/report`, `.../flags`, `.../classify`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-056: SA-CCR Live Position Wiring ✅ DONE
+**What:** Wire live OMS positions into SA-CCR EAD calculation (was using static SAMPLE_NETTING_SETS only).
+**Context:** `infrastructure/risk/sa_ccr.py` — `build_live_netting_sets(positions)` maps live positions by counterparty_id + product_subtype to SA-CCR netting set format, merges with static baseline. `calculate_portfolio_ead()` now auto-fetches live positions.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-057: Loan Origination Engine ✅ DONE
+**What:** SQLite-backed commercial loan book — TERM/REVOLVER/BULLET facilities, amortization, IFRS9 integration.
+**Context:** `infrastructure/credit/loan_book.py` — 8 seed loans, `originate()`, `repay()`, `get_amortization()`, IFRS9 stage assignment. `infrastructure/credit/ifrs9_ecl.py` — `add_obligor()`/`remove_obligor()` + `_live_portfolio`. `api/loan_routes.py` — 6 endpoints at `/api/loans/`.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-058: Deposit Account Model ✅ DONE
+**What:** CHECKING/SAVINGS/TERM accounts for RETAIL/SME/CORPORATE segments. NMD behavioural split. ALM repricing bucket output.
+**Context:** `infrastructure/treasury/deposits.py` — 10 seed accounts, `open_account()`, `deposit()`, `withdraw()`, `get_nmd_profile()`, `get_repricing_buckets()`. `api/deposits_routes.py` — 8 endpoints at `/api/deposits/`. `infrastructure/liquidity/intraday.py` — `record_payment()` added.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-059: Payments Simulation — Fedwire/CHIPS ✅ DONE
+**What:** RTGS (Fedwire, instant settle) + bilateral net (CHIPS, EOD batch). Nostro accounts with daylight overdraft limit enforcement.
+**Context:** `infrastructure/payments/ledger.py` — `PaymentLedger` with submit/settle/batch. `infrastructure/payments/nostro.py` — 4 seed nostros (USD/EUR/GBP/JPY), balance tracking. `api/payments_routes.py` — 7 endpoints at `/api/payments/`. Intraday monitor updated on settlement.
+**Status:** ✅ DONE — 2026-04-14
+
+### TODO-060: Securities Custody Layer ✅ DONE
+**What:** Custody accounts (OMNIBUS/SEGREGATED), holdings, settlement (T+1 equity/T+2 bond DVP), corporate actions.
+**Context:** `infrastructure/custody/custody_accounts.py` — 4 seed clients, 10 seed holdings, ~$19B AuC. `infrastructure/custody/settlement.py` — `SettlementEngine` with PENDING/AFFIRMED/SETTLED/FAILED lifecycle. `infrastructure/custody/corporate_actions.py` — 3 seed CAs (IBM div, Amazon split, MSFT div). `api/custody_routes.py` — 10 endpoints at `/api/custody/`.
+**Status:** ✅ DONE — 2026-04-14
+
+---
+
 ## Not in scope (explicitly deferred)
 - Multi-user / auth system (pre-v1)
 - Production cloud deployment (pre-v1)

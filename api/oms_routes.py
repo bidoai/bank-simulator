@@ -64,6 +64,7 @@ class OrderRequest(BaseModel):
     product_subtype: Optional[str] = None   # "irs","cds","fwd","option","gov_bond","spot","future"
     spread_bps: Optional[float] = None      # CDS spread at booking
     override_raroc: bool = False            # P6: bypass RAROC gate (use when desk is below-hurdle but trade is strategically necessary)
+    volcker_classification: Optional[str] = None  # Volcker Rule class; auto-classified if None
 
 
 # ---------------------------------------------------------------------------
@@ -295,6 +296,19 @@ async def submit_order(order: OrderRequest) -> dict:
     if normalised_side not in ("buy", "sell"):
         raise HTTPException(status_code=400, detail=f"Unknown side: {order.side!r}")
 
+    # Volcker Rule auto-classification
+    try:
+        from infrastructure.compliance.volcker import classify_trade as _vc_classify
+        volcker_class = order.volcker_classification or _vc_classify(
+            desk=order.desk.upper(),
+            product_subtype=order.product_subtype,
+            tenor_years=order.tenor_years,
+            counterparty_id=order.counterparty_id,
+            notional=order.notional or order.qty,
+        ).value
+    except Exception:
+        volcker_class = order.volcker_classification or "MARKET_MAKING"
+
     # Build product_details dict for derivatives
     product_details: dict | None = None
     if order.product_subtype:
@@ -306,7 +320,10 @@ async def submit_order(order: OrderRequest) -> dict:
             "expiry_date":  order.expiry_date,
             "currency":     order.currency,
             "original_side": order.side,       # preserve "payer"/"receiver" etc.
+            "volcker_classification": volcker_class,
         }.items() if v is not None}
+    else:
+        product_details = {"volcker_classification": volcker_class}
 
     async with _ORDER_LOCK:
         try:
